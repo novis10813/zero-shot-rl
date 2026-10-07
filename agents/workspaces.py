@@ -118,6 +118,10 @@ class OfflineRLWorkspace(AbstractWorkspace):
 
             if i % self.eval_frequency == 0:
                 eval_metrics = self.eval(agent=agent, tasks=tasks)
+                logger.info(
+                    f"Step {i} eval: "
+                    + ", ".join(f"{k}={v:.3f}" for k, v in eval_metrics.items())
+                )
 
                 if eval_metrics["eval/task_reward_iqm"] > best_mean_task_reward:
                     logger.info(
