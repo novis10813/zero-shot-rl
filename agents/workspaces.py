@@ -148,8 +148,7 @@ class OfflineRLWorkspace(AbstractWorkspace):
             run.save(best_model_path.as_posix(), base_path=model_path.as_posix())
             run.finish()
 
-        # delete local models
-        shutil.rmtree(model_path)
+        logger.info(f"Best model kept at {best_model_path}.")
 
     def eval(
         self,
