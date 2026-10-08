@@ -29,8 +29,9 @@ The authors' code is the `upstream` remote (`enjeeneer/zero-shot-rl`). Always re
    - copy its checkpoints (best and final) and log from the lab host to `artifacts/T<NN>-<name>/<job id>/`,
      check the sha256 against the host copy, then delete the host copy;
    - tag the commit it ran with an annotated tag `exp/T<NN>-<job id>`. The tag message
-     records what the report leaves out: seed, host, the repo-relative paths of the
-     checkpoints and log under `artifacts/`, and the checkpoints' sha256.
+     records what the report leaves out: seed, the repo-relative paths of the checkpoints
+     and log under `artifacts/`, and the checkpoints' sha256. No host names: the fork is
+     public, and `lab show <job id>` gives the host.
 
    A tag never points to a different commit. Its message may be corrected by re-creating
    the tag on the same commit.
