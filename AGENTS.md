@@ -7,7 +7,7 @@ one report per task. These rules keep `main` clean while experiments stay reprod
 
 | Branch | Purpose | Rules |
 |---|---|---|
-| `task/T<NN>-<name>` | one per task; experiments and trial and error | Anything goes, but never rebase, force-push or delete it |
+| `task/T<NN>-<name>` | one per task; experiments and trial and error | Anything goes, but never rebase, force-push or delete it (a GitHub ruleset blocks both) |
 | `clean/T<NN>-<name>` | branched from `task/T<NN>-<name>` when the task ends; holds only what passes the file rule | Opened as a PR to `task/T<NN>-<name>`. Deleted once that PR is merged |
 | `chore/<name>` | changes outside any task: refactors, documentation, tooling, these rules | Short-lived. Opened as a PR to `main` and deleted once merged. A refactor must not change training or evaluation results |
 | `main` | runnable code and every finished task | Every new task branches from it. Receives a task only by merging its `task/` branch after the `clean/` PR |
@@ -73,7 +73,8 @@ tasks/T<NN>-<name>/
   from `main`. Changes that only affect logging or which files are kept need no switch.
 - New baselines go in new modules (for example `agents/<name>/`), not in edits to existing
   agents.
-- A task's analysis script moves to `analysis/` only when a second task needs it.
+- A task's analysis script moves to `analysis/` only when a second task needs it. The same PR
+  updates the commands in earlier tasks' READMEs.
 
 ## Reports
 
@@ -92,6 +93,8 @@ Datasets, checkpoints and job logs are never committed.
   (git-ignored), and referenced from `exp/` tag messages. The lab hosts only run jobs and
   keep no results. `git clean -x` deletes `artifacts/`; do not run it.
 - Datasets are inputs and can be re-downloaded. They may stay on the lab hosts as a cache.
+- Checkpoints are saved with `AbstractAgent.save` (class, constructor arguments and
+  `state_dict`) and loaded with `load_agent`. Never pickle whole objects.
 - `.gitignore` covers `artifacts/`, `datasets/` and `agents/*/saved_models/`.
 
 ## Tasks
