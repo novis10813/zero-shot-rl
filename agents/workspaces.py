@@ -118,6 +118,10 @@ class OfflineRLWorkspace(AbstractWorkspace):
 
             if i % self.eval_frequency == 0:
                 eval_metrics = self.eval(agent=agent, tasks=tasks)
+                logger.info(
+                    f"Step {i} eval: "
+                    + ", ".join(f"{k}={v:.3f}" for k, v in eval_metrics.items())
+                )
 
                 if eval_metrics["eval/task_reward_iqm"] > best_mean_task_reward:
                     logger.info(
@@ -148,8 +152,7 @@ class OfflineRLWorkspace(AbstractWorkspace):
             run.save(best_model_path.as_posix(), base_path=model_path.as_posix())
             run.finish()
 
-        # delete local models
-        shutil.rmtree(model_path)
+        logger.info(f"Best model kept at {best_model_path}.")
 
     def eval(
         self,

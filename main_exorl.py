@@ -47,6 +47,7 @@ parser.add_argument("--target_conservative_penalty", type=float, default=50.0)
 parser.add_argument("--action_condition_index", type=int)
 parser.add_argument("--action_condition_value", type=float)
 parser.add_argument("--cql_alpha", type=float, default=0.01)
+parser.add_argument("--dataset_path", type=str, default=None)
 args = parser.parse_args()
 
 if args.wandb_logging == "True":
@@ -102,13 +103,16 @@ config["device"] = torch.device(
 set_seed_everywhere(config["seed"])
 
 # setup dataset
-dataset_path = (
-    BASE_DIR
-    / "datasets"
-    / config["domain_name"]
-    / config["exploration_algorithm"]
-    / "dataset.npz"
-)
+if config["dataset_path"] is not None:
+    dataset_path = Path(config["dataset_path"])
+else:
+    dataset_path = (
+        BASE_DIR
+        / "datasets"
+        / config["domain_name"]
+        / config["exploration_algorithm"]
+        / "dataset.npz"
+    )
 if config["algorithm"] in ("fb", "vcfb", "mcfb", "sf-lap"):
     relabel = False
 else:
