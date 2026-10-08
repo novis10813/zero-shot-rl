@@ -10,6 +10,7 @@ one report per task. These rules keep `main` clean while experiments stay reprod
 | `upstream` | the authors' `main` | Only updated from `enjeeneer/zero-shot-rl`. Never commit to it |
 | `task/T<NN>-<name>` | one per task; experiments and trial and error | Anything goes, but never rebase, force-push or delete it |
 | `clean/T<NN>-<name>` | branched from `task/T<NN>-<name>` when the task ends; holds only what passes the file rule | Opened as a PR to `task/T<NN>-<name>`. Deleted once that PR is merged |
+| `chore/<name>` | changes outside any task: refactors, documentation, tooling, these rules | Short-lived. Opened as a PR to `main` and deleted once merged. A refactor must not change training or evaluation results |
 | `main` | runnable code and every finished task | Every new task branches from it. Receives a task only by merging its `task/` branch after the `clean/` PR |
 
 Task numbers are two digits and never reused: `T01`, `T02`, ...
