@@ -9,7 +9,7 @@ one report per task. These rules keep `main` clean while experiments stay reprod
 |---|---|---|
 | `upstream` | the authors' `main` | Only updated from `enjeeneer/zero-shot-rl`. Never commit to it |
 | `task/T<NN>-<name>` | one per task; experiments and trial and error | Anything goes, but never rebase, force-push or delete it |
-| `clean/T<NN>-<name>` | branched from `task/T<NN>-<name>` when the task ends; holds only what passes the file rule | Opened as a PR to `task/T<NN>-<name>` |
+| `clean/T<NN>-<name>` | branched from `task/T<NN>-<name>` when the task ends; holds only what passes the file rule | Opened as a PR to `task/T<NN>-<name>`. Deleted once that PR is merged |
 | `main` | runnable code and every finished task | Every new task branches from it. Receives a task only by merging its `task/` branch after the `clean/` PR |
 
 Task numbers are two digits and never reused: `T01`, `T02`, ...
@@ -80,4 +80,4 @@ referenced from `exp/` tag messages. `.gitignore` covers `datasets/` and
 
 | Task | Branch | Status |
 |---|---|---|
-| T01 FB reproduction on ExORL Walker RND-100k | `task/T01-fb-reproduction` (same commits as the earlier `lab-repro`) | Report in `tasks/T01-fb-reproduction/` |
+| T01 FB reproduction on ExORL Walker RND-100k | `task/T01-fb-reproduction` | Report in `tasks/T01-fb-reproduction/` |
