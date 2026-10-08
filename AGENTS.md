@@ -7,7 +7,6 @@ one report per task. These rules keep `main` clean while experiments stay reprod
 
 | Branch | Purpose | Rules |
 |---|---|---|
-| `upstream` | the authors' `main` | Only updated from `enjeeneer/zero-shot-rl`. Never commit to it |
 | `task/T<NN>-<name>` | one per task; experiments and trial and error | Anything goes, but never rebase, force-push or delete it |
 | `clean/T<NN>-<name>` | branched from `task/T<NN>-<name>` when the task ends; holds only what passes the file rule | Opened as a PR to `task/T<NN>-<name>`. Deleted once that PR is merged |
 | `chore/<name>` | changes outside any task: refactors, documentation, tooling, these rules | Short-lived. Opened as a PR to `main` and deleted once merged. A refactor must not change training or evaluation results |
@@ -15,16 +14,23 @@ one report per task. These rules keep `main` clean while experiments stay reprod
 
 Task numbers are two digits and never reused: `T01`, `T02`, ...
 
+Tasks run one at a time: `task/T<NN+1>` branches from `main` after `T<NN>` is merged, so it
+starts with everything earlier tasks changed.
+
+The authors' code is the `upstream` remote (`enjeeneer/zero-shot-rl`). Always refer to it as
+`upstream/main`. Bringing their updates into `main` is a `chore/` PR that merges
+`upstream/main`.
+
 ## Workflow per task
 
 1. Branch `task/T<NN>-<name>` from `main`. Run experiments with `lab run`, which executes
    the pushed commit.
 2. For every job whose results go into the report:
-   - copy its checkpoint and log from the lab host to `artifacts/T<NN>-<name>/<job id>/`,
+   - copy its checkpoints (best and final) and log from the lab host to `artifacts/T<NN>-<name>/<job id>/`,
      check the sha256 against the host copy, then delete the host copy;
    - tag the commit it ran with an annotated tag `exp/T<NN>-<job id>`. The tag message
      records what the report leaves out: seed, host, the repo-relative paths of the
-     checkpoint and log under `artifacts/`, and the checkpoint's sha256.
+     checkpoints and log under `artifacts/`, and the checkpoints' sha256.
 
    A tag never points to a different commit. Its message may be corrected by re-creating
    the tag on the same commit.
@@ -61,7 +67,7 @@ tasks/T<NN>-<name>/
   *.py                                   analysis used only by this task
 ```
 
-- Upstream files stay where they are, so merging `upstream` into `main` stays easy.
+- Upstream files stay where they are, so merging `upstream/main` into `main` stays easy.
 - A change that can alter training or evaluation results goes behind a new argument or config
   key whose default keeps the original behaviour, so every earlier result still reproduces
   from `main`. Changes that only affect logging or which files are kept need no switch.
@@ -76,6 +82,7 @@ tasks/T<NN>-<name>/
   messages.
 - Every number and figure in a report must be regenerable from `data/` with a command in the
   task's `README.md`.
+  Numbers quoted from other sources (papers, other repos) name their source instead.
 
 ## Data and checkpoints
 

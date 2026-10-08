@@ -147,12 +147,17 @@ class OfflineRLWorkspace(AbstractWorkspace):
             if self.wandb_logging:
                 run.log(metrics)
 
+        # keep the final model too: reports may cite a step other than this run's best
+        agent._name = self.learning_steps  # pylint: disable=protected-access
+        final_model_path = agent.save(model_path)
+
         if self.wandb_logging:
             # save to wandb_logging
             run.save(best_model_path.as_posix(), base_path=model_path.as_posix())
             run.finish()
 
         logger.info(f"Best model kept at {best_model_path}.")
+        logger.info(f"Final model kept at {final_model_path}.")
 
     def eval(
         self,
