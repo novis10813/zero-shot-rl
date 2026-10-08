@@ -1,6 +1,6 @@
 """
-Evaluates a saved FB / CFB checkpoint on ExORL tasks with the same
-protocol as OfflineRLWorkspace.eval.
+Evaluates a saved FB / CFB checkpoint (a .pt file written by AbstractAgent.save) on
+ExORL tasks with the same protocol as OfflineRLWorkspace.eval.
 """
 
 from argparse import ArgumentParser
@@ -9,6 +9,7 @@ from pathlib import Path
 import torch
 from loguru import logger
 
+from agents.base import load_agent
 from agents.fb.replay_buffer import FBReplayBuffer
 from agents.workspaces import OfflineRLWorkspace
 from rewards import RewardFunctionConstructor
@@ -51,7 +52,7 @@ replay_buffer = FBReplayBuffer(
     action_condition=None,
 )
 
-agent = torch.load(args.checkpoint, map_location=device, weights_only=False)
+agent = load_agent(Path(args.checkpoint), device)
 
 workspace = OfflineRLWorkspace(
     reward_constructor=reward_constructor,

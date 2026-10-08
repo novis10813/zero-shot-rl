@@ -3,6 +3,8 @@
 """Module for holding abstract base classes for all agents."""
 
 import abc
+import functools
+import importlib
 import numpy as np
 import torch
 import wandb
@@ -18,8 +20,37 @@ from agents.utils import TruncatedNormal, SquashedNormal
 from rewards import RewardFunctionConstructor
 
 
+def _to_plain(value):
+    """Converts constructor arguments to types torch.load(weights_only=True) accepts."""
+    if isinstance(value, torch.device):
+        return str(value)
+    if isinstance(value, np.generic):
+        return value.item()
+    if isinstance(value, (list, tuple)):
+        return [_to_plain(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _to_plain(v) for k, v in value.items()}
+    return value
+
+
 class AbstractAgent(torch.nn.Module, metaclass=abc.ABCMeta):
     """Abstract base class for all agents."""
+
+    def __init_subclass__(cls, **kwargs):
+        """Records the keyword arguments of the outermost constructor, so save() can
+        store them next to the weights and load_agent() can rebuild the agent."""
+        super().__init_subclass__(**kwargs)
+        init = cls.__init__
+
+        @functools.wraps(init)
+        def recording_init(self, *args, **init_kwargs):
+            if args:
+                raise TypeError(f"{cls.__name__} takes keyword arguments only")
+            init(self, **init_kwargs)
+            if type(self) is cls:
+                self._init_kwargs = _to_plain(init_kwargs)
+
+        cls.__init__ = recording_init
 
     def __init__(
         self,
@@ -65,17 +96,39 @@ class AbstractAgent(torch.nn.Module, metaclass=abc.ABCMeta):
 
     def save(self, dir_path: Path) -> Path:
         """
-        Saves a copy of the model in a format that can be loaded by load
+        Saves the agent's class, constructor arguments and state_dict (no optimiser
+        state) to <name>.pt. Load it with load_agent().
         """
         dir_path.mkdir(exist_ok=True)
-        save_path = dir_path / Path(str(self._name) + ".pickle")
-        torch.save(self, save_path)
+        save_path = dir_path / Path(str(self._name) + ".pt")
+        torch.save(
+            {
+                "class": f"{type(self).__module__}.{type(self).__qualname__}",
+                "init_kwargs": self._init_kwargs,
+                "state_dict": self.state_dict(),
+            },
+            save_path,
+        )
 
         return save_path
 
     @abc.abstractmethod
     def load(self, filepath: Path):
         pass
+
+
+def load_agent(path: Path, device: torch.device) -> AbstractAgent:
+    """Rebuilds an agent saved by AbstractAgent.save() on the given device."""
+    checkpoint = torch.load(path, map_location=device, weights_only=True)
+    module_name, _, class_name = checkpoint["class"].rpartition(".")
+    agent_class = getattr(importlib.import_module(module_name), class_name)
+    init_kwargs = dict(checkpoint["init_kwargs"])
+    if "device" in init_kwargs:
+        init_kwargs["device"] = device
+    agent = agent_class(**init_kwargs)
+    agent.load_state_dict(checkpoint["state_dict"])
+
+    return agent
 
 
 class AbstractMLP(torch.nn.Module, metaclass=abc.ABCMeta):

@@ -27,7 +27,7 @@ every seed trains on the same subsample.
 One job per seed, 1M steps. Every 20k steps the job logs a line
 `Step <i> eval: eval/<task>/episode_reward_iqm=..., eval/task_reward_iqm=...`. At the end it
 keeps the best model by mean IQM and the final model in
-`agents/fb/saved_models/local-run-*/<step>.pickle`. The T01 runs predate the final-model
+`agents/fb/saved_models/local-run-*/<step>.pt`. The T01 runs predate the final-model
 change and kept only the best model (see section 5).
 
 ```bash
@@ -94,6 +94,13 @@ uv run python $T/aggregate_seeds.py $T/data/zsrl-5_eval.csv $T/data/zsrl-6_eval.
 
 The archived T01 checkpoints are each run's own best step, not the 900k and 1M steps of
 Table 1: seed 42 at 740k, seed 0 at 800k, seed 1 at 680k, seed 2 at 200k, seed 3 at 560k.
+The runs saved them as pickled agents. `convert_checkpoints.py` rewrote them in the
+state_dict format of `AbstractAgent.save` and checked that every tensor and the actions on
+100 random inputs are identical:
+
+```bash
+uv run python -m tasks.T01-fb-reproduction.convert_checkpoints <step>.pickle ...
+```
 
 Same protocol as the in-training evaluation: z inferred from 10k buffer transitions
 relabelled with each task's reward, 10 deterministic rollouts of 1000 steps per task, IQM.
@@ -101,7 +108,7 @@ Scores differ slightly from the in-training ones, because the z-inference sample
 environment's random state differ.
 
 ```bash
-uv run python -m scripts.eval_exorl <checkpoint.pickle> walker \
+uv run python -m scripts.eval_exorl <checkpoint.pt> walker \
   --dataset_path $HOME/zsrl-datasets/walker/rnd/dataset.npz \
   --eval_tasks stand walk run flip --eval_rollouts 10
 ```
@@ -118,4 +125,5 @@ logged and kept on disk.
 | `main_exorl.py --dataset_path` | read the dataset from outside the job's worktree |
 | `agents/workspaces.py`: keep the best and the final checkpoint after training | the original deletes the best one unless it was uploaded to wandb, and never saves the final one |
 | `agents/workspaces.py`: log every evaluation's per-task IQM | without wandb, per-task scores were not recorded |
+| `agents/base.py`: checkpoints store class, constructor arguments and `state_dict` (`.pt`); `load_agent()` rebuilds the agent with `weights_only=True` | pickled whole agents break when the class changes and can run arbitrary code on load |
 | `scripts/eval_exorl.py` | re-evaluate a saved checkpoint |
