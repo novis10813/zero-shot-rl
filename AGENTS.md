@@ -19,9 +19,15 @@ Task numbers are two digits and never reused: `T01`, `T02`, ...
 
 1. Branch `task/T<NN>-<name>` from `main`. Run experiments with `lab run`, which executes
    the pushed commit.
-2. For every job whose results go into the report, tag the commit it ran with an annotated
-   tag `exp/T<NN>-<job id>`. The tag message records what the report leaves out: seed, host,
-   checkpoint path, sha256 and log path. Tags are never moved or deleted.
+2. For every job whose results go into the report:
+   - copy its checkpoint and log from the lab host to `artifacts/T<NN>-<name>/<job id>/`,
+     check the sha256 against the host copy, then delete the host copy;
+   - tag the commit it ran with an annotated tag `exp/T<NN>-<job id>`. The tag message
+     records what the report leaves out: seed, host, the repo-relative paths of the
+     checkpoint and log under `artifacts/`, and the checkpoint's sha256.
+
+   A tag never points to a different commit. Its message may be corrected by re-creating
+   the tag on the same commit.
 3. Branch `clean/T<NN>-<name>` from `task/T<NN>-<name>`. Move, rewrite or delete files until
    only what passes the file rule is left, and open a PR to `task/T<NN>-<name>`.
 4. After that PR is merged, open a PR from `task/T<NN>-<name>` to `main`.
@@ -73,9 +79,13 @@ tasks/T<NN>-<name>/
 
 ## Data and checkpoints
 
-Datasets, checkpoints and job logs are never committed. They live on the lab hosts and are
-referenced from `exp/` tag messages. `.gitignore` covers `datasets/` and
-`agents/*/saved_models/`.
+Datasets, checkpoints and job logs are never committed.
+
+- Checkpoints and job logs are kept only on this machine, in `artifacts/` at the repo root
+  (git-ignored), and referenced from `exp/` tag messages. The lab hosts only run jobs and
+  keep no results. `git clean -x` deletes `artifacts/`; do not run it.
+- Datasets are inputs and can be re-downloaded. They may stay on the lab hosts as a cache.
+- `.gitignore` covers `artifacts/`, `datasets/` and `agents/*/saved_models/`.
 
 ## Tasks
 
