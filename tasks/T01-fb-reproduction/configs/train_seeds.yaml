@@ -1,0 +1,8 @@
+# lab sweep spec for the five T01 training runs (seeds 42, 0, 1, 2, 3).
+# Peak VRAM is about 8.4 GB per job, reached while loading the dataset after the job starts,
+# so the lab dispatcher can over-pack a GPU: keep at most two jobs per 32 GB GPU.
+command: PYTHONUNBUFFERED=1 uv run python main_exorl.py fb walker rnd --eval_tasks stand walk run flip --wandb_logging False --dataset_path $HOME/zsrl-datasets/walker/rnd/dataset.npz --seed {seed}
+vram: 10G
+gpus: 1
+grid:
+  seed: [42, 0, 1, 2, 3]
