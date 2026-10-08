@@ -25,8 +25,10 @@ every seed trains on the same subsample.
 ## 2. Training
 
 One job per seed, 1M steps. Every 20k steps the job logs a line
-`Step <i> eval: eval/<task>/episode_reward_iqm=..., eval/task_reward_iqm=...` and keeps the
-best model by mean IQM in `agents/fb/saved_models/local-run-*/<step>.pickle`.
+`Step <i> eval: eval/<task>/episode_reward_iqm=..., eval/task_reward_iqm=...`. At the end it
+keeps the best model by mean IQM and the final model in
+`agents/fb/saved_models/local-run-*/<step>.pickle`. The T01 runs predate the final-model
+change and kept only the best model (see section 5).
 
 ```bash
 lab sweep tasks/T01-fb-reproduction/configs/train_seeds.yaml
@@ -76,7 +78,10 @@ for line in sys.stdin:
 Table 1 and both figures of the report. The step with the highest all-task IQM over the
 five seeds is selected (as in the paper's Table 6), and each task's IQM over seeds is
 reported with a 95% stratified-bootstrap interval (`rliable`, 10,000 resamples, seed 0).
-Keep the file order below: the bootstrap intervals depend on it.
+Keep the file order below: the bootstrap intervals depend on it. The script prints, for the
+selected and the final step, each task's IQM and interval and the mean of the 4 task IQMs
+(the report's "4 任務平均" column), then each run's own best-step mean (the "397 到 488"
+range). The paper's numbers and the fb-offline comparison are quoted from their sources.
 
 ```bash
 T=tasks/T01-fb-reproduction
@@ -86,6 +91,9 @@ uv run python $T/aggregate_seeds.py $T/data/zsrl-5_eval.csv $T/data/zsrl-6_eval.
 ```
 
 ## 5. Re-evaluating a checkpoint
+
+The archived T01 checkpoints are each run's own best step, not the 900k and 1M steps of
+Table 1: seed 42 at 740k, seed 0 at 800k, seed 1 at 680k, seed 2 at 200k, seed 3 at 560k.
 
 Same protocol as the in-training evaluation: z inferred from 10k buffer transitions
 relabelled with each task's reward, 10 deterministic rollouts of 1000 steps per task, IQM.
@@ -108,6 +116,6 @@ logged and kept on disk.
 |---|---|
 | `pyproject.toml` + `uv.lock`: Python 3.9, torch 2.7.1 (CUDA 12.8), `setuptools<70`. Other pins as in `requirements.txt`, minus the unused `gcloud` and `pylint` | torch 2.1.0 does not support Blackwell GPUs (sm_120). wandb 0.15.2 imports `pkg_resources` |
 | `main_exorl.py --dataset_path` | read the dataset from outside the job's worktree |
-| `agents/workspaces.py`: keep the best checkpoint after training | the original deletes it unless it was uploaded to wandb |
+| `agents/workspaces.py`: keep the best and the final checkpoint after training | the original deletes the best one unless it was uploaded to wandb, and never saves the final one |
 | `agents/workspaces.py`: log every evaluation's per-task IQM | without wandb, per-task scores were not recorded |
 | `scripts/eval_exorl.py` | re-evaluate a saved checkpoint |

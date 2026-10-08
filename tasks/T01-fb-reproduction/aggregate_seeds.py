@@ -47,12 +47,20 @@ def report(index: int, label: str) -> tuple:
     for t, name in enumerate([*TASKS, "all tasks"]):
         low, high = interval[label][0][t], interval[label][1][t]
         print(f"  {name:9s} IQM {point[label][t]:6.1f}  ({low:.0f}-{high:.0f})")
+    print(f"  mean of the 4 task IQMs {point[label][:4].mean():6.1f}")
     return point[label][:4], interval[label][0][:4], interval[label][1][:4]
 
 
 np.random.seed(0)
 best_estimates = report(best, "best step")
 final_estimates = report(final, "final step")
+
+per_seed_best = scores.mean(axis=2).max(axis=1)
+print(
+    "each run's own best step, mean of 4 tasks: "
+    f"{per_seed_best.min():.1f}-{per_seed_best.max():.1f} "
+    f"({', '.join(f'{v:.1f}' for v in per_seed_best)})"
+)
 
 if args.comparison_output is not None:
     # Paper Table 6 (Rnd-100k, Walker, FB): IQM and 95% interval per task.
