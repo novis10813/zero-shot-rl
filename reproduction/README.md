@@ -15,7 +15,7 @@ stratified-bootstrap interval (`rliable`, 10,000 resamples).
 
 | | stand | walk | run | flip | mean of 4 |
 |---|---|---|---|---|---|
-| this reproduction, selected step (900k) | 601 (560–643) | 362 (169–639) | 120 (84–178) | 276 (135–396) | 340 |
+| this reproduction, selected step (900k) | 601 (560–643) | 362 (169–639) | 120 (84–178) | 275 (135–396) | 340 |
 | this reproduction, final step (1M) | 480 (212–674) | 366 (273–516) | 112 (62–171) | 281 (114–389) | 310 |
 | paper, FB (Table 6) | 558 (498–637) | 184 (123–278) | 101 (90–135) | 163 (90–212) | 252 |
 | paper, VC-FB (Table 6) | 624 (604–639) | 446 (435–460) | 179 (165–197) | 325 (292–350) | 394 |
@@ -25,7 +25,7 @@ Walker. "Mean of 4" is the plain mean of the four task scores in both rows. The 
 over seeds and tasks is 325 (240–408) at the selected step and 282 (216–354) at 1M.
 
 - On every task the 95% interval of this reproduction overlaps the paper's FB interval.
-  stand and run are close to the paper. walk (362 vs 184) and flip (276 vs 163) are higher,
+  stand and run are close to the paper. walk (362 vs 184) and flip (275 vs 163) are higher,
   with wide intervals: walk spans 169–639 across seeds.
 - Each seed's own best step scores far above the 5-seed result (mean of 4 tasks 397–488,
   seed 42: 403), because each run picks its luckiest evaluation. That is why the first
@@ -44,8 +44,11 @@ Grey: each seed. Blue: mean over seeds. Dashed line: selected step (900k). Data:
 
 ```bash
 cd reproduction && uv run python aggregate_seeds.py zsrl-5_eval.csv zsrl-6_eval.csv \
-  zsrl-7_eval.csv zsrl-12_eval.csv zsrl-13_eval.csv -o fb_walker_rnd_5seeds.png
+  zsrl-7_eval.csv zsrl-12_eval.csv zsrl-13_eval.csv -o fb_walker_rnd_5seeds.png \
+  --comparison_output fb_vs_paper.png
 ```
+
+![Per-task IQM against the paper's FB](fb_vs_paper.png)
 
 ## Artifacts
 
