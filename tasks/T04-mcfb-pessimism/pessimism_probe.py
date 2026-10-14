@@ -93,8 +93,21 @@ def make_env(seed):
     )
 
 
-envs = [make_env(args.seed + i) for i in range(max(args.n_states, args.visited_episodes))]
+envs = []
 reward_fns = reward_constructor.reward_functions
+
+
+def get_envs(n):
+    while len(envs) < n:
+        envs.append(make_env(args.seed + len(envs)))
+    return envs[:n]
+
+
+def set_physics(env, state):
+    """reset_context runs mj_forward, so positions-derived quantities match the state."""
+    env.reset()
+    with env.physics.reset_context():
+        env.physics.set_state(state)
 
 
 def nn_distance(obs, exclude_self_idx=None):
@@ -132,11 +145,11 @@ def mc_returns(agent, z, task, physics_states, first_actions):
     """Set each env to a physics state, take the first action, then follow the noisy
     actor at z. Returns sum_{t < horizon} gamma^t r_t, where r_t follows action t."""
     n = len(physics_states)
+    get_envs(n)
     returns = np.zeros(n)
     obs = np.zeros((n, storage["observations"].shape[1]), dtype=np.float32)
     for i in range(n):
-        envs[i].reset()
-        envs[i].physics.set_state(physics_states[i])
+        set_physics(envs[i], physics_states[i])
         ts = envs[i].step(first_actions[i])
         obs[i] = ts.observation["observations"]
         returns[i] += reward_fns[task](envs[i].physics)
@@ -157,6 +170,7 @@ def visited_states(agent, z):
     """Physics states and observations along deterministic eval rollouts from reset."""
     physics, observations = [], []
     zs = z.unsqueeze(0).repeat(args.visited_episodes, 1)
+    get_envs(args.visited_episodes)
     obs = np.stack(
         [envs[i].reset().observation["observations"] for i in range(args.visited_episodes)]
     ).astype(np.float32)
@@ -237,11 +251,10 @@ def action_gaps(agent, task_zs):
 
 
 # sanity: dataset observation t is the observation of dataset physics t
-check_env = envs[0]
-check_env.reset()
+check_env = get_envs(1)[0]
 max_obs_err = 0.0
 for i in probe_idx[:20]:
-    check_env.physics.set_state(storage["physics"][i])
+    set_physics(check_env, storage["physics"][i])
     obs = check_env._task.get_observation(check_env.physics)  # pylint: disable=protected-access
     flat = np.concatenate([np.asarray(v).ravel() for v in obs.values()])
     max_obs_err = max(max_obs_err, float(np.abs(flat - storage["observations"][i].cpu().numpy()).max()))
