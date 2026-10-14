@@ -24,7 +24,7 @@ from scipy.stats import spearmanr
 
 DATA = Path(__file__).parent / "data"
 TASKS = ["stand", "walk", "run", "flip"]
-ALGOS = {"fb": "FB", "vcfb": "VC-FB", "mcfb": "MC-FB"}
+ALGOS = {"fb": "FB", "vcfb": "VC-FB", "mcfb": "MC-FB", "dvcfb": "DVC-FB"}
 METRICS = ["level", "d_ood", "d_policy", "spearman", "d_visited"]
 GAP_SETS = ["prior", "backward", "task"]
 
