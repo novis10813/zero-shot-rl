@@ -1,5 +1,6 @@
 """Module for specifiying the Conservative Forward-Backward Agent."""
 
+import math
 import torch
 from typing import Dict, Tuple
 
@@ -8,8 +9,8 @@ from agents.fb.agent import FB
 
 class CFB(FB):
     """
-    Conservative Forward-Backward Agent. Can be
-    either Measure-Conservative or Value-Conservative.
+    Conservative Forward-Backward Agent. Can be Measure-Conservative,
+    Value-Conservative or Directed Value-Conservative (appendix B.1.6).
     """
 
     def __init__(
@@ -50,16 +51,18 @@ class CFB(FB):
         vcfb: bool,
         mcfb: bool,
         lagrange: bool = False,
+        dvcfb: bool = False,
     ):
-        assert vcfb != mcfb
+        assert vcfb + mcfb + dvcfb == 1, "Exactly one of vcfb, mcfb, dvcfb must be True"
         self.vcfb = vcfb
         self.mcfb = mcfb
+        self.dvcfb = dvcfb
         if self.vcfb:
             name = "VCFB"
         elif self.mcfb:
             name = "MCFB"
         else:
-            raise ValueError("Either vcfb or mcfb must be True")
+            name = "DVCFB"
 
         super().__init__(
             observation_length=observation_length,
@@ -168,7 +171,7 @@ class CFB(FB):
             step=step,
         )
 
-        # calculate MC or VC penalty
+        # calculate MC, VC or DVC penalty
         if self.mcfb:
             (
                 conservative_penalty,
@@ -183,6 +186,31 @@ class CFB(FB):
                 B_next=B_next,
                 M1_next=M1_next,
                 M2_next=M2_next,
+            )
+        # DVCFB: the VC penalty with every z replaced by B(s_g), s_g ~ D (eq. 19).
+        # z = B(s_g) is normalised like the B(s) zs mixed into training and is
+        # treated as a sampled task (no gradient into B), as the zs are in VC-FB.
+        elif self.dvcfb:
+            with torch.no_grad():
+                goal_zs = self.FB.backward_representation(
+                    next_observations[torch.randperm(self.batch_size)]
+                )
+                goal_zs = math.sqrt(self._z_dimension) * torch.nn.functional.normalize(
+                    goal_zs, dim=1
+                )
+            goal_F1, goal_F2 = self.FB.forward_representation(
+                observations, actions, goal_zs
+            )
+            (
+                conservative_penalty,
+                conservative_metrics,
+            ) = self._value_conservative_penalty(
+                observations=observations,
+                next_observations=next_observations,
+                zs=goal_zs,
+                actor_std_dev=actor_std_dev,
+                F1=goal_F1,
+                F2=goal_F2,
             )
         # VCFB
         else:
