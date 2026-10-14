@@ -187,6 +187,11 @@ def visited_states(agent, z):
     return physics, np.stack(observations)
 
 
+def rounded(x):
+    x = x.cpu().numpy() if torch.is_tensor(x) else np.asarray(x)
+    return [round(float(v), 4) for v in x]
+
+
 def calibration(agent, z, scale, task):
     probe_obs = storage["observations"][probe_idx]
     probe_physics = storage["physics"][probe_idx]
@@ -211,12 +216,12 @@ def calibration(agent, z, scale, task):
             q, q1, q2 = q_values(agent, obs, actions, zs)
         g = mc_returns(agent, z, task, physics, actions.cpu().numpy())
         result[name] = {
-            "q_hat": (scale * q).cpu().tolist(),
-            "q1_hat": (scale * q1).cpu().tolist(),
-            "q2_hat": (scale * q2).cpu().tolist(),
-            "mc_return": g.tolist(),
+            "q_hat": rounded(scale * q),
+            "q1_hat_mean": (scale * q1).mean().item(),
+            "q2_hat_mean": (scale * q2).mean().item(),
+            "mc_return": rounded(g),
         }
-    result["visited"]["nn_distance"] = nn_distance(v_obs).cpu().tolist()
+    result["visited"]["nn_distance"] = rounded(nn_distance(v_obs))
     return result
 
 
@@ -263,9 +268,9 @@ print(f"max |obs(physics) - dataset obs| on 20 probe states: {max_obs_err:.2e}")
 output = {
     "args": vars(args),
     "max_obs_err": max_obs_err,
-    "data_nn_distance": nn_distance(
+    "data_nn_distance": rounded(nn_distance(
         storage["observations"][probe_idx], torch.as_tensor(probe_idx, device=device)
-    ).cpu().tolist(),
+    )),
     "models": {},
 }
 for spec in args.checkpoints:
