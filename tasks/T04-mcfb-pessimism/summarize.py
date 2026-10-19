@@ -10,6 +10,7 @@ Per model and task, on the same 1000 training states (paired):
     d_visited  mean(Q_hat - G) on states the eval policy visits minus the same on
                training states (both with a = pi(s)); < 0 means more pessimistic off-data
 Each is averaged over the four tasks per seed, then mean and std over seeds.
+Table 0 reads the training eval curves in data/eval_<algo>_s<seed>.csv (extract_eval.py).
 
 Usage: python tasks/T04-mcfb-pessimism/summarize.py [--fig <png>]
 """
@@ -75,6 +76,25 @@ for path in sorted(DATA.glob("probe_*.json")):
 def fmt(values):
     return f"{np.mean(values):+.2f} ± {np.std(values):.2f}"
 
+
+evals = defaultdict(list)  # algo -> seeds of (final mean, best mean, best step, final per task)
+for path in sorted(DATA.glob("eval_*.csv")):
+    curve = np.genfromtxt(path, delimiter=",", names=True)
+    best = np.argmax(curve["mean"])
+    evals[path.stem.split("_")[1]].append(
+        (curve["mean"][-1], curve["mean"][best], curve["step"][best], [curve[t][-1] for t in TASKS]))
+
+print("Table 0: eval return (IQM over episodes, mean of the four tasks), mean ± std over seeds\n")
+print("| Algorithm | n | final (1M) | best during training | best step per seed | " + " | ".join(f"final {t}" for t in TASKS) + " |")
+print("|---" * (5 + len(TASKS)) + "|")
+for a in [a for a in ALGOS if a in evals]:
+    v = evals[a]
+    per_task_final = np.array([e[3] for e in v])
+    print(f"| {ALGOS[a]} | {len(v)} | {np.mean([e[0] for e in v]):.0f} ± {np.std([e[0] for e in v]):.0f} "
+          f"| {np.mean([e[1] for e in v]):.0f} ± {np.std([e[1] for e in v]):.0f} "
+          f"| {', '.join(f'{int(e[2]) // 1000}k' for e in v)} | "
+          + " | ".join(f"{per_task_final[:, i].mean():.0f}" for i in range(len(TASKS))) + " |")
+print()
 
 algos = [a for a in ALGOS if a in per_seed]
 print("Table 1: calibration metrics, reward units, mean ± std over seeds (tasks averaged)\n")
