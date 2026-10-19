@@ -52,6 +52,7 @@ per_seed = defaultdict(list)  # algo -> list of {metric: value averaged over tas
 per_task = defaultdict(lambda: defaultdict(list))  # (algo, task) -> metric -> seeds
 gaps = defaultdict(lambda: defaultdict(list))  # algo -> z set -> seeds of (gap, frac)
 nn = defaultdict(list)
+returns = defaultdict(list)  # algo -> seeds of (mean G, std G) over data actions, tasks averaged
 for path in sorted(DATA.glob("probe_*.json")):
     algo = path.stem.split("_")[1]
     probe = json.loads(path.read_text())
@@ -67,6 +68,9 @@ for path in sorted(DATA.glob("probe_*.json")):
         scale = np.mean([model["action_gaps"][k]["q_data_std"] for k in keys])
         frac = np.mean([model["action_gaps"][k]["frac_data_above_uniform"] for k in keys])
         gaps[algo][name].append((gap, gap / scale, frac))
+    returns[algo].append(
+        (np.mean([np.mean(model["calibration"][t]["data"]["mc_return"]) for t in TASKS]),
+         np.mean([np.std(model["calibration"][t]["data"]["mc_return"]) for t in TASKS])))
     nn[algo].append(
         (np.median(probe["data_nn_distance"]),
          np.median(np.concatenate([model["calibration"][t]["visited"]["nn_distance"] for t in TASKS])))
@@ -124,6 +128,11 @@ for a in algos:
     v = np.array(nn[a])
     print(f"  {ALGOS[a]}: training {v[:, 0].mean():.2f}, visited {v[:, 1].mean():.2f}")
 
+print("\nScale of G on data actions (reward units, tasks averaged): mean, std over states")
+for a in algos:
+    v = np.array(returns[a])
+    print(f"  {ALGOS[a]}: mean {v[:, 0].mean():.1f}, std {v[:, 1].mean():.1f}")
+
 if args.fig:
     import matplotlib
 
@@ -144,5 +153,6 @@ if args.fig:
         ax.set_title(title, fontsize=9)
     axes[0].set_ylabel("reward units (Σ γ^t r)")
     fig.tight_layout()
+    Path(args.fig).parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(args.fig, dpi=150)
     print(f"\nwrote {args.fig}")

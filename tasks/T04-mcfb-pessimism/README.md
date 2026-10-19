@@ -87,8 +87,8 @@ then compares it with a Monte Carlo return $G(s,a)$: reset the simulator to $s$,
 and follow the actor at $z_r$ with the training target noise for 300 steps
 ($\gamma = 0.98$). Restoring a dataset state reproduces its observation to within $2\times10^{-6}$.
 The 1000 training states come from probe seed 0 and are the same for every model only on the
-same GPU: idlab1 drew a different set from the same seed. All reported probes ran on one GPU
-of idlab, so every model is scored on the same states. Four action sources: dataset action, uniform action (`ood`), policy action, and policy
+same machine: another host drew a different set from the same seed. All reported probes ran
+on one GPU, so every model is scored on the same states. Four action sources: dataset action, uniform action (`ood`), policy action, and policy
 action on states the eval policy visits. It also records $Q(s,a_\text{data})$ against
 $Q(s,a_\text{uniform})$ for $z$ from the prior, from $B(s)$ and $z_r$.
 
