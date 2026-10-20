@@ -50,6 +50,8 @@ parser.add_argument("--action_condition_index", type=int)
 parser.add_argument("--action_condition_value", type=float)
 parser.add_argument("--cql_alpha", type=float, default=0.01)
 parser.add_argument("--dataset_path", type=str, default=None)
+# onestep_fb only: overrides bc_coefficient in agents/onestep_fb/config.yaml
+parser.add_argument("--bc_coefficient", type=float, default=None)
 args = parser.parse_args()
 
 if args.wandb_logging == "True":
@@ -243,6 +245,9 @@ elif config["algorithm"] == "td3":
     eval_std = None
 
 elif config["algorithm"] == "onestep_fb":
+
+    if args.bc_coefficient is None:
+        config["bc_coefficient"] = yaml.safe_load(open(config_path))["bc_coefficient"]
 
     agent = OneStepFB(
         observation_length=observation_length,
