@@ -103,3 +103,4 @@ Datasets, checkpoints and job logs are never committed.
 | Task | Branch | Status |
 |---|---|---|
 | T01 FB reproduction on ExORL Walker RND-100k | `task/T01-fb-reproduction` | Report in `tasks/T01-fb-reproduction/` |
+| T04 MC-FB pessimism vs VC-FB and DVC-FB on ExORL Walker RND-100k | `task/T04-mcfb-pessimism` | Report in `tasks/T04-mcfb-pessimism/` |
