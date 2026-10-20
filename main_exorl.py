@@ -60,9 +60,15 @@ else:
 if args.algorithm in ("vcfb"):
     args.vcfb = True
     args.mcfb = False
+    args.dvcfb = False
 elif args.algorithm in ("mcfb"):
     args.vcfb = False
     args.mcfb = True
+    args.dvcfb = False
+elif args.algorithm == "dvcfb":
+    args.vcfb = False
+    args.mcfb = False
+    args.dvcfb = True
 
 if args.lagrange == "True":
     args.lagrange = True
@@ -76,7 +82,7 @@ else:
     args.action_condition = None
 
 working_dir = Path.cwd()
-if args.algorithm in ("vcfb", "mcfb"):
+if args.algorithm in ("vcfb", "mcfb", "dvcfb"):
     algo_dir = "calfb" if "cal" in args.algorithm else "cfb"
     config_path = working_dir / "agents" / algo_dir / "config.yaml"
     model_dir = working_dir / "agents" / algo_dir / "saved_models"
@@ -113,7 +119,7 @@ else:
         / config["exploration_algorithm"]
         / "dataset.npz"
     )
-if config["algorithm"] in ("fb", "vcfb", "mcfb", "sf-lap"):
+if config["algorithm"] in ("fb", "vcfb", "mcfb", "dvcfb", "sf-lap"):
     relabel = False
 else:
     relabel = True
@@ -289,7 +295,7 @@ elif config["algorithm"] == "fb":
     eval_std = config["std_dev_eval"]
 
 
-elif config["algorithm"] in ("vcfb", "mcfb"):
+elif config["algorithm"] in ("vcfb", "mcfb", "dvcfb"):
     if config["domain_name"] == "point_mass_maze":
         config["discount"] = 0.99
         config["z_dimension"] = 100
@@ -326,6 +332,7 @@ elif config["algorithm"] in ("vcfb", "mcfb"):
         device=config["device"],
         vcfb=config["vcfb"],
         mcfb=config["mcfb"],
+        dvcfb=config["dvcfb"],
         total_action_samples=config["total_action_samples"],
         ood_action_weight=config["ood_action_weight"],
         alpha=config["alpha"],
