@@ -14,12 +14,15 @@ Latent geometry (computed inside each seed: latent spaces of different seeds are
                                 from z_r (component orthogonal to z_r), per seed, mean over tasks
     figures/latent_tangent_cos.png  the same, mean over seeds
     figures/pca.png             PCA of each seed's latents, one panel per seed and task
+    figures/pca_3d.html         the same with three components, rotatable (plotly.js from a CDN)
 
 Usage (repo root):
     uv run python tasks/T05-opt-to-pessi/analyze.py
 """
 
 from pathlib import Path
+
+import json
 
 import matplotlib
 
@@ -216,6 +219,72 @@ def plot_latents(latents, cos):
     fig.savefig(ROOT / "figures" / "pca.png", dpi=120)
 
 
+PCA_3D_HTML = """<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>T05 latent PCA</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script></head>
+<body style="font-family: sans-serif">
+<p>PCA of one seed and task's latents, three components. Lines run from G0 through increasing
+target angle. Drag to rotate, scroll to zoom, click a legend entry to hide it.
+<select id="view"></select></p>
+<div id="plot" style="width: 100%; height: 85vh"></div>
+<script>
+const VIEWS = __DATA__;
+const select = document.getElementById("view");
+Object.keys(VIEWS).forEach(k => select.add(new Option(k, k)));
+function draw() {
+  const v = VIEWS[select.value];
+  const traces = v.traces.map(t => ({
+    type: "scatter3d", mode: t.lines ? "lines+markers" : "markers", name: t.name,
+    x: t.x, y: t.y, z: t.z, text: t.text, hoverinfo: "text+name",
+    marker: {size: t.size, color: t.color, symbol: t.symbol}, line: {color: t.color, width: 5},
+  }));
+  const axis = i => ({title: `PC${i + 1} (${(100 * v.var[i]).toFixed(0)}%)`});
+  Plotly.react("plot", traces, {scene: {xaxis: axis(0), yaxis: axis(1), zaxis: axis(2)},
+    margin: {l: 0, r: 0, t: 30, b: 0}, title: select.value});
+}
+select.onchange = draw;
+draw();
+</script></body></html>
+"""
+
+
+def plot_pca_3d(latents):
+    hex_colors = {f: matplotlib.colors.to_hex(c) for f, c in COLORS.items()}
+    views = {}
+    for seed, z in latents.items():
+        for task in TASKS:
+            k = (z["task"] == task) & np.isin(z["family"], SWEEPS[:-1] + ["G0", "G0p", "C2"])
+            x = z["z"][k] - z["z"][k].mean(0)
+            _, s, vt = np.linalg.svd(x, full_matrices=False)
+            p = x @ vt[:3].T
+            fam, ang, strength = z["family"][k], z["target_angle"][k], z["strength"][k]
+            g0 = p[fam == "G0"][0]
+
+            def trace(name, pts, text, color, lines, size=4, symbol="circle"):
+                return {"name": name, "x": pts[:, 0].tolist(), "y": pts[:, 1].tolist(),
+                        "z": pts[:, 2].tolist(), "text": text, "color": color, "lines": lines,
+                        "size": size, "symbol": symbol}
+
+            traces = []
+            for f in SWEEPS[:-1]:
+                m = fam == f
+                if m.any():
+                    order = np.argsort(ang[m])
+                    text = ["G0"] + [f"{a:g} deg, strength {s:+.3g}"
+                                     for a, s in zip(ang[m][order], strength[m][order])]
+                    traces.append(trace(LABELS[f], np.vstack([g0, p[m][order]]), text,
+                                        hex_colors[f], True))
+            traces.append(trace(LABELS["G0"], g0[None], ["G0"], "#000000", False, 8))
+            traces.append(trace(LABELS["G0p"], p[fam == "G0p"], ["G0p"], "#808080", False, 8,
+                                "diamond"))
+            traces.append(trace(LABELS["C2"], p[fam == "C2"], ["C2"] * int((fam == "C2").sum()),
+                                "#000000", False, 4, "x"))
+            views[f"seed {seed}, {task}"] = {"traces": traces,
+                                            "var": (s[:3] ** 2 / (s ** 2).sum()).tolist()}
+    html = PCA_3D_HTML.replace("__DATA__", json.dumps(views, separators=(",", ":")))
+    (ROOT / "figures" / "pca_3d.html").write_text(html)
+
+
 def main():
     (ROOT / "figures").mkdir(exist_ok=True)
     d, latents = load()
@@ -227,6 +296,7 @@ def main():
     to_g0.to_csv(ROOT / "data" / "latent_to_g0.csv", index=False, float_format="%.4g")
     cos.to_csv(ROOT / "data" / "latent_tangent_cos.csv", index=False, float_format="%.4g")
     plot_latents(latents, cos)
+    plot_pca_3d(latents)
 
     pd.set_option("display.width", 200)
     cols = ["family", "target_angle", "d_return_iqm_mean", "d_return_iqm_std", "rel_return_mean",
