@@ -1,4 +1,5 @@
-"""Roll out the fixed one-step FB actor at every latent written by implicit_z.py.
+"""Roll out the fixed FB actor (one-step FB or standard FB) at every latent written by
+implicit_z.py or implicit_z_fb.py.
 
 Each latent runs --episodes deterministic episodes (clipped mean action) of 1000 steps.
 Episode e starts from the reset of an environment seeded with e, so all latents share
@@ -31,6 +32,7 @@ import torch
 
 import custom_dmc_tasks as cdmc
 from agents.base import load_agent
+from agents.fb.agent import FB
 from agents.onestep_fb.replay_buffer import OneStepFBReplayBuffer
 from rewards import RewardFunctionConstructor
 
@@ -38,6 +40,22 @@ FALL_HEIGHT = 0.6
 RTG_HORIZON = 750  # return-to-go is truncated by at most gamma^250 ~ 0.006 of its scale
 
 G = {}  # per-process state, filled before the pool forks
+
+
+def policy(agent, obs, z):
+    """Deterministic action of either agent type."""
+    if isinstance(agent, FB):
+        action, _ = agent.actor(obs, z, 0.2, sample=False)
+        return action.clamp(-1.0, 1.0)
+    return agent.policy(obs, z)
+
+
+def forward(agent, obs, actions, z):
+    """F(s, a) averaged over the two heads (standard FB also conditions F on z)."""
+    if isinstance(agent, FB):
+        F1, F2 = agent.FB.forward_representation(observation=obs, action=actions, z=z)
+        return (F1 + F2) / 2
+    return agent.forward_representation(obs, actions).mean(0)
 
 
 def make_env(seed):
@@ -69,7 +87,7 @@ def record_video(row, path):
     obs, frames = env.reset().observation["observations"], []
     for t in range(1000):
         with torch.no_grad():
-            action = agent.policy(torch.as_tensor(obs, dtype=torch.float32).unsqueeze(0), z)
+            action = policy(agent, torch.as_tensor(obs, dtype=torch.float32).unsqueeze(0), z)
         obs = env.step(action.numpy()[0]).observation["observations"]
         if t % 2 == 0:
             frames.append(env.physics.render(height=240, width=320, camera_id=0))
@@ -92,7 +110,7 @@ def rollout(row):
     probe_obs, probe_actions, probe_steps = [], [], []
     for t in range(1000):
         with torch.no_grad():
-            actions = agent.policy(torch.as_tensor(obs, dtype=torch.float32), z).numpy()
+            actions = policy(agent, torch.as_tensor(obs, dtype=torch.float32), z).numpy()
         if t % args.knn_every == 0:
             probe_obs.append(obs.copy())
             probe_actions.append(actions.copy())
@@ -116,12 +134,12 @@ def rollout(row):
         nearest = torch.minimum(nearest, torch.cdist(query, G["sa"][start:start + 20000]).min(1).values)
     with torch.no_grad():
         z_probe = torch.as_tensor(z_np, dtype=torch.float32).expand(len(s), -1)
-        m7 = agent.forward_representation(s, agent.policy(s, z_probe))
-        m7 = (m7.mean(0) @ torch.as_tensor(G["u_1"])).numpy()
-        q = (agent.forward_representation(s, a).mean(0) @ torch.as_tensor(z_np)).numpy()
+        m7 = forward(agent, s, policy(agent, s, z_probe), z_probe)
+        m7 = (m7 @ torch.as_tensor(G["u_1"])).numpy()
+        q = (forward(agent, s, a, z_probe) @ torch.as_tensor(z_np)).numpy()
 
     # discounted return-to-go at the probe steps
-    gamma = agent._discount
+    gamma = getattr(agent, "_discount", 0.98)  # agents/fb/config.yaml
     rtg = np.zeros((n, 1001))
     for t in range(999, -1, -1):
         rtg[:, t] = rewards[:, t] + gamma * rtg[:, t + 1]
@@ -177,7 +195,7 @@ def main():
     buffer = OneStepFBReplayBuffer(
         reward_constructor=reward_constructor,
         dataset_path=Path(args.dataset_path),
-        discount=agent._discount,
+        discount=getattr(agent, "_discount", 0.98),
         transitions=args.transitions,
         device=torch.device("cpu"),
     )
