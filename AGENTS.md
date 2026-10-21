@@ -3,6 +3,9 @@
 The repo will hold several baselines, modified RL functions and
 one report per task. These rules keep `main` clean while experiments stay reproducible.
 
+Read `RESEARCH.md` before planning a task, and name in each task's `README.md` the research
+question the task serves.
+
 ## Branches
 
 | Branch | Purpose | Rules |
