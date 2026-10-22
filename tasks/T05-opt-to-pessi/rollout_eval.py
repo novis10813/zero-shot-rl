@@ -79,8 +79,11 @@ def write_video(frames, path):
 
 
 def record_video(row, path):
-    """Episode 0 of a latent, replayed in the main process (rendering does not work in
-    forked workers). The actor is deterministic, so it is the evaluated episode 0."""
+    """Replay using initialization seed 0 in the main process.
+
+    Rendering does not work in forked workers. Batch-size and numerical differences
+    can change trajectories, so this need not reproduce evaluated episode 0 exactly.
+    """
     agent, data = G["agent"], G["data"]
     z = torch.as_tensor(data["z"][row], dtype=torch.float32).unsqueeze(0)
     env = make_env(0)
