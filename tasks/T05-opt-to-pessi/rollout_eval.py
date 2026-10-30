@@ -1,5 +1,4 @@
-"""Roll out the fixed FB actor (one-step FB or standard FB) at every latent written by
-implicit_z.py or implicit_z_fb.py.
+"""Roll out the fixed standard FB actor at every latent written by implicit_z_fb.py.
 
 Each latent runs --episodes deterministic episodes (clipped mean action) of 1000 steps.
 Episode e starts from the reset of an environment seeded with e, so all latents share
@@ -36,6 +35,7 @@ from agents.fb.agent import FB
 from agents.fb.replay_buffer import FBReplayBuffer
 from rewards import RewardFunctionConstructor
 
+DISCOUNT = 0.98  # agents/fb/config.yaml
 FALL_HEIGHT = 0.6
 RTG_HORIZON = 750  # return-to-go is truncated by at most gamma^250 ~ 0.006 of its scale
 
@@ -43,19 +43,15 @@ G = {}  # per-process state, filled before the pool forks
 
 
 def policy(agent, obs, z):
-    """Deterministic action of either agent type."""
-    if isinstance(agent, FB):
-        action, _ = agent.actor(obs, z, 0.2, sample=False)
-        return action.clamp(-1.0, 1.0)
-    return agent.policy(obs, z)
+    """Deterministic action: clipped actor mean."""
+    action, _ = agent.actor(obs, z, 0.2, sample=False)
+    return action.clamp(-1.0, 1.0)
 
 
 def forward(agent, obs, actions, z):
-    """F(s, a) averaged over the two heads (standard FB also conditions F on z)."""
-    if isinstance(agent, FB):
-        F1, F2 = agent.FB.forward_representation(observation=obs, action=actions, z=z)
-        return (F1 + F2) / 2
-    return agent.forward_representation(obs, actions).mean(0)
+    """F(s, a, z) averaged over the two heads."""
+    F1, F2 = agent.FB.forward_representation(observation=obs, action=actions, z=z)
+    return (F1 + F2) / 2
 
 
 def make_env(seed):
@@ -142,10 +138,9 @@ def rollout(row):
         q = (forward(agent, s, a, z_probe) @ torch.as_tensor(z_np)).numpy()
 
     # discounted return-to-go at the probe steps
-    gamma = getattr(agent, "_discount", 0.98)  # agents/fb/config.yaml
     rtg = np.zeros((n, 1001))
     for t in range(999, -1, -1):
-        rtg[:, t] = rewards[:, t] + gamma * rtg[:, t + 1]
+        rtg[:, t] = rewards[:, t] + DISCOUNT * rtg[:, t + 1]
     steps = np.array(probe_steps)
     rtg_probe = rtg[:, steps].reshape(-1)
     keep = np.tile(steps <= RTG_HORIZON, n)
@@ -190,6 +185,8 @@ def main():
 
     torch.set_num_threads(1)
     agent = load_agent(Path(args.checkpoint), torch.device("cpu"))
+    if not isinstance(agent, FB):
+        raise ValueError("Only standard FB is supported")
     agent.eval()
     data = dict(np.load(args.zs))
     reward_constructor = RewardFunctionConstructor(
@@ -198,7 +195,7 @@ def main():
     buffer = FBReplayBuffer(
         reward_constructor=reward_constructor,
         dataset_path=Path(args.dataset_path),
-        discount=getattr(agent, "_discount", 0.98),
+        discount=DISCOUNT,
         transitions=args.transitions,
         device=torch.device("cpu"),
     )

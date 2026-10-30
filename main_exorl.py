@@ -16,8 +16,6 @@ from agents.workspaces import OfflineRLWorkspace
 from agents.cql.agent import CQL
 from agents.fb.agent import FB
 from agents.cfb.agent import CFB
-from agents.onestep_fb.agent import OneStepFB
-from agents.onestep_fb.replay_buffer import OneStepFBReplayBuffer
 from agents.td3.agent import TD3
 from agents.gciql.agent import GCIQL
 from agents.sf.agent import SF
@@ -50,8 +48,6 @@ parser.add_argument("--action_condition_index", type=int)
 parser.add_argument("--action_condition_value", type=float)
 parser.add_argument("--cql_alpha", type=float, default=0.01)
 parser.add_argument("--dataset_path", type=str, default=None)
-# onestep_fb only: overrides bc_coefficient in agents/onestep_fb/config.yaml
-parser.add_argument("--bc_coefficient", type=float, default=None)
 args = parser.parse_args()
 
 if args.wandb_logging == "True":
@@ -123,7 +119,7 @@ else:
         / config["exploration_algorithm"]
         / "dataset.npz"
     )
-if config["algorithm"] in ("fb", "vcfb", "mcfb", "dvcfb", "sf-lap", "onestep_fb"):
+if config["algorithm"] in ("fb", "vcfb", "mcfb", "dvcfb", "sf-lap"):
     relabel = False
 else:
     relabel = True
@@ -241,51 +237,6 @@ elif config["algorithm"] == "td3":
     )
 
     z_inference_steps = None
-    train_std = None
-    eval_std = None
-
-elif config["algorithm"] == "onestep_fb":
-
-    if args.bc_coefficient is None:
-        config["bc_coefficient"] = yaml.safe_load(open(config_path))["bc_coefficient"]
-
-    agent = OneStepFB(
-        observation_length=observation_length,
-        action_length=action_length,
-        device=config["device"],
-        name=config["name"],
-        z_dimension=config["z_dimension"],
-        forward_hidden_dimension=config["forward_hidden_dimension"],
-        forward_hidden_layers=config["forward_hidden_layers"],
-        forward_layer_norm=config["forward_layer_norm"],
-        backward_hidden_dimension=config["backward_hidden_dimension"],
-        backward_hidden_layers=config["backward_hidden_layers"],
-        backward_layer_norm=config["backward_layer_norm"],
-        actor_hidden_dimension=config["actor_hidden_dimension"],
-        actor_hidden_layers=config["actor_hidden_layers"],
-        actor_layer_norm=config["actor_layer_norm"],
-        actor_final_init_scale=config["actor_final_init_scale"],
-        learning_rate=config["learning_rate"],
-        batch_size=config["batch_size"],
-        discount=config["discount"],
-        tau=config["tau"],
-        orthonormalisation_coefficient=config["orthonormalisation_coefficient"],
-        z_mix_ratio=config["z_mix_ratio"],
-        bc_coefficient=config["bc_coefficient"],
-        reward_temperature=config["reward_temperature"],
-    )
-
-    replay_buffer = OneStepFBReplayBuffer(
-        reward_constructor=reward_constructor,
-        dataset_path=dataset_path,
-        transitions=config["dataset_transitions"],
-        relabel=relabel,
-        task=config["train_task"],
-        device=config["device"],
-        discount=config["discount"],
-    )
-
-    z_inference_steps = config["z_inference_steps"]
     train_std = None
     eval_std = None
 

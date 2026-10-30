@@ -23,7 +23,6 @@ from agents.cql.agent import CQL
 from agents.base import OfflineReplayBuffer
 
 from agents.cfb.agent import CFB
-from agents.onestep_fb.agent import OneStepFB
 from agents.gciql.agent import GCIQL
 
 from agents.sf.agent import SF
@@ -95,15 +94,7 @@ class OfflineRLWorkspace(AbstractWorkspace):
         best_model_path = None
 
         # sample set transitions for z inference
-        if isinstance(agent, OneStepFB):
-            (
-                self.observations_z,
-                self.actions_z,
-                self.rewards_z,
-            ) = replay_buffer.sample_task_inference_transitions(
-                inference_steps=self.z_inference_steps
-            )
-        elif isinstance(agent, (FB, SF, GCIQL)):
+        if isinstance(agent, (FB, SF, GCIQL)):
             if self.domain_name == "point_mass_maze":
                 self.goal_states = {}
                 for task, goal_state in point_mass_maze_goals.items():
@@ -182,12 +173,7 @@ class OfflineRLWorkspace(AbstractWorkspace):
             metrics: dict of metrics
         """
 
-        if isinstance(agent, OneStepFB):
-            zs = {
-                task: agent.infer_z(self.observations_z, self.actions_z, rewards)
-                for task, rewards in self.rewards_z.items()
-            }
-        elif isinstance(agent, (FB, SF, GCIQL)):
+        if isinstance(agent, (FB, SF, GCIQL)):
             zs = {}
             if self.domain_name == "point_mass_maze":
                 for task, goal_state in self.goal_states.items():
@@ -208,7 +194,7 @@ class OfflineRLWorkspace(AbstractWorkspace):
 
                 timestep = self.env.reset()
                 while not timestep.last():
-                    if isinstance(agent, (FB, GCIQL, OneStepFB)):
+                    if isinstance(agent, (FB, GCIQL)):
                         action, _ = agent.act(
                             timestep.observation["observations"],
                             task=zs[task],

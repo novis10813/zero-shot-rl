@@ -1,4 +1,4 @@
-"""Regression checks for standard FB without one-step FB imports."""
+"""Regression checks for the standard FB inference buffer, latent solver and entry points."""
 
 import os
 from pathlib import Path
@@ -167,21 +167,12 @@ class SolverTests(unittest.TestCase):
             self.assertEqual((converged, iterations), (True, 0))
 
 
-class ImportIsolationTests(unittest.TestCase):
-    def test_standard_entrypoints_import_without_one_step_modules(self):
+class ImportTests(unittest.TestCase):
+    def test_entrypoints_import(self):
         script = """
 import importlib
-import importlib.abc
-import sys
-class RejectOneStep(importlib.abc.MetaPathFinder):
-    def find_spec(self, fullname, path=None, target=None):
-        if fullname == 'implicit_z' or fullname.startswith('agents.onestep_fb'):
-            raise ImportError('One-step dependency: ' + fullname)
-sys.meta_path.insert(0, RejectOneStep())
 for name in ('implicit_z_fb', 'rollout_eval', 'record_missing_fb', 'rollout_task_behavior_fb'):
     importlib.import_module(name)
-assert 'implicit_z' not in sys.modules
-assert not any(name.startswith('agents.onestep_fb') for name in sys.modules)
 """
         environment = dict(os.environ)
         environment["PYTHONPATH"] = os.pathsep.join((str(REPO), str(ROOT)))

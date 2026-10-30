@@ -1,10 +1,8 @@
 # T05：重現 standard FB 的 latent 與配對 rollout 比較
 
-Standard FB 推論與 rollout 不依賴 one-step FB 的模組。`implicit_z_fb.py` 使用
-`latent_solver.py` 的固定點與夾角搜尋，以及 `agents/fb/inference_buffer.py` 的
-`FBInferenceReplayBuffer`，保留資料中下一個動作的對齊與 episode 結尾排除規則。
-`rollout_eval.py` 只需觀測與動作，因此使用一般 `FBReplayBuffer`。既有命令、取樣
-順序、數值計算與輸出格式不變。
+`implicit_z_fb.py` 使用 `latent_solver.py` 的固定點與夾角搜尋，以及
+`agents/fb/inference_buffer.py` 的 `FBInferenceReplayBuffer`，保留資料中下一個動作的對齊與
+episode 結尾排除規則。`rollout_eval.py` 只需觀測與動作，因此使用一般 `FBReplayBuffer`。
 
 ## 從既有 latent 重建所有 Q1 表格
 
