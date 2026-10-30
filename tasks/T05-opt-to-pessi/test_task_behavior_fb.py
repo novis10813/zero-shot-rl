@@ -9,8 +9,8 @@ import numpy as np
 from analyze_q1_fb import ROOT, SOURCES, csv_text
 from analyze_task_behavior_fb import (DT, EPISODES, STEPS, TRACE_KEYS, analyze, report_table,
                                       rotation_metrics, selected_rows, trace_name, validate_trace)
-from rollout_eval import make_env
-from rollout_task_behavior_fb import publish_npz, torso_angle
+from zero_shot_rl.rollout.env import make_env
+from zero_shot_rl.rollout.trace import publish_npz, torso_angle
 
 
 def wrap(angles):

@@ -6,29 +6,18 @@ from pathlib import Path
 import numpy as np
 
 from analyze_q1_fb import METHODS, REPORT_LABELS, ROOT, SOURCES, TASKS, csv_text, validate
+from zero_shot_rl.latent.archive import matched_rows
+from zero_shot_rl.rollout import trace_format
+from zero_shot_rl.rollout.trace_format import DT, EPISODES, STEPS, TRACE_KEYS
 
-EPISODES = 20
-STEPS = 1000
-DT = 0.025
 WALK_SPEED = 1.0
 METRICS = ("return", "speed", "net_displacement_estimate", "walk_speed_mae", "height", "upright",
            "positive_turns", "negative_turns", "net_turns", "angular_momentum")
-TRACE_KEYS = ("reward", "speed", "height", "upright", "angular_momentum")
 
 
 def selected_rows(data):
     """Exactly one raw latent and each of five 10-degree corrections per task."""
-    rows = []
-    for task in TASKS:
-        for family in ("z_r", *METHODS):
-            mask = (data["task"] == task) & (data["family"] == family)
-            if family != "z_r":
-                mask &= data["target_angle"] == 10.0
-            matches = np.flatnonzero(mask)
-            if len(matches) != 1 or not data["converged"][matches[0]]:
-                raise ValueError(f"Expected one converged {task}/{family} latent")
-            rows.append(int(matches[0]))
-    return rows
+    return matched_rows(data, TASKS, ("z_r", *METHODS), 10.0)
 
 
 def rotation_metrics(angles):
@@ -78,25 +67,7 @@ def trace_name(seed):
 
 
 def validate_trace(trace, data):
-    rows = selected_rows(data)
-    if not np.array_equal(trace["rows"], rows):
-        raise ValueError("Trace rows differ from saved latent selection")
-    if not np.array_equal(trace["episodes"], np.arange(EPISODES)):
-        raise ValueError("Unexpected initialization seeds")
-    if float(trace["dt"]) != DT:
-        raise ValueError("Unexpected control timestep")
-    if not np.array_equal(trace["z"], data["z"][rows]):
-        raise ValueError("Trace latents differ from saved inference")
-    for key in (*TRACE_KEYS, "angle"):
-        shape = (len(rows), EPISODES, STEPS + (key == "angle"))
-        if trace[key].shape != shape or not np.isfinite(trace[key]).all():
-            raise ValueError(f"Invalid {key} trace")
-    if np.any((trace["reward"] < 0) | (trace["reward"] > 1)):
-        raise ValueError("Task reward outside [0,1]")
-    if np.any(np.abs(trace["upright"]) > 1 + 1e-6):
-        raise ValueError("Invalid uprightness")
-    if np.any(np.abs(np.diff(np.unwrap(trace["angle"], axis=-1), axis=-1)) > np.pi / 2):
-        raise ValueError("Angle sampling too sparse for reliable turns")
+    trace_format.validate_trace(trace, data, selected_rows(data))
 
 
 def analyze(data_dir):

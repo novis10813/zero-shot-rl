@@ -1,7 +1,13 @@
-"""Replay stored standard-FB latents for task-specific behavior, without training.
+"""Replay stored standard FB latents and write per-step behavior traces, without training.
 
-Writes NEW traces and provenance. Refuses to overwrite traces or legacy CSVs.
-Run from the repo root with PYTHONPATH=. MUJOCO_GL=egl .venv/bin/python.
+For every model in --config, replays one converged latent per task and family
+(zero_shot_rl.latent.archive.matched_rows) for EPISODES episodes and writes the trace to
+the model's "trace" path, with a provenance manifest and source snapshot in
+--provenance-dir. Refuses to overwrite traces or manifests.
+
+Usage (repo root):
+    PYTHONPATH=. MUJOCO_GL=egl python -m zero_shot_rl.rollout.trace --config <sources.json> \
+        --provenance-dir <dir> --families z_r <family> ... --target-angle 10
 """
 
 import argparse
@@ -9,7 +15,6 @@ import hashlib
 import importlib
 import json
 import multiprocessing as mp
-import os
 from pathlib import Path
 import subprocess
 import time
@@ -20,10 +25,12 @@ import torch
 
 from agents.base import load_agent
 from agents.fb.agent import FB
-from analyze_q1_fb import ROOT, SOURCES, validate
-from analyze_task_behavior_fb import DT, EPISODES, STEPS, TRACE_KEYS, selected_rows, trace_name, validate_trace
-from record_missing_fb import CHECKPOINTS, REPO, sha256
-from rollout_eval import make_env, policy
+from zero_shot_rl.latent.archive import matched_rows, validate
+from zero_shot_rl.provenance import no_clobber, sha256, snapshot
+from zero_shot_rl.rollout.env import make_env, policy
+from zero_shot_rl.rollout.trace_format import DT, EPISODES, STEPS, TRACE_KEYS, validate_trace
+
+REPO = Path(__file__).resolve().parents[2]
 
 G = {}
 
@@ -67,47 +74,52 @@ def rollout(row):
 
 
 def publish_npz(path, trace):
-    temporary = path.with_suffix(".partial.npz")
-    try:
+    with no_clobber(path) as temporary:
         np.savez_compressed(temporary, **trace)
-        os.link(temporary, path)  # atomic no-clobber
-    finally:
-        temporary.unlink(missing_ok=True)
+
+
+def source_files():
+    files = [REPO / "agents/base.py", REPO / "agents/utils.py", REPO / "utils.py", REPO / "dmc.py"]
+    for folder in ("zero_shot_rl", "agents/fb", "custom_dmc_tasks", "rewards/walker"):
+        files += sorted((REPO / folder).rglob("*.py"))
+    files += sorted((REPO / "custom_dmc_tasks").rglob("*.xml"))
+    return sorted(set(files))
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, default=ROOT / "data")
+    parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument("--provenance-dir", type=Path, required=True)
+    parser.add_argument("--families", nargs="+", required=True)
+    parser.add_argument("--target-angle", type=float, required=True)
+    parser.add_argument("--tasks", nargs="+", default=["stand", "walk", "run", "flip"])
     parser.add_argument("--workers", type=int, default=4)
-    parser.add_argument("--seed", type=int, choices=[s for s, _ in SOURCES], default=None)
+    parser.add_argument("--seed", type=int, default=None, help="training seed; default: all")
     args = parser.parse_args()
     if args.workers < 1:
         parser.error("--workers must be positive")
-    args.data_dir = args.data_dir.resolve()
-    if not args.data_dir.is_relative_to(REPO):
-        parser.error("--data-dir must be inside the repository")
-    args.data_dir.mkdir(parents=True, exist_ok=True)
     torch.set_num_threads(1)
-    directory = REPO / "artifacts/T05-opt-to-pessi/task-behavior"
+    directory = args.provenance_dir.resolve()
     directory.mkdir(parents=True, exist_ok=True)
-    for seed, source in SOURCES:
+    for model in json.loads(args.config.read_text())["models"]:
+        seed = model["training_seed"]
         if args.seed is not None and seed != args.seed:
             continue
-        path = args.data_dir / trace_name(seed)
-        manifest = directory / f"behavior_fb_seed{seed}.json"
+        path, latents = REPO / model["trace"], REPO / model["latents"]
+        manifest = directory / f"{path.stem}.json"
         if path.exists() or manifest.exists():
             raise FileExistsError(f"Refusing to overwrite {path} or {manifest}")
-        with np.load(args.data_dir / source, allow_pickle=False) as archive:
+        with np.load(latents, allow_pickle=False) as archive:
             data = dict(archive)
-        validate(data, source)
-        checkpoint, expected = CHECKPOINTS[seed]
+        validate(data, latents.name, args.tasks, data["z"].shape[1])
+        checkpoint, expected = model["checkpoint"], model["checkpoint_sha256"]
         if sha256(REPO / checkpoint) != expected:
             raise ValueError(f"Checkpoint hash mismatch: seed {seed}")
         agent = load_agent(REPO / checkpoint, torch.device("cpu"))
         if not isinstance(agent, FB):
             raise ValueError("Only standard FB is allowed")
         agent.eval()
-        rows = selected_rows(data)
+        rows = matched_rows(data, args.tasks, args.families, args.target_angle)
         G.update(agent=agent, data=data)
         results = []
         start = time.monotonic()
@@ -120,34 +132,23 @@ def main():
                       f"elapsed {time.monotonic() - start:.1f}s", flush=True)
         trace = {key: np.stack([r[key] for r in results]) for key in (*TRACE_KEYS, "angle")}
         trace.update(rows=np.array(rows), episodes=np.arange(EPISODES), dt=np.array(DT), z=data["z"][rows])
-        validate_trace(trace, data)
-        files = [Path(__file__), ROOT / "analyze_task_behavior_fb.py", ROOT / "rollout_eval.py",
-                 ROOT / "analyze_q1_fb.py", ROOT / "record_missing_fb.py", REPO / "agents/base.py",
-                 REPO / "agents/utils.py", REPO / "utils.py", REPO / "dmc.py"]
-        for folder in ("agents/fb", "custom_dmc_tasks", "rewards/walker"):
-            files += sorted((REPO / folder).rglob("*.py"))
-        files += sorted((REPO / "custom_dmc_tasks").rglob("*.xml"))
-        files = sorted(set(files))
+        validate_trace(trace, data, rows)
         metadata = dict(
             training_seed=seed, trace=str(path.relative_to(REPO)),
             git_status=subprocess.check_output(["git", "status", "--porcelain"], text=True),
             git_diff_sha256=hashlib.sha256(subprocess.check_output(["git", "diff", "HEAD"])).hexdigest(),
             checkpoint=checkpoint, checkpoint_sha256=expected,
-            latent_source=str((args.data_dir / source).relative_to(REPO)),
-            latent_source_sha256=sha256(args.data_dir / source),
-            code_sha256={str(p.relative_to(REPO)): sha256(p) for p in files},
+            latent_source=str(latents.relative_to(REPO)),
+            latent_source_sha256=sha256(latents),
+            # Keep actual source bytes, including untracked code, locally.
+            code_sha256=snapshot(source_files(), REPO, directory / f"source_seed{seed}"),
             git_commit=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
             torch_version=torch.__version__, numpy_version=np.__version__, mujoco_version=mujoco.__version__,
             steps=STEPS, episodes=EPISODES, control_timestep=DT, action_batch_size=EPISODES,
             workers=args.workers, policy="deterministic mean, clamped [-1,1]",
             note="New local replay, not an exact reconstruction of historical evaluation or videos",
         )
-        # Keep actual source bytes, including untracked evaluation code, locally.
-        snapshot = directory / f"source_seed{seed}"
-        for file in files:
-            target = snapshot / file.relative_to(REPO)
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(file.read_bytes())
+        path.parent.mkdir(parents=True, exist_ok=True)
         publish_npz(path, trace)
         manifest_created = False
         try:

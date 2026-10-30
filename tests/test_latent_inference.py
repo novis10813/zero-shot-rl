@@ -1,4 +1,7 @@
-"""Regression checks for the standard FB inference buffer, latent solver and entry points."""
+"""Standard FB inference buffer, latent solver and entry-module imports.
+
+Run from the repo root: PYTHONPATH=. python -m unittest discover -s tests
+"""
 
 import os
 from pathlib import Path
@@ -13,12 +16,11 @@ import torch
 
 from agents.fb.inference_buffer import FBInferenceReplayBuffer
 from agents.fb.replay_buffer import FBReplayBuffer
-from implicit_z_fb import FBImplicitZ
-from latent_solver import LatentSolver, angle, normalized
+from zero_shot_rl.latent.implicit import FBImplicitZ
+from zero_shot_rl.latent.solver import LatentSolver, angle, normalized
 
 
-ROOT = Path(__file__).resolve().parent
-REPO = ROOT.parents[1]
+REPO = Path(__file__).resolve().parents[1]
 
 
 def make_episode(length, offset):
@@ -171,11 +173,12 @@ class ImportTests(unittest.TestCase):
     def test_entrypoints_import(self):
         script = """
 import importlib
-for name in ('implicit_z_fb', 'rollout_eval', 'record_missing_fb', 'rollout_task_behavior_fb'):
+for name in ('zero_shot_rl.latent.infer', 'zero_shot_rl.rollout.evaluate',
+             'zero_shot_rl.rollout.video', 'zero_shot_rl.rollout.trace'):
     importlib.import_module(name)
 """
         environment = dict(os.environ)
-        environment["PYTHONPATH"] = os.pathsep.join((str(REPO), str(ROOT)))
+        environment["PYTHONPATH"] = str(REPO)
         result = subprocess.run([sys.executable, "-c", script], cwd=REPO, env=environment,
                                 capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

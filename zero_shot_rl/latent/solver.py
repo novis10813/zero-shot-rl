@@ -1,4 +1,4 @@
-"""Geometry and damped fixed-point search shared by T05 latent inference runners.
+"""Geometry and damped fixed-point search for implicit-reward latents.
 
 Reward definitions and constant-reward fastpaths belong to the callers. Numerical
 operation order, warm starts and failure results preserve the original experiments.

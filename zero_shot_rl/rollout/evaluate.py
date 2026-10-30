@@ -1,4 +1,4 @@
-"""Roll out the fixed standard FB actor at every latent written by implicit_z_fb.py.
+"""Roll out the fixed standard FB actor at every latent written by zero_shot_rl.latent.infer.
 
 Each latent runs --episodes deterministic episodes (clipped mean action) of 1000 steps.
 Episode e starts from the reset of an environment seeded with e, so all latents share
@@ -16,81 +16,29 @@ the same start states. Per episode it records
                   return-to-go over steps t <= 750 (U6 for G0)
 
 Usage (repo root):
-    PYTHONPATH=. MUJOCO_GL=egl python tasks/T05-opt-to-pessi/rollout_eval.py \
+    PYTHONPATH=. MUJOCO_GL=egl python -m zero_shot_rl.rollout.evaluate \
         --checkpoint <best.pt> --zs <zs.npz> --dataset_path <dataset.npz> --out <rollouts.csv>
 """
 
 import csv
 import multiprocessing as mp
-import subprocess
 from argparse import ArgumentParser
 from pathlib import Path
 
 import numpy as np
 import torch
 
-import custom_dmc_tasks as cdmc
 from agents.base import load_agent
 from agents.fb.agent import FB
 from agents.fb.replay_buffer import FBReplayBuffer
 from rewards import RewardFunctionConstructor
+from zero_shot_rl.rollout.env import forward, make_env, policy, render_episode, write_video
 
 DISCOUNT = 0.98  # agents/fb/config.yaml
 FALL_HEIGHT = 0.6
 RTG_HORIZON = 750  # return-to-go is truncated by at most gamma^250 ~ 0.006 of its scale
 
 G = {}  # per-process state, filled before the pool forks
-
-
-def policy(agent, obs, z):
-    """Deterministic action: clipped actor mean."""
-    action, _ = agent.actor(obs, z, 0.2, sample=False)
-    return action.clamp(-1.0, 1.0)
-
-
-def forward(agent, obs, actions, z):
-    """F(s, a, z) averaged over the two heads."""
-    F1, F2 = agent.FB.forward_representation(observation=obs, action=actions, z=z)
-    return (F1 + F2) / 2
-
-
-def make_env(seed):
-    return cdmc.make(
-        domain="walker",
-        task="flip",
-        environment_kwargs={"flat_observation": True},
-        task_kwargs={"random": seed},
-    )
-
-
-def write_video(frames, path):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    h, w, _ = frames[0].shape
-    proc = subprocess.Popen(
-        ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
-         "-s", f"{w}x{h}", "-r", "30", "-i", "-", "-pix_fmt", "yuv420p", str(path)],
-        stdin=subprocess.PIPE,
-    )
-    proc.communicate(np.stack(frames).tobytes())
-
-
-def record_video(row, path):
-    """Replay using initialization seed 0 in the main process.
-
-    Rendering does not work in forked workers. Batch-size and numerical differences
-    can change trajectories, so this need not reproduce evaluated episode 0 exactly.
-    """
-    agent, data = G["agent"], G["data"]
-    z = torch.as_tensor(data["z"][row], dtype=torch.float32).unsqueeze(0)
-    env = make_env(0)
-    obs, frames = env.reset().observation["observations"], []
-    for t in range(1000):
-        with torch.no_grad():
-            action = policy(agent, torch.as_tensor(obs, dtype=torch.float32).unsqueeze(0), z)
-        obs = env.step(action.numpy()[0]).observation["observations"]
-        if t % 2 == 0:
-            frames.append(env.physics.render(height=240, width=320, camera_id=0))
-    write_video(frames, path)
 
 
 def rollout(row):
@@ -180,8 +128,10 @@ def main():
     parser.add_argument("--families", nargs="+", default=None, help="default: all")
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--video_dir", type=str, default=None)
-    parser.add_argument("--video_families", nargs="+", default=["G0", "G1", "G1neg", "G3", "G5", "G5neg"])
+    parser.add_argument("--video_families", nargs="+", default=None)
     args = parser.parse_args()
+    if args.video_dir is not None and args.video_families is None:
+        parser.error("--video_dir requires --video_families")
 
     torch.set_num_threads(1)
     agent = load_agent(Path(args.checkpoint), torch.device("cpu"))
@@ -243,7 +193,8 @@ def main():
     for row in rows:
         path = video(row)
         if path is not None:
-            record_video(row, path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            write_video(render_episode(agent, data["z"][row]), path)
             print(f"video {path}", flush=True)
 
 

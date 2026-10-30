@@ -13,6 +13,8 @@ from pathlib import Path
 
 import numpy as np
 
+from zero_shot_rl.latent import archive
+
 ROOT = Path(__file__).resolve().parent
 TASKS = ("stand", "walk", "run", "flip")
 # Filenames and training seeds are recorded in exp/T05-zero-shot-rl-{30,31,32}.
@@ -53,19 +55,7 @@ def tangent(z, baseline):
 
 
 def validate(data, source):
-    n = len(data["task"])
-    if data["z"].shape != (n, 50):
-        raise ValueError(f"{source}: expected 50-dimensional latents")
-    for key in ("family", "strength", "target_angle", "angle", "converged", "multi"):
-        if data[key].shape != (n,):
-            raise ValueError(f"{source}: malformed {key}")
-    if set(data["task"]) != set(TASKS):
-        raise ValueError(f"{source}: unexpected tasks")
-    if not np.isfinite(data["z"]).all():
-        raise ValueError(f"{source}: nonfinite latent")
-    if not np.allclose(np.linalg.norm(data["z"], axis=1), np.sqrt(50), atol=2e-6,
-                       rtol=0):
-        raise ValueError(f"{source}: latent norm differs from sqrt(50)")
+    archive.validate(data, source, TASKS, 50)
 
 
 def summarize(rows, keys, metrics):
