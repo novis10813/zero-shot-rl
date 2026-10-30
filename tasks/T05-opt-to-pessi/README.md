@@ -5,19 +5,19 @@
 | 路徑 | 內容 |
 |---|---|
 | `zero_shot_rl/latent/infer.py` | 對固定 FB checkpoint 推論各 reward 的 latent，寫成 NPZ；固定點與夾角搜尋在 `zero_shot_rl/latent/solver.py` |
-| `zero_shot_rl/rollout/evaluate.py` | 以 NPZ 中每個 latent 執行 rollout，寫成 CSV |
-| `zero_shot_rl/rollout/trace.py`、`video.py` | 任務指標補跑的逐步 trace，以及補錄影片 |
+| `zero_shot_rl/eval/latents.py` | 以 NPZ 中每個 latent 執行 rollout，寫成 CSV |
+| `zero_shot_rl/eval/trace.py`、`video.py` | 任務指標補跑的逐步 trace，以及補錄影片 |
 | `configs/sources.json` | 三個模型的訓練 seed、job、checkpoint 與雜湊、latent／rollout／trace 路徑 |
 | `analyze/` | 從 `data/inputs/` 重建 `data/` 的 CSV 與 `figures/` 的 PNG |
 | `tests/` | 分析、重現與補跑格式的測試 |
 | `common.py`、`geometry.py` | 分析共用的常數、輸出核對與 float64 幾何 |
 
-`zero_shot_rl.latent.infer` 使用 `agents/fb/inference_buffer.py` 的 `FBInferenceReplayBuffer`，保留資料中下一個動作的對齊與 episode 結尾排除規則。`zero_shot_rl.rollout.evaluate` 只需觀測與動作，因此使用一般 `FBReplayBuffer`。兩者的命令格式如下，實際 checkpoint 與資料集見 `exp/T05-zero-shot-rl-{30,31,32}` tags：
+`zero_shot_rl.latent.infer` 使用 `agents/fb/inference_buffer.py` 的 `FBInferenceReplayBuffer`，保留資料中下一個動作的對齊與 episode 結尾排除規則。`zero_shot_rl.eval.latents` 只需觀測與動作，因此使用一般 `FBReplayBuffer`。兩者的命令格式如下，實際 checkpoint 與資料集見 `exp/T05-zero-shot-rl-{30,31,32}` tags：
 
 ```bash
 PYTHONPATH=. .venv/bin/python -m zero_shot_rl.latent.infer \
   --checkpoint <fb.pt> --dataset_path <dataset.npz> --out <zs.npz>
-PYTHONPATH=. MUJOCO_GL=egl .venv/bin/python -m zero_shot_rl.rollout.evaluate \
+PYTHONPATH=. MUJOCO_GL=egl .venv/bin/python -m zero_shot_rl.eval.latents \
   --checkpoint <fb.pt> --zs <zs.npz> --dataset_path <dataset.npz> --out <rollouts.csv>
 ```
 
@@ -148,9 +148,9 @@ PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.q2 --check
 
 `delta_` 一律是修正 latent 減原始 reward latent。`*_mean_mean` 是先對每個模型的 20 episodes 取平均，再對三個訓練 seeds 等權平均。`*_mean_min/max` 是三個 seed 平均的範圍，不是 episode 範圍或信賴區間。不混合任務，也不把 episodes 當額外的訓練 seeds。`delta_*_se` 是配對差樣本標準差除以 20 的平方根，僅衡量固定模型內初始狀態的變動，不包含模型訓練變異。報告列出跑步 CQL 與翻轉 ReBRAC 兩個例子，其餘 SE 可從 seed summary 查詢，不進行顯著性檢定或多重比較校正。三個選定模型的訓練步數不同，不能把模型間差異都歸因於隨機 seed。`delta_*_positive_episodes` 只是差值為正的次數，不代表成功次數，對低高度時間或飽和比例而言，正值也不表示較好。
 
-配對由 `zero_shot_rl/rollout/env.py` 的 `make_env(e)` 與確定性 actor 確保相同初始化種子，沒有儲存初始物理狀態供獨立核對。CSV 與 NPZ 的列索引、任務、family、係數、角度及 20 episodes 覆蓋率會完整驗證。CSV 只有六位有效數字，不能藉數值微小非零就宣稱差異具統計或實務意義。輸出保留十位有效數字，報告採 Python 預設浮點格式化取位。`--check` 是本機相同 NumPy 環境下的逐字核對，其他 BLAS／NumPy 環境若出現末位差異，須先確認是數值精度而非輸入或演算法變更。
+配對由 `zero_shot_rl/eval/env.py` 的 `make_env(e)` 與確定性 actor 確保相同初始化種子，沒有儲存初始物理狀態供獨立核對。CSV 與 NPZ 的列索引、任務、family、係數、角度及 20 episodes 覆蓋率會完整驗證。CSV 只有六位有效數字，不能藉數值微小非零就宣稱差異具統計或實務意義。輸出保留十位有效數字，報告採 Python 預設浮點格式化取位。`--check` 是本機相同 NumPy 環境下的逐字核對，其他 BLAS／NumPy 環境若出現末位差異，須先確認是數值精度而非輸入或演算法變更。
 
-指標定義見 `zero_shot_rl/rollout/evaluate.py`：`return` 是 1000 steps 的原始任務 reward 總和；`speed` 是平均水平速度；`upright` 是平均軀幹朝上分量；`fall_frac` 是軀幹高度低於 0.6 的時間比例；`sat_frac` 是動作分量絕對值大於 0.99 的比例；`abs_action` 是動作絕對值平均；`knn_dist` 是每維以資料集均值／標準差縮放後，狀態與動作拼接向量到最近訓練樣本的平均歐氏距離。實驗預設每 10 steps 計算最近鄰距離，所有 episodes 固定跑滿 1000 steps。`m7` 與 `q_corr` 不納入 Q2，後者本來就是每個 latent 跨 probes 的相關係數，不是每個 episode 的獨立測量。
+指標定義見 `zero_shot_rl/eval/latents.py`：`return` 是 1000 steps 的原始任務 reward 總和；`speed` 是平均水平速度；`upright` 是平均軀幹朝上分量；`fall_frac` 是軀幹高度低於 0.6 的時間比例；`sat_frac` 是動作分量絕對值大於 0.99 的比例；`abs_action` 是動作絕對值平均；`knn_dist` 是每維以資料集均值／標準差縮放後，狀態與動作拼接向量到最近訓練樣本的平均歐氏距離。實驗預設每 10 steps 計算最近鄰距離，所有 episodes 固定跑滿 1000 steps。`m7` 與 `q_corr` 不納入 Q2，後者本來就是每個 latent 跨 probes 的相關係數，不是每個 episode 的獨立測量。
 
 ## Q4–Q6 從已存係數與候選 AX 掃描重建曲線
 
@@ -203,7 +203,7 @@ $$
 
 ## 任務指標補跑使用固定 latent，與歷史評估分開
 
-為直接觀察每個任務的行為，`zero_shot_rl.rollout.trace` 使用同三個 standard FB 模型與已存 latent，對原始 reward 及五種修正 reward 的目標 10 度條件補跑。每個模型有四個任務、每任務六種條件，共 24 個 latent；每條件沿用初始化種子 0–19、確定性 actor、batch size 20，各 1000 steps，控制間隔 0.025 秒。模型與 latent 均不更新，不訓練真正的 CQL／ReBRAC，也不新增影片。
+為直接觀察每個任務的行為，`zero_shot_rl.eval.trace` 使用同三個 standard FB 模型與已存 latent，對原始 reward 及五種修正 reward 的目標 10 度條件補跑。每個模型有四個任務、每任務六種條件，共 24 個 latent；每條件沿用初始化種子 0–19、確定性 actor、batch size 20，各 1000 steps，控制間隔 0.025 秒。模型與 latent 均不更新，不訓練真正的 CQL／ReBRAC，也不新增影片。
 
 每個 step 保存原始任務 reward、水平速度、軀幹高度、直立程度、繞世界 +Y 的角動量；軀幹角度另包含 reset 狀態，共 1001 個時間點。同一次執行同時計算新 return，不能把新指標接到歷史 CSV 或既有影片的軌跡。評估使用各任務原有 `rewards/walker/*.py`，並非以 implicit reward 評分。
 
@@ -222,7 +222,7 @@ $$
 
 ```bash
 PYTHONPATH=. MUJOCO_GL=egl OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
-  .venv/bin/python -m zero_shot_rl.rollout.trace --config tasks/T05-opt-to-pessi/configs/sources.json \
+  .venv/bin/python -m zero_shot_rl.eval.trace --config tasks/T05-opt-to-pessi/configs/sources.json \
   --provenance-dir artifacts/T05-opt-to-pessi/task-behavior \
   --families z_r CQL ReBRAC ReBRAC+E2E E2E E2E-bi --target-angle 10 --workers 4
 PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.task_behavior
@@ -243,7 +243,7 @@ PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.task_behavior --
 補錄影片與原影片使用相同目錄與檔名規則，新增來源由 `artifacts/T05-opt-to-pessi/videos/supplement_fb.jsonl` 區分，記錄 checkpoint／latent／影片的 sha256、來源列、版本與設定。補錄日誌為同目錄的 `supplement_fb.log`。這些產物均保留於 git-ignored 的 `artifacts/`，不提交影片或日誌。命令如下：
 
 ```bash
-VIDEO="PYTHONPATH=. MUJOCO_GL=egl .venv/bin/python -m zero_shot_rl.rollout.video \
+VIDEO="PYTHONPATH=. MUJOCO_GL=egl .venv/bin/python -m zero_shot_rl.eval.video \
   --config tasks/T05-opt-to-pessi/configs/sources.json --video-dir artifacts/T05-opt-to-pessi/videos \
   --manifest artifacts/T05-opt-to-pessi/videos/supplement_fb.jsonl \
   --families z_r CQL ReBRAC ReBRAC+E2E E2E E2E-bi --manifest-families ReBRAC+E2E"

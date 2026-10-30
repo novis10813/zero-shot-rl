@@ -12,8 +12,8 @@ import numpy as np
 from common import (INPUTS, METHODS, MODELS, OUTPUTS, REPORT_LABELS, SOURCES, TASKS, csv_text,
                     validate, write_or_check)
 from zero_shot_rl.latent.archive import matched_rows
-from zero_shot_rl.rollout import trace_format
-from zero_shot_rl.rollout.trace_format import DT, EPISODES
+from zero_shot_rl.eval import trace_format
+from zero_shot_rl.eval.trace_format import DT, EPISODES
 
 WALK_SPEED = 1.0
 METRICS = ("return", "speed", "net_displacement_estimate", "walk_speed_mae", "height", "upright",

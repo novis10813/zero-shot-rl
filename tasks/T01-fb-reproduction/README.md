@@ -108,7 +108,7 @@ Scores differ slightly from the in-training ones, because the z-inference sample
 environment's random state differ.
 
 ```bash
-uv run python -m scripts.eval_exorl <checkpoint.pt> walker \
+uv run python -m zero_shot_rl.eval.checkpoint <checkpoint.pt> walker \
   --dataset_path $HOME/zsrl-datasets/walker/rnd/dataset.npz \
   --eval_tasks stand walk run flip --eval_rollouts 10
 ```
@@ -126,4 +126,4 @@ logged and kept on disk.
 | `agents/workspaces.py`: keep the best and the final checkpoint after training | the original deletes the best one unless it was uploaded to wandb, and never saves the final one |
 | `agents/workspaces.py`: log every evaluation's per-task IQM | without wandb, per-task scores were not recorded |
 | `agents/base.py`: checkpoints store class, constructor arguments and `state_dict` (`.pt`); `load_agent()` rebuilds the agent with `weights_only=True` | pickled whole agents break when the class changes and can run arbitrary code on load |
-| `scripts/eval_exorl.py` | re-evaluate a saved checkpoint |
+| `zero_shot_rl/eval/checkpoint.py` | re-evaluate a saved checkpoint |

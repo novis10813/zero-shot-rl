@@ -10,7 +10,7 @@ import numpy as np
 
 from common import INPUTS, METHODS, SOURCES
 from zero_shot_rl.latent.archive import family_rows
-from zero_shot_rl.rollout.video import record, verify_video, video_name
+from zero_shot_rl.eval.video import record, verify_video, video_name
 
 
 class VideoTests(unittest.TestCase):
@@ -31,7 +31,7 @@ class VideoTests(unittest.TestCase):
     def test_encoder_validation(self):
         good = dict(codec_name="h264", width=320, height=240,
                     nb_read_frames="500", r_frame_rate="30/1")
-        with patch("zero_shot_rl.rollout.video.subprocess.run") as run:
+        with patch("zero_shot_rl.eval.video.subprocess.run") as run:
             run.return_value.stdout = json.dumps(dict(streams=[good]))
             verify_video(Path("example.mp4"))
             for key, value in (("codec_name", "wrong"), ("width", 1), ("height", 1),
@@ -45,7 +45,7 @@ class VideoTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "existing.mp4"
             path.write_bytes(b"preserve original")
-            with patch("zero_shot_rl.rollout.video.render_episode") as render_episode:
+            with patch("zero_shot_rl.eval.video.render_episode") as render_episode:
                 with self.assertRaises(FileExistsError):
                     record(None, None, path)
                 render_episode.assert_not_called()

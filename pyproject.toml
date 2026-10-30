@@ -39,3 +39,18 @@ torch = { index = "pytorch-cu128" }
 name = "pytorch-cu128"
 url = "https://download.pytorch.org/whl/cu128"
 explicit = true
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.3",
+]
+
+[tool.ruff]
+# Checks our code only; upstream files are left as the authors wrote them.
+include = ["zero_shot_rl/**/*.py", "tests/**/*.py", "tasks/**/*.py"]
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F"]
+# Long lines are not reformatted; several hold report labels and table text.
+ignore = ["E501"]

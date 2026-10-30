@@ -35,7 +35,7 @@ def load_rollouts(path, data):
                 raise ValueError(f"{path}: mismatched {key}")
         for key, saved in (("strength", "strength"), ("target_angle", "target_angle"),
                            ("angle", "angle")):
-            # zero_shot_rl.rollout.evaluate writes six significant digits.
+            # zero_shot_rl.eval.latents writes six significant digits.
             if not np.isclose(float(record[key]), data[saved][row], rtol=7e-6, atol=1e-6, equal_nan=True):
                 raise ValueError(f"{path}: mismatched {key}")
         values = {metric: float(record[metric]) for metric in METRICS}

@@ -173,8 +173,8 @@ class ImportTests(unittest.TestCase):
     def test_entrypoints_import(self):
         script = """
 import importlib
-for name in ('zero_shot_rl.latent.infer', 'zero_shot_rl.rollout.evaluate',
-             'zero_shot_rl.rollout.video', 'zero_shot_rl.rollout.trace'):
+for name in ('zero_shot_rl.latent.infer', 'zero_shot_rl.eval.latents',
+             'zero_shot_rl.eval.video', 'zero_shot_rl.eval.trace'):
     importlib.import_module(name)
 """
         environment = dict(os.environ)
