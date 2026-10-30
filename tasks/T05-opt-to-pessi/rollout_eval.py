@@ -33,7 +33,7 @@ import torch
 import custom_dmc_tasks as cdmc
 from agents.base import load_agent
 from agents.fb.agent import FB
-from agents.onestep_fb.replay_buffer import OneStepFBReplayBuffer
+from agents.fb.replay_buffer import FBReplayBuffer
 from rewards import RewardFunctionConstructor
 
 FALL_HEIGHT = 0.6
@@ -195,7 +195,7 @@ def main():
     reward_constructor = RewardFunctionConstructor(
         domain_name="walker", task_names=sorted(set(data["task"])), seed=0, device=torch.device("cpu")
     )
-    buffer = OneStepFBReplayBuffer(
+    buffer = FBReplayBuffer(
         reward_constructor=reward_constructor,
         dataset_path=Path(args.dataset_path),
         discount=getattr(agent, "_discount", 0.98),

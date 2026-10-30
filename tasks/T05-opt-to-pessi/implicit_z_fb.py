@@ -11,7 +11,7 @@ where s'_a is the next state of action a at the dataset state s. s'_a comes from
 simulator step from the stored physics, as for the dataset action in z inference
 (rewards.RewardFunctionConstructor.process_timesteps).
 
-Families (strength = coefficient, angle-matched as in implicit_z.py):
+Families (strength = coefficient, matched by latent_solver angle search):
 
     z_r        dz = 0
     CQL        r_imp = -alpha (mu/pi_beta - 1), mu ~ exp(Q/tau) over --n_mu_actions
@@ -20,15 +20,15 @@ Families (strength = coefficient, angle-matched as in implicit_z.py):
                dz = -gamma beta E_D[p(s') B(s')]
     E2E        r_imp = +c on the data:  dz = c E_D[B(s')]
     ReBRAC+E2E ReBRAC plus the E2E constant, the constant scaled to the same norm as the
-               ReBRAC shift at z_r (as G6 in implicit_z.py)
+               ReBRAC shift at z_r
     E2E-bi     bilevel E2E, r_imp = +beta pi/pi_beta:  dz = beta E_{s~D}[B(s'_{pi_z(s)})]
     AX         common axis: z_r rotated by +-angle towards d = normalise(t_E2E-bi - mean(
                t_CQL, t_ReBRAC)), t_f the unit tangent of family f at 10 degrees
                (negative angle = pessimistic side)
-    C1, C2     random rotations and disjoint-subset noise, as in implicit_z.py
+    C1, C2     random rotations and disjoint-subset noise controls
 
 CQL, ReBRAC, ReBRAC+E2E and E2E-bi depend on z and are solved by the damped fixed point
-of implicit_z.py.
+of latent_solver.py.
 
 Usage (repo root):
     PYTHONPATH=. python tasks/T05-opt-to-pessi/implicit_z_fb.py \
@@ -44,11 +44,13 @@ import numpy as np
 import torch
 
 from agents.base import load_agent
-from agents.onestep_fb.replay_buffer import OneStepFBReplayBuffer
-from implicit_z import ANGLES, TASKS, ImplicitZ, angle, normalized
+from agents.fb.inference_buffer import FBInferenceReplayBuffer
+from latent_solver import LatentSolver, angle, normalized
 from rewards import RewardFunctionConstructor
 from utils import set_seed_everywhere
 
+TASKS = ["stand", "walk", "run", "flip"]
+ANGLES = [5, 10, 20, 35, 50, 70]  # target angles to z_r, degrees
 DISCOUNT = 0.98  # agents/fb/config.yaml
 AXIS_ANGLES = [-50, -35, -20, -10, 10, 20, 35, 50]
 Z_FAMILIES = ("CQL", "ReBRAC", "ReBRAC+E2E", "E2E-bi")
@@ -86,7 +88,7 @@ class Simulator:
         return np.concatenate(self.pool.map(_step, chunks))
 
 
-class FBImplicitZ(ImplicitZ):
+class FBImplicitZ(LatentSolver):
     def __init__(self, agent, data, sim, args):
         self.agent, self.args, self.sim = agent, args, sim
         self.d = agent._z_dimension
@@ -201,7 +203,7 @@ def main():
     reward_constructor = RewardFunctionConstructor(
         domain_name="walker", task_names=args.tasks, seed=args.seed, device=device
     )
-    buffer = OneStepFBReplayBuffer(
+    buffer = FBInferenceReplayBuffer(
         reward_constructor=reward_constructor,
         dataset_path=Path(args.dataset_path),
         discount=DISCOUNT,
