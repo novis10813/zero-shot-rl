@@ -1,29 +1,55 @@
 # T05：重現 standard FB 的 latent 與配對 rollout 比較
 
-`implicit_z_fb.py` 使用 `latent_solver.py` 的固定點與夾角搜尋，以及
-`agents/fb/inference_buffer.py` 的 `FBInferenceReplayBuffer`，保留資料中下一個動作的對齊與
-episode 結尾排除規則。`rollout_eval.py` 只需觀測與動作，因此使用一般 `FBReplayBuffer`。
+推論與 rollout 程式位於 repo 根目錄的 `zero_shot_rl/`，本任務只保留分析、測試、設定與數據：
+
+| 路徑 | 內容 |
+|---|---|
+| `zero_shot_rl/latent/infer.py` | 對固定 FB checkpoint 推論各 reward 的 latent，寫成 NPZ；固定點與夾角搜尋在 `zero_shot_rl/latent/solver.py` |
+| `zero_shot_rl/rollout/evaluate.py` | 以 NPZ 中每個 latent 執行 rollout，寫成 CSV |
+| `zero_shot_rl/rollout/trace.py`、`video.py` | 任務指標補跑的逐步 trace，以及補錄影片 |
+| `configs/sources.json` | 三個模型的訓練 seed、job、checkpoint 與雜湊、latent／rollout／trace 路徑 |
+| `analyze/` | 從 `data/inputs/` 重建 `data/` 的 CSV 與 `figures/` 的 PNG |
+| `tests/` | 分析、重現與補跑格式的測試 |
+| `common.py`、`geometry.py` | 分析共用的常數、輸出核對與 float64 幾何 |
+
+`zero_shot_rl.latent.infer` 使用 `agents/fb/inference_buffer.py` 的 `FBInferenceReplayBuffer`，保留資料中下一個動作的對齊與 episode 結尾排除規則。`zero_shot_rl.rollout.evaluate` 只需觀測與動作，因此使用一般 `FBReplayBuffer`。兩者的命令格式如下，實際 checkpoint 與資料集見 `exp/T05-zero-shot-rl-{30,31,32}` tags：
+
+```bash
+PYTHONPATH=. .venv/bin/python -m zero_shot_rl.latent.infer \
+  --checkpoint <fb.pt> --dataset_path <dataset.npz> --out <zs.npz>
+PYTHONPATH=. MUJOCO_GL=egl .venv/bin/python -m zero_shot_rl.rollout.evaluate \
+  --checkpoint <fb.pt> --zs <zs.npz> --dataset_path <dataset.npz> --out <rollouts.csv>
+```
+
+`--video_dir` 必須搭配 `--video_families`，列出要錄影的 family。
+
+所有分析命令在 repo 根目錄執行，預設從 `data/inputs/` 讀取輸入，CSV 寫入 `data/`，PNG 寫入 `figures/`，可用 `--input-dir`、`--out-dir`、`--figure-dir` 改寫。`--check` 重算並逐 byte 核對既有輸出，缺檔或過期時以 `Stale or missing output` 失敗，不寫入檔案。全部測試：
+
+```bash
+PYTHONPATH=. .venv/bin/python -m unittest discover -s tests
+PYTHONPATH=. MUJOCO_GL=egl .venv/bin/python -m unittest discover \
+  -s tasks/T05-opt-to-pessi/tests -t tasks/T05-opt-to-pessi
+```
 
 ## 從既有 latent 重建所有 Q1 表格
 
 在 repo 根目錄執行：
 
 ```bash
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_q1_fb.py
-.venv/bin/python -m unittest discover -s tasks/T05-opt-to-pessi -p 'test_q1_fb.py'
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_q1_fb.py --check
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_q1_fb.py --report-tables
+PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.q1
+PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.q1 --check
+PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.q1 --report-tables
 ```
 
-第一個命令重建六份 CSV。`--check` 重新計算並逐份核對 CSV，若缺少檔案或結果過期則失敗，不寫入檔案。Q1 的 `--report-tables` 輸出尚未填入 Q2 欄位的主表模板、方法兩兩比較表與子集結果文字，不寫入檔案。測試核對 [REPORT.md](REPORT.md) 的 Q1 欄位與數據，完整主表則由下方的 Q2 命令重建。
+第一個命令重建六份 CSV。Q1 的 `--report-tables` 輸出尚未填入 Q2 欄位的主表模板、方法兩兩比較表與子集結果文字，不寫入檔案。測試核對 [REPORT.md](REPORT.md) 的 Q1 欄位與數據，完整主表則由下方的 Q2 命令重建。
 
 ## 只在同一模型與任務內比較向量
 
-輸入為 `data/zs_fb_zero-shot-rl-30.npz`、`data/zs_fb_zero-shot-rl-31.npz`、`data/zs_fb_zero-shot-rl-32.npz`，分別對應訓練隨機種子 0、1、2，來源記錄於 `exp/T05-zero-shot-rl-{30,31,32}` tags。每個模型包含站立、行走、跑步、翻轉四個 Walker 任務。
+輸入為 `data/inputs/zs_fb_zero-shot-rl-30.npz`、`zs_fb_zero-shot-rl-31.npz`、`zs_fb_zero-shot-rl-32.npz`，分別對應訓練隨機種子 0、1、2，對應關係見 `configs/sources.json`，來源記錄於 `exp/T05-zero-shot-rl-{30,31,32}` tags。每個模型包含站立、行走、跑步、翻轉四個 Walker 任務。
 
 每份輸入以原始任務 reward 的 latent 為基準。計算先在各模型、各任務內完成，再彙整角度、距離與 cosine，不跨模型平均 latent 座標。結果為描述性平均與最小／最大值，不將四個任務當成額外訓練 seeds，也不提供顯著性檢定。
 
-`implicit_z_fb.py` 產生的五種 reward 修正對應如下。這些名稱表示投影規則，不表示重現原始演算法訓練出的 policy。
+`zero_shot_rl.latent.infer` 產生的五種 reward 修正對應如下。這些名稱表示投影規則，不表示重現原始演算法訓練出的 policy。
 
 | 輸入 family 欄位 | CSV 完整名稱 | reward 修正的意義 |
 |---|---|---|
@@ -69,10 +95,9 @@ $$
 只讀上述三份 `zs_fb_*.npz`，不分析 one-step FB，不執行模型、不新增 rollout。主圖採五種修正都有的目標 10 度，所有 CSV 同時保存 5 度與 10 度。來源列可回溯到各 NPZ，既有 Q1 表格與原始資料不覆寫。
 
 ```bash
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_latent_fb.py
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_latent_fb.py --report-tables
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_latent_fb.py --check
-.venv/bin/python -m unittest discover -s tasks/T05-opt-to-pessi -p 'test_latent_fb.py'
+PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.latent
+PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.latent --report-tables
+PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.latent --check
 ```
 
 第一個命令重建七份 CSV 與八張 PNG。`--check` 重算並逐 byte 核對所有 CSV／PNG，不寫檔；PNG 的逐 byte 重現要求相同 NumPy、Matplotlib、字型與繪圖環境。`--report-tables` 印出報告中的兩表及完整 latent PCA 的變異保留範圍。測試包含已知單軸／正交向量、旋轉不變性、獨立重算殘差與 SVD、PCA 投影、來源覆蓋率、10 度熱圖矩陣與 CSV 一致性、表格與報告一致性，以及 `--check` 對缺檔／過期資料拒絕且不寫檔的行為。
@@ -103,14 +128,12 @@ $$
 
 ## Q2 從既有 rollout 重建配對差與報告表格
 
-仍只分析 standard FB，讀取相同三個 latent 檔及 `data/rollouts_fb_zero-shot-rl-{30,31,32}.csv`。不重訓、不重新推論、不新增 rollout。命令如下：
+仍只分析 standard FB，讀取相同三個 latent 檔及 `data/inputs/rollouts_fb_zero-shot-rl-{30,31,32}.csv`。不重訓、不重新推論、不新增 rollout。命令如下：
 
 ```bash
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_q2_fb.py
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_q2_fb.py --report-tables
-.venv/bin/python -m unittest discover -s tasks/T05-opt-to-pessi -p 'test_q*_fb.py'
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_q1_fb.py --check
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_q2_fb.py --check
+PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.q2
+PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.q2 --report-tables
+PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.q2 --check
 ```
 
 `--report-tables` 輸出報告的完整五欄主表、原始 reward 行為基準表、Q2 配對行為表與代表案例的逐 seed 標準誤表。測試會確認報告中四表與重算結果逐字一致，也保留 Q1 已填欄位的核對。報告採目標 10 度以延續 Q1 的主表，CSV 同時保存全部方法都有的 5 度、10 度結果，不依 return 選取強度。
@@ -125,22 +148,21 @@ $$
 
 `delta_` 一律是修正 latent 減原始 reward latent。`*_mean_mean` 是先對每個模型的 20 episodes 取平均，再對三個訓練 seeds 等權平均。`*_mean_min/max` 是三個 seed 平均的範圍，不是 episode 範圍或信賴區間。不混合任務，也不把 episodes 當額外的訓練 seeds。`delta_*_se` 是配對差樣本標準差除以 20 的平方根，僅衡量固定模型內初始狀態的變動，不包含模型訓練變異。報告列出跑步 CQL 與翻轉 ReBRAC 兩個例子，其餘 SE 可從 seed summary 查詢，不進行顯著性檢定或多重比較校正。三個選定模型的訓練步數不同，不能把模型間差異都歸因於隨機 seed。`delta_*_positive_episodes` 只是差值為正的次數，不代表成功次數，對低高度時間或飽和比例而言，正值也不表示較好。
 
-配對由 `rollout_eval.py` 的 `make_env(e)` 與確定性 actor 確保相同初始化種子，沒有儲存初始物理狀態供獨立核對。CSV 與 NPZ 的列索引、任務、family、係數、角度及 20 episodes 覆蓋率會完整驗證。CSV 只有六位有效數字，不能藉數值微小非零就宣稱差異具統計或實務意義。輸出保留十位有效數字，報告採 Python 預設浮點格式化取位。`--check` 是本機相同 NumPy 環境下的逐字核對，其他 BLAS／NumPy 環境若出現末位差異，須先確認是數值精度而非輸入或演算法變更。
+配對由 `zero_shot_rl/rollout/env.py` 的 `make_env(e)` 與確定性 actor 確保相同初始化種子，沒有儲存初始物理狀態供獨立核對。CSV 與 NPZ 的列索引、任務、family、係數、角度及 20 episodes 覆蓋率會完整驗證。CSV 只有六位有效數字，不能藉數值微小非零就宣稱差異具統計或實務意義。輸出保留十位有效數字，報告採 Python 預設浮點格式化取位。`--check` 是本機相同 NumPy 環境下的逐字核對，其他 BLAS／NumPy 環境若出現末位差異，須先確認是數值精度而非輸入或演算法變更。
 
-指標定義見 `rollout_eval.py`：`return` 是 1000 steps 的原始任務 reward 總和；`speed` 是平均水平速度；`upright` 是平均軀幹朝上分量；`fall_frac` 是軀幹高度低於 0.6 的時間比例；`sat_frac` 是動作分量絕對值大於 0.99 的比例；`abs_action` 是動作絕對值平均；`knn_dist` 是每維以資料集均值／標準差縮放後，狀態與動作拼接向量到最近訓練樣本的平均歐氏距離。實驗預設每 10 steps 計算最近鄰距離，所有 episodes 固定跑滿 1000 steps。`m7` 與 `q_corr` 不納入 Q2，後者本來就是每個 latent 跨 probes 的相關係數，不是每個 episode 的獨立測量。
+指標定義見 `zero_shot_rl/rollout/evaluate.py`：`return` 是 1000 steps 的原始任務 reward 總和；`speed` 是平均水平速度；`upright` 是平均軀幹朝上分量；`fall_frac` 是軀幹高度低於 0.6 的時間比例；`sat_frac` 是動作分量絕對值大於 0.99 的比例；`abs_action` 是動作絕對值平均；`knn_dist` 是每維以資料集均值／標準差縮放後，狀態與動作拼接向量到最近訓練樣本的平均歐氏距離。實驗預設每 10 steps 計算最近鄰距離，所有 episodes 固定跑滿 1000 steps。`m7` 與 `q_corr` 不納入 Q2，後者本來就是每個 latent 跨 probes 的相關係數，不是每個 episode 的獨立測量。
 
 ## Q4–Q6 從已存係數與候選 AX 掃描重建曲線
 
-`analyze_sweeps_fb.py` 只讀上述三份 standard FB NPZ、歷史 rollout CSV 及 `data/sweep_fb_missing.csv`。不載入模型、不重新推論、不新增 rollout，不使用 one-step FB 或後述補跑的 trace。
+`analyze/sweeps.py` 只讀上述三份 standard FB NPZ、歷史 rollout CSV 及 `data/inputs/sweep_fb_missing.csv`。不載入模型、不重新推論、不新增 rollout，不使用 one-step FB 或後述補跑的 trace。
 
 ```bash
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_sweeps_fb.py
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_sweeps_fb.py --report-tables
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_sweeps_fb.py --check
-.venv/bin/python -m unittest discover -s tasks/T05-opt-to-pessi -p 'test_sweeps_fb.py'
+PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.sweeps
+PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.sweeps --report-tables
+PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.sweeps --check
 ```
 
-第一個命令產生下表十一份 CSV 與十張圖。`--report-tables` 輸出 Q4 覆蓋率文字、方法表及 Q5／Q6 單調性表。`--check` 逐 byte 驗證 CSV／PNG，缺檔或過期即失敗且不寫檔。PNG 重現需要相同 NumPy、Matplotlib、字型與繪圖環境。測試另以原始 CSV 獨立核對全部 episode 配對與標準誤，以 SciPy 核對含 ties 的 Spearman，並檢查幾何、AX 構造、輸入損壞、來源覆蓋率及報告一致性。
+第一個命令產生下表十一份 CSV 與十張圖。`--report-tables` 輸出 Q4 覆蓋率文字、方法表及 Q5／Q6 單調性表。PNG 重現需要相同 NumPy、Matplotlib、字型與繪圖環境。測試另以原始 CSV 獨立核對全部 episode 配對與標準誤，以 SciPy 核對含 ties 的 Spearman，並檢查幾何、AX 構造、輸入損壞、來源覆蓋率及報告一致性。
 
 | `data/` 輸出 | 列數 | 內容 |
 |---|---:|---|
@@ -161,10 +183,10 @@ $$
 缺失狀態表 `sweep_fb_missing.csv` 有 81 列，是從原推論 stdout 匯出的去識別輸入，保留 NPZ 檔名、訓練 seed、任務、方法、目標角度、狀態、已收斂網格最大角度與來源行號。來源對應前述 `exp/T05-zero-shot-rl-*` tags，不包含完整日誌文字、主機或 checkpoint 路徑。一般重現只需此表，不需要本機日誌。必要時可用以下命令重新匯出，並重新產生分析輸出及執行 `--check`：
 
 ```bash
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_sweeps_fb.py --export-missing
+PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.sweeps --export-missing
 ```
 
-匯出預設讀取 `artifacts/T05-opt-to-pessi/zero-shot-rl-{30,31,32}/output.log`，可用 `--log-dir` 指定另一個含三個 job 子目錄的位置。每筆缺失會與 NPZ 的缺少條件逐一核對，重複、額外或漏列均拒絕。`unbracketed_grid` 對應日誌的 `unreachable`，僅指已收斂網格沒有括住目標；`bisection_not_converged` 對應 `no fixed point`，僅指二分搜尋中的固定點迭代未收斂；`target_mismatch` 對應 `discontinuous`，指恢復後角度偏差超過容許值，本次沒有此狀態。這些都不是不存在解的證明，中間失敗係數未保存，無法精確重建失敗係數區間。
+匯出預設讀取 `artifacts/T05-opt-to-pessi/zero-shot-rl-{30,31,32}/output.log`，寫入 `--input-dir`（預設 `data/inputs/`），可用 `--log-dir` 指定另一個含三個 job 子目錄的位置。每筆缺失會與 NPZ 的缺少條件逐一核對，重複、額外或漏列均拒絕。`unbracketed_grid` 對應日誌的 `unreachable`，僅指已收斂網格沒有括住目標；`bisection_not_converged` 對應 `no fixed point`，僅指二分搜尋中的固定點迭代未收斂；`target_mismatch` 對應 `discontinuous`，指恢復後角度偏差超過容許值，本次沒有此狀態。這些都不是不存在解的證明，中間失敗係數未保存，無法精確重建失敗係數區間。
 
 AX 使用各模型／任務目標 10 度的單位偏移方向構造軸，並逐列核對已存向量：
 
@@ -181,7 +203,7 @@ $$
 
 ## 任務指標補跑使用固定 latent，與歷史評估分開
 
-為直接觀察每個任務的行為，`rollout_task_behavior_fb.py` 使用同三個 standard FB 模型與已存 latent，對原始 reward 及五種修正 reward 的目標 10 度條件補跑。每個模型有四個任務、每任務六種條件，共 24 個 latent；每條件沿用初始化種子 0–19、確定性 actor、batch size 20，各 1000 steps，控制間隔 0.025 秒。模型與 latent 均不更新，不訓練真正的 CQL／ReBRAC，也不新增影片。
+為直接觀察每個任務的行為，`zero_shot_rl.rollout.trace` 使用同三個 standard FB 模型與已存 latent，對原始 reward 及五種修正 reward 的目標 10 度條件補跑。每個模型有四個任務、每任務六種條件，共 24 個 latent；每條件沿用初始化種子 0–19、確定性 actor、batch size 20，各 1000 steps，控制間隔 0.025 秒。模型與 latent 均不更新，不訓練真正的 CQL／ReBRAC，也不新增影片。
 
 每個 step 保存原始任務 reward、水平速度、軀幹高度、直立程度、繞世界 +Y 的角動量；軀幹角度另包含 reset 狀態，共 1001 個時間點。同一次執行同時計算新 return，不能把新指標接到歷史 CSV 或既有影片的軌跡。評估使用各任務原有 `rewards/walker/*.py`，並非以 implicit reward 評分。
 
@@ -200,15 +222,15 @@ $$
 
 ```bash
 PYTHONPATH=. MUJOCO_GL=egl OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
-  .venv/bin/python tasks/T05-opt-to-pessi/rollout_task_behavior_fb.py --workers 4
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_task_behavior_fb.py
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_task_behavior_fb.py --check
-.venv/bin/python tasks/T05-opt-to-pessi/analyze_task_behavior_fb.py --report-tables
-PYTHONPATH=. MUJOCO_GL=egl .venv/bin/python -m unittest discover \
-  -s tasks/T05-opt-to-pessi -p 'test_*fb.py'
+  .venv/bin/python -m zero_shot_rl.rollout.trace --config tasks/T05-opt-to-pessi/configs/sources.json \
+  --provenance-dir artifacts/T05-opt-to-pessi/task-behavior \
+  --families z_r CQL ReBRAC ReBRAC+E2E E2E E2E-bi --target-angle 10 --workers 4
+PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.task_behavior
+PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.task_behavior --check
+PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.task_behavior --report-tables
 ```
 
-`data/behavior_fb_seed{0,1,2}.npz` 保留上述逐步評估資料、已用 latent、來源列、初始化種子與控制間隔。`artifacts/T05-opt-to-pessi/task-behavior/` 保存本機日誌、每個模型的 JSON 來源紀錄與程式碼快照，包含 checkpoint／latent／trace／相關程式碼雜湊與軟體版本，不提交 checkpoint 或日誌。
+`data/inputs/behavior_fb_seed{0,1,2}.npz` 保留上述逐步評估資料、已用 latent、來源列、初始化種子與控制間隔。`artifacts/T05-opt-to-pessi/task-behavior/` 保存本機日誌、每個模型的 JSON 來源紀錄與程式碼快照，包含 checkpoint／latent／trace／相關程式碼雜湊與軟體版本，不提交 checkpoint 或日誌。
 
 分析從逐步數據產生 `data/behavior_fb_episodes.csv`（1440 筆）、`behavior_fb_seed_summary.csv`（72 筆）與 `behavior_fb_task_summary.csv`（24 筆）。`delta_` 一律是相同模型、任務、初始化種子的條件值減原始 reward 基準，再先平均 20 episodes、後等權平均三個模型。Seed summary 保留配對差的標準誤，task summary 的最小／最大值為三個模型的平均值範圍，不是信賴區間。所有統計逐任務呈現，不混合任務 return，也不把 60 episodes 當成 60 個訓練 seeds。`--check` 從逐步資料重算並核對三份 CSV，`--report-tables` 輸出任務行為表，兩者均不執行模型。
 
@@ -221,10 +243,13 @@ PYTHONPATH=. MUJOCO_GL=egl .venv/bin/python -m unittest discover \
 補錄影片與原影片使用相同目錄與檔名規則，新增來源由 `artifacts/T05-opt-to-pessi/videos/supplement_fb.jsonl` 區分，記錄 checkpoint／latent／影片的 sha256、來源列、版本與設定。補錄日誌為同目錄的 `supplement_fb.log`。這些產物均保留於 git-ignored 的 `artifacts/`，不提交影片或日誌。命令如下：
 
 ```bash
-PYTHONPATH=. MUJOCO_GL=egl .venv/bin/python tasks/T05-opt-to-pessi/record_missing_fb.py --dry-run
-PYTHONPATH=. MUJOCO_GL=egl .venv/bin/python tasks/T05-opt-to-pessi/record_missing_fb.py
-PYTHONPATH=. MUJOCO_GL=egl .venv/bin/python tasks/T05-opt-to-pessi/record_missing_fb.py --check
-PYTHONPATH=. MUJOCO_GL=egl .venv/bin/python -m unittest discover -s tasks/T05-opt-to-pessi -p 'test_*fb.py'
+VIDEO="PYTHONPATH=. MUJOCO_GL=egl .venv/bin/python -m zero_shot_rl.rollout.video \
+  --config tasks/T05-opt-to-pessi/configs/sources.json --video-dir artifacts/T05-opt-to-pessi/videos \
+  --manifest artifacts/T05-opt-to-pessi/videos/supplement_fb.jsonl \
+  --families z_r CQL ReBRAC ReBRAC+E2E E2E E2E-bi --manifest-families ReBRAC+E2E"
+eval "$VIDEO --dry-run"
+eval "$VIDEO"
+eval "$VIDEO --check"
 ```
 
 `--dry-run` 只列缺漏，`--check` 只驗證覆蓋率、影片解碼幀數與補錄來源，不執行模型。錄影時會核對 checkpoint 雜湊，使用 NPZ 中已存 latent，原子發布影片且拒絕覆寫既有檔。若中斷發生在影片發布後、manifest 追加前，`--check` 會指出缺少來源，不將該檔默認為已驗證補錄。
