@@ -16,7 +16,7 @@ the same start states. Per episode it records
                   return-to-go over steps t <= 750 (U6 for G0)
 
 Usage (repo root):
-    PYTHONPATH=. MUJOCO_GL=egl python -m zero_shot_rl.rollout.evaluate \
+    PYTHONPATH=. MUJOCO_GL=egl python -m zero_shot_rl.eval.latents \
         --checkpoint <best.pt> --zs <zs.npz> --dataset_path <dataset.npz> --out <rollouts.csv>
 """
 
@@ -32,7 +32,7 @@ from agents.base import load_agent
 from agents.fb.agent import FB
 from agents.fb.replay_buffer import FBReplayBuffer
 from rewards import RewardFunctionConstructor
-from zero_shot_rl.rollout.env import forward, make_env, policy, render_episode, write_video
+from zero_shot_rl.eval.env import forward, make_env, policy, render_episode, write_video
 
 DISCOUNT = 0.98  # agents/fb/config.yaml
 FALL_HEIGHT = 0.6

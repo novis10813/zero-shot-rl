@@ -9,9 +9,9 @@ import numpy as np
 from analyze.task_behavior import (analyze, behavior_rows, report_table, rotation_metrics,
                                    trace_name, validate_trace)
 from common import INPUTS, ROOT, SOURCES, csv_text
-from zero_shot_rl.rollout.env import make_env
-from zero_shot_rl.rollout.trace import publish_npz, torso_angle
-from zero_shot_rl.rollout.trace_format import DT, EPISODES, STEPS, TRACE_KEYS
+from zero_shot_rl.eval.env import make_env
+from zero_shot_rl.eval.trace import publish_npz, torso_angle
+from zero_shot_rl.eval.trace_format import DT, EPISODES, STEPS, TRACE_KEYS
 
 
 def wrap(angles):

@@ -6,7 +6,7 @@ Each model's videos go to <video-dir>/fb_<job>/; every new video is appended wit
 provenance to --manifest.
 
 Usage (repo root):
-    PYTHONPATH=. MUJOCO_GL=egl python -m zero_shot_rl.rollout.video --config <sources.json> \
+    PYTHONPATH=. MUJOCO_GL=egl python -m zero_shot_rl.eval.video --config <sources.json> \
         --video-dir <dir> --manifest <dir>/<name>.jsonl --families <family> ... [--check | --dry-run]
 """
 
@@ -23,7 +23,7 @@ import torch
 from agents.base import load_agent
 from zero_shot_rl.latent.archive import family_rows, validate
 from zero_shot_rl.provenance import no_clobber, sha256
-from zero_shot_rl.rollout.env import render_episode, write_video
+from zero_shot_rl.eval.env import render_episode, write_video
 
 REPO = Path(__file__).resolve().parents[2]
 

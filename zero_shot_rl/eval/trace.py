@@ -6,7 +6,7 @@ the model's "trace" path, with a provenance manifest and source snapshot in
 --provenance-dir. Refuses to overwrite traces or manifests.
 
 Usage (repo root):
-    PYTHONPATH=. MUJOCO_GL=egl python -m zero_shot_rl.rollout.trace --config <sources.json> \
+    PYTHONPATH=. MUJOCO_GL=egl python -m zero_shot_rl.eval.trace --config <sources.json> \
         --provenance-dir <dir> --families z_r <family> ... --target-angle 10
 """
 
@@ -27,8 +27,8 @@ from agents.base import load_agent
 from agents.fb.agent import FB
 from zero_shot_rl.latent.archive import matched_rows, validate
 from zero_shot_rl.provenance import no_clobber, sha256, snapshot
-from zero_shot_rl.rollout.env import make_env, policy
-from zero_shot_rl.rollout.trace_format import DT, EPISODES, STEPS, TRACE_KEYS, validate_trace
+from zero_shot_rl.eval.env import make_env, policy
+from zero_shot_rl.eval.trace_format import DT, EPISODES, STEPS, TRACE_KEYS, validate_trace
 
 REPO = Path(__file__).resolve().parents[2]
 

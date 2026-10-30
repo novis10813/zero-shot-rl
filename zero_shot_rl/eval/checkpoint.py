@@ -1,6 +1,10 @@
 """
 Evaluates a saved FB / CFB checkpoint (a .pt file written by AbstractAgent.save) on
 ExORL tasks with the same protocol as OfflineRLWorkspace.eval.
+
+Usage (repo root):
+    uv run python -m zero_shot_rl.eval.checkpoint <checkpoint.pt> walker \
+        --dataset_path <dataset.npz> --eval_tasks stand walk run flip
 """
 
 from argparse import ArgumentParser

@@ -1,4 +1,4 @@
-"""Format of the per-step behavior traces written by zero_shot_rl.rollout.trace.
+"""Format of the per-step behavior traces written by zero_shot_rl.eval.trace.
 
 numpy only, so analysis code can use it without torch or MuJoCo.
 """
