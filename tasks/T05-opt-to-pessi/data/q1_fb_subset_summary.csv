@@ -1,0 +1,6 @@
+task,n_comparisons,n_training_seeds,n_tasks,angle_to_full_data_deg_mean,angle_to_full_data_deg_min,angle_to_full_data_deg_max
+stand,15,3,1,2.683256944,2.008423901,3.290547017
+all four tasks,60,3,4,2.542360532,1.839419544,3.290547017
+walk,15,3,1,2.649722995,2.185130341,3.272015205
+run,15,3,1,2.479438338,1.989920673,3.046636314
+flip,15,3,1,2.357023851,1.839419544,2.855787046

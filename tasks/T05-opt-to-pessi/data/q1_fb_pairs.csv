@@ -1,0 +1,241 @@
+source,training_seed,task,method_a,method_b,target_angle_deg,latent_cosine,latent_angle_deg,tangent_cosine
+zs_fb_zero-shot-rl-30.npz,0,stand,CQL implicit-reward projection,ReBRAC action-deviation penalty,5,0.9945953204,5.959617703,0.2847591588
+zs_fb_zero-shot-rl-30.npz,0,stand,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,5,0.9898708544,8.161900678,-0.3456213965
+zs_fb_zero-shot-rl-30.npz,0,stand,CQL implicit-reward projection,Positive constant reward,5,0.9899763818,8.119201589,-0.3236178513
+zs_fb_zero-shot-rl-30.npz,0,stand,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9892734699,8.399554052,-0.4214874634
+zs_fb_zero-shot-rl-30.npz,0,stand,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,5,0.9906516159,7.840519076,-0.2405782018
+zs_fb_zero-shot-rl-30.npz,0,stand,ReBRAC action-deviation penalty,Positive constant reward,5,0.9849028076,9.968587593,-0.9914727546
+zs_fb_zero-shot-rl-30.npz,0,stand,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9855128124,9.764620735,-0.917814216
+zs_fb_zero-shot-rl-30.npz,0,stand,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,5,0.9951882641,5.622931814,0.362857332
+zs_fb_zero-shot-rl-30.npz,0,stand,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.99552299,5.423677068,0.4050545652
+zs_fb_zero-shot-rl-30.npz,0,stand,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9995041357,1.804417284,0.9345061724
+zs_fb_zero-shot-rl-30.npz,0,stand,CQL implicit-reward projection,ReBRAC action-deviation penalty,10,0.9784009971,11.9299683,0.2827760709
+zs_fb_zero-shot-rl-30.npz,0,stand,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,10,0.9603490086,16.18863457,-0.3114136119
+zs_fb_zero-shot-rl-30.npz,0,stand,CQL implicit-reward projection,Positive constant reward,10,0.9600532206,16.24931074,-0.3236111978
+zs_fb_zero-shot-rl-30.npz,0,stand,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9572098755,16.82171713,-0.4220157334
+zs_fb_zero-shot-rl-30.npz,0,stand,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,10,0.9644902523,15.31457726,-0.1778373662
+zs_fb_zero-shot-rl-30.npz,0,stand,ReBRAC action-deviation penalty,Positive constant reward,10,0.9400747968,19.93587864,-0.9913273951
+zs_fb_zero-shot-rl-30.npz,0,stand,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9424593575,19.53123801,-0.9177524503
+zs_fb_zero-shot-rl-30.npz,0,stand,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,10,0.9787713318,11.82688307,0.2973847931
+zs_fb_zero-shot-rl-30.npz,0,stand,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9803221696,11.3852084,0.3467950658
+zs_fb_zero-shot-rl-30.npz,0,stand,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9980156508,3.610094108,0.9340125387
+zs_fb_zero-shot-rl-30.npz,0,walk,CQL implicit-reward projection,ReBRAC action-deviation penalty,5,0.993972697,6.293866378,0.2023561446
+zs_fb_zero-shot-rl-30.npz,0,walk,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,5,0.9907139026,7.814314689,-0.229337296
+zs_fb_zero-shot-rl-30.npz,0,walk,CQL implicit-reward projection,Positive constant reward,5,0.9906955596,7.822040755,-0.228832649
+zs_fb_zero-shot-rl-30.npz,0,walk,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9898034235,8.189069161,-0.3502569688
+zs_fb_zero-shot-rl-30.npz,0,walk,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,5,0.9922793488,7.124336305,-0.02095122709
+zs_fb_zero-shot-rl-30.npz,0,walk,ReBRAC action-deviation penalty,Positive constant reward,5,0.9848987175,9.969941263,-0.9921901717
+zs_fb_zero-shot-rl-30.npz,0,walk,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9854187567,9.796344226,-0.9287225388
+zs_fb_zero-shot-rl-30.npz,0,walk,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,5,0.9935223712,6.524997812,0.1451624286
+zs_fb_zero-shot-rl-30.npz,0,walk,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9940628105,6.246592779,0.2143887064
+zs_fb_zero-shot-rl-30.npz,0,walk,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9995884166,1.643922844,0.9456721731
+zs_fb_zero-shot-rl-30.npz,0,walk,CQL implicit-reward projection,ReBRAC action-deviation penalty,10,0.9759988651,12.57841726,0.2027921168
+zs_fb_zero-shot-rl-30.npz,0,walk,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,10,0.9631865407,15.59489133,-0.2207120312
+zs_fb_zero-shot-rl-30.npz,0,walk,CQL implicit-reward projection,Positive constant reward,10,0.9629371793,15.64794898,-0.2286341125
+zs_fb_zero-shot-rl-30.npz,0,walk,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9591267441,16.43795211,-0.3529634371
+zs_fb_zero-shot-rl-30.npz,0,walk,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,10,0.9703760796,13.98095676,0.01510364209
+zs_fb_zero-shot-rl-30.npz,0,walk,ReBRAC action-deviation penalty,Positive constant reward,10,0.9400623938,19.93796273,-0.9921637252
+zs_fb_zero-shot-rl-30.npz,0,walk,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.94189726,19.62734292,-0.9283420295
+zs_fb_zero-shot-rl-30.npz,0,walk,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,10,0.9731378236,13.31021979,0.1086828599
+zs_fb_zero-shot-rl-30.npz,0,walk,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.975308636,12.75874196,0.1819156551
+zs_fb_zero-shot-rl-30.npz,0,walk,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9983494658,3.292377696,0.9453302638
+zs_fb_zero-shot-rl-30.npz,0,run,CQL implicit-reward projection,ReBRAC action-deviation penalty,5,0.9942962298,6.122450507,0.2476569434
+zs_fb_zero-shot-rl-30.npz,0,run,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,5,0.9907331876,7.80618366,-0.2265442825
+zs_fb_zero-shot-rl-30.npz,0,run,CQL implicit-reward projection,Positive constant reward,5,0.9903407111,7.97003832,-0.2756867471
+zs_fb_zero-shot-rl-30.npz,0,run,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9896299696,8.258547373,-0.3721779718
+zs_fb_zero-shot-rl-30.npz,0,run,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,5,0.9920184282,7.243878049,-0.05166487156
+zs_fb_zero-shot-rl-30.npz,0,run,ReBRAC action-deviation penalty,Positive constant reward,5,0.9848585429,9.983227796,-0.9907033989
+zs_fb_zero-shot-rl-30.npz,0,run,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9854296281,9.79268268,-0.919280901
+zs_fb_zero-shot-rl-30.npz,0,run,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,5,0.9938352897,6.365277294,0.1867132928
+zs_fb_zero-shot-rl-30.npz,0,run,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9944192892,6.055981924,0.2623475732
+zs_fb_zero-shot-rl-30.npz,0,run,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9995437151,1.730900929,0.9398226875
+zs_fb_zero-shot-rl-30.npz,0,run,CQL implicit-reward projection,ReBRAC action-deviation penalty,10,0.9773718474,12.21193654,0.248662867
+zs_fb_zero-shot-rl-30.npz,0,run,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,10,0.963709191,15.48310968,-0.2037880442
+zs_fb_zero-shot-rl-30.npz,0,run,CQL implicit-reward projection,Positive constant reward,10,0.9615185695,15.94651753,-0.2758200122
+zs_fb_zero-shot-rl-30.npz,0,run,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.958534417,16.55746128,-0.3757269153
+zs_fb_zero-shot-rl-30.npz,0,run,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,10,0.9694912427,14.18927698,-0.01400060011
+zs_fb_zero-shot-rl-30.npz,0,run,ReBRAC action-deviation penalty,Positive constant reward,10,0.9400726978,19.93623137,-0.9907791233
+zs_fb_zero-shot-rl-30.npz,0,run,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9422637717,19.56472985,-0.9193464997
+zs_fb_zero-shot-rl-30.npz,0,run,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,10,0.9743286408,13.01054661,0.148050149
+zs_fb_zero-shot-rl-30.npz,0,run,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9766621356,12.402706,0.2249445414
+zs_fb_zero-shot-rl-30.npz,0,run,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9981806728,3.456677797,0.9396099583
+zs_fb_zero-shot-rl-30.npz,0,flip,CQL implicit-reward projection,ReBRAC action-deviation penalty,5,0.9944554387,6.036317779,0.2615675909
+zs_fb_zero-shot-rl-30.npz,0,flip,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,5,0.9906100505,7.857957538,-0.2490432777
+zs_fb_zero-shot-rl-30.npz,0,flip,CQL implicit-reward projection,Positive constant reward,5,0.9902004495,8.027790013,-0.2977977754
+zs_fb_zero-shot-rl-30.npz,0,flip,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.989515735,8.303989553,-0.3883619488
+zs_fb_zero-shot-rl-30.npz,0,flip,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,5,0.9934265973,6.573110544,0.1259825935
+zs_fb_zero-shot-rl-30.npz,0,flip,ReBRAC action-deviation penalty,Positive constant reward,5,0.9849567166,9.950728821,-0.9914146612
+zs_fb_zero-shot-rl-30.npz,0,flip,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9854562914,9.783696589,-0.9251191051
+zs_fb_zero-shot-rl-30.npz,0,flip,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,5,0.992471867,7.034838007,0.004648080596
+zs_fb_zero-shot-rl-30.npz,0,flip,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9930599608,6.754140324,0.08248249062
+zs_fb_zero-shot-rl-30.npz,0,flip,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9995678552,1.68448803,0.9431174817
+zs_fb_zero-shot-rl-30.npz,0,flip,CQL implicit-reward projection,ReBRAC action-deviation penalty,10,0.9777100699,12.11998269,0.2604285844
+zs_fb_zero-shot-rl-30.npz,0,flip,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,10,0.9624148161,15.7585297,-0.2457019022
+zs_fb_zero-shot-rl-30.npz,0,flip,CQL implicit-reward projection,Positive constant reward,10,0.9608596118,16.08336834,-0.2979429777
+zs_fb_zero-shot-rl-30.npz,0,flip,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9581076982,16.64303996,-0.3911705944
+zs_fb_zero-shot-rl-30.npz,0,flip,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,10,0.9743379007,13.00818976,0.1492626272
+zs_fb_zero-shot-rl-30.npz,0,flip,ReBRAC action-deviation penalty,Positive constant reward,10,0.9399598665,19.9551824,-0.9914902449
+zs_fb_zero-shot-rl-30.npz,0,flip,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9420611183,19.59937392,-0.924520103
+zs_fb_zero-shot-rl-30.npz,0,flip,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,10,0.9692155132,14.25358332,-0.01998684535
+zs_fb_zero-shot-rl-30.npz,0,flip,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9717905676,13.64146643,0.06400827105
+zs_fb_zero-shot-rl-30.npz,0,flip,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9982738052,3.367014837,0.9426948757
+zs_fb_zero-shot-rl-31.npz,1,stand,CQL implicit-reward projection,ReBRAC action-deviation penalty,5,0.9935401154,6.516045042,0.1517858038
+zs_fb_zero-shot-rl-31.npz,1,stand,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,5,0.99180675,7.339436289,-0.07693059517
+zs_fb_zero-shot-rl-31.npz,1,stand,CQL implicit-reward projection,Positive constant reward,5,0.9911928212,7.609835981,-0.1564183521
+zs_fb_zero-shot-rl-31.npz,1,stand,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9898588579,8.16674073,-0.3386312303
+zs_fb_zero-shot-rl-31.npz,1,stand,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,5,0.9907191343,7.812109688,-0.223145517
+zs_fb_zero-shot-rl-31.npz,1,stand,ReBRAC action-deviation penalty,Positive constant reward,5,0.9848494773,9.986223533,-0.9946314082
+zs_fb_zero-shot-rl-31.npz,1,stand,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9853834859,9.80821435,-0.9345529642
+zs_fb_zero-shot-rl-31.npz,1,stand,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,5,0.994855623,5.814205532,0.3220164557
+zs_fb_zero-shot-rl-31.npz,1,stand,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9950519644,5.702079608,0.3444309637
+zs_fb_zero-shot-rl-31.npz,1,stand,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9995874861,1.645780227,0.9454163543
+zs_fb_zero-shot-rl-31.npz,1,stand,CQL implicit-reward projection,ReBRAC action-deviation penalty,10,0.9745638541,12.95054877,0.1519360974
+zs_fb_zero-shot-rl-31.npz,1,stand,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,10,0.9679443277,14.54645231,-0.06610834873
+zs_fb_zero-shot-rl-31.npz,1,stand,CQL implicit-reward projection,Positive constant reward,10,0.9652040487,15.15895998,-0.157018881
+zs_fb_zero-shot-rl-31.npz,1,stand,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9597016436,16.32114561,-0.3389023409
+zs_fb_zero-shot-rl-31.npz,1,stand,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,10,0.9655752498,15.07741333,-0.1452871944
+zs_fb_zero-shot-rl-31.npz,1,stand,ReBRAC action-deviation penalty,Positive constant reward,10,0.9400346003,19.94263212,-0.9946197389
+zs_fb_zero-shot-rl-31.npz,1,stand,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9418162634,19.6411541,-0.9337967144
+zs_fb_zero-shot-rl-31.npz,1,stand,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,10,0.9772003671,12.25829799,0.2435013625
+zs_fb_zero-shot-rl-31.npz,1,stand,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.977498582,12.17756083,0.253997428
+zs_fb_zero-shot-rl-31.npz,1,stand,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.998325872,3.315832334,0.9445077744
+zs_fb_zero-shot-rl-31.npz,1,walk,CQL implicit-reward projection,ReBRAC action-deviation penalty,5,0.9936591089,6.455687963,0.1630242758
+zs_fb_zero-shot-rl-31.npz,1,walk,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,5,0.9908538486,7.755117655,-0.2050910847
+zs_fb_zero-shot-rl-31.npz,1,walk,CQL implicit-reward projection,Positive constant reward,5,0.9910167216,7.685651922,-0.1806479416
+zs_fb_zero-shot-rl-31.npz,1,walk,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9898620324,8.165460232,-0.3386370002
+zs_fb_zero-shot-rl-31.npz,1,walk,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,5,0.991494254,7.47828737,-0.1279402354
+zs_fb_zero-shot-rl-31.npz,1,walk,ReBRAC action-deviation penalty,Positive constant reward,5,0.9849179766,9.963565662,-0.994953935
+zs_fb_zero-shot-rl-31.npz,1,walk,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9853773457,9.810279321,-0.9432763738
+zs_fb_zero-shot-rl-31.npz,1,walk,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,5,0.994142564,6.204454748,0.2266197699
+zs_fb_zero-shot-rl-31.npz,1,walk,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9948474753,5.818812002,0.3164992908
+zs_fb_zero-shot-rl-31.npz,1,walk,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9996889181,1.429177803,0.9588490729
+zs_fb_zero-shot-rl-31.npz,1,walk,CQL implicit-reward projection,ReBRAC action-deviation penalty,10,0.9748923437,12.866298,0.163744601
+zs_fb_zero-shot-rl-31.npz,1,walk,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,10,0.9641104195,15.39676,-0.1929972963
+zs_fb_zero-shot-rl-31.npz,1,walk,CQL implicit-reward projection,Positive constant reward,10,0.9644656337,15.31991692,-0.1813403528
+zs_fb_zero-shot-rl-31.npz,1,walk,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9596968978,16.32211317,-0.3400515303
+zs_fb_zero-shot-rl-31.npz,1,walk,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,10,0.967302004,14.69226445,-0.08600499186
+zs_fb_zero-shot-rl-31.npz,1,walk,ReBRAC action-deviation penalty,Positive constant reward,10,0.9399409426,19.95835915,-0.9950091404
+zs_fb_zero-shot-rl-31.npz,1,walk,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9415048944,19.69416079,-0.9433106616
+zs_fb_zero-shot-rl-31.npz,1,walk,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,10,0.9753906299,12.73745222,0.1841564683
+zs_fb_zero-shot-rl-31.npz,1,walk,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9778913688,12.07040825,0.2669653564
+zs_fb_zero-shot-rl-31.npz,1,walk,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9987523015,2.862448123,0.958626001
+zs_fb_zero-shot-rl-31.npz,1,run,CQL implicit-reward projection,ReBRAC action-deviation penalty,5,0.9935604625,6.505763914,0.1536033897
+zs_fb_zero-shot-rl-31.npz,1,run,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,5,0.9918653424,7.313110119,-0.07098437749
+zs_fb_zero-shot-rl-31.npz,1,run,CQL implicit-reward projection,Positive constant reward,5,0.9911895494,7.611251413,-0.1609659813
+zs_fb_zero-shot-rl-31.npz,1,run,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9899272726,8.139100121,-0.3319863246
+zs_fb_zero-shot-rl-31.npz,1,run,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,5,0.9910734815,7.661296621,-0.1707188005
+zs_fb_zero-shot-rl-31.npz,1,run,ReBRAC action-deviation penalty,Positive constant reward,5,0.9848118069,9.998662334,-0.9936699959
+zs_fb_zero-shot-rl-31.npz,1,run,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9853076958,9.833672858,-0.9353762344
+zs_fb_zero-shot-rl-31.npz,1,run,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,5,0.9945194709,6.001328813,0.2794039341
+zs_fb_zero-shot-rl-31.npz,1,run,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.994859335,5.812105703,0.3217114712
+zs_fb_zero-shot-rl-31.npz,1,run,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9996226049,1.574162046,0.950166666
+zs_fb_zero-shot-rl-31.npz,1,run,CQL implicit-reward projection,ReBRAC action-deviation penalty,10,0.9744332298,12.98390186,0.1535091046
+zs_fb_zero-shot-rl-31.npz,1,run,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,10,0.9684263705,14.43607883,-0.04409237547
+zs_fb_zero-shot-rl-31.npz,1,run,CQL implicit-reward projection,Positive constant reward,10,0.9648606298,15.23402368,-0.1613886545
+zs_fb_zero-shot-rl-31.npz,1,run,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9595535853,16.35130529,-0.3375302498
+zs_fb_zero-shot-rl-31.npz,1,run,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,10,0.9661305056,14.95462228,-0.1252393682
+zs_fb_zero-shot-rl-31.npz,1,run,ReBRAC action-deviation penalty,Positive constant reward,10,0.9399631161,19.95463684,-0.9935291392
+zs_fb_zero-shot-rl-31.npz,1,run,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9418269087,19.63933946,-0.9327118932
+zs_fb_zero-shot-rl-31.npz,1,run,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,10,0.976897169,12.33985096,0.2338131556
+zs_fb_zero-shot-rl-31.npz,1,run,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9779276461,12.06046446,0.2675827323
+zs_fb_zero-shot-rl-31.npz,1,run,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9984398322,3.200956446,0.9482574062
+zs_fb_zero-shot-rl-31.npz,1,flip,CQL implicit-reward projection,ReBRAC action-deviation penalty,5,0.9938642906,6.350272047,0.1860356681
+zs_fb_zero-shot-rl-31.npz,1,flip,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,5,0.9922790598,7.124469806,-0.01683417249
+zs_fb_zero-shot-rl-31.npz,1,flip,CQL implicit-reward projection,Positive constant reward,5,0.9909665405,7.70712063,-0.1898937602
+zs_fb_zero-shot-rl-31.npz,1,flip,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9898234676,8.181002596,-0.34183484
+zs_fb_zero-shot-rl-31.npz,1,flip,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,5,0.993060087,6.754078882,0.07979136818
+zs_fb_zero-shot-rl-31.npz,1,flip,ReBRAC action-deviation penalty,Positive constant reward,5,0.9849779736,9.943678176,-0.9922415926
+zs_fb_zero-shot-rl-31.npz,1,flip,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9853722596,9.811989481,-0.9419468405
+zs_fb_zero-shot-rl-31.npz,1,flip,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,5,0.9927428042,6.906929878,0.04453500231
+zs_fb_zero-shot-rl-31.npz,1,flip,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9930138917,6.776546871,0.07928303123
+zs_fb_zero-shot-rl-31.npz,1,flip,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9996539167,1.507441618,0.9543815075
+zs_fb_zero-shot-rl-31.npz,1,flip,CQL implicit-reward projection,ReBRAC action-deviation penalty,10,0.9754489635,12.72228454,0.1855339236
+zs_fb_zero-shot-rl-31.npz,1,flip,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,10,0.9695923466,14.16562562,-0.00715934792
+zs_fb_zero-shot-rl-31.npz,1,flip,CQL implicit-reward projection,Positive constant reward,10,0.9640666277,15.40620754,-0.1904846722
+zs_fb_zero-shot-rl-31.npz,1,flip,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9595323372,16.3556291,-0.3418338768
+zs_fb_zero-shot-rl-31.npz,1,flip,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,10,0.973365436,13.2534549,0.1157521403
+zs_fb_zero-shot-rl-31.npz,1,flip,ReBRAC action-deviation penalty,Positive constant reward,10,0.9400088555,19.94695637,-0.9921710526
+zs_fb_zero-shot-rl-31.npz,1,flip,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9416015376,19.67772318,-0.9409137604
+zs_fb_zero-shot-rl-31.npz,1,flip,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,10,0.9700914423,14.04830013,0.008378638964
+zs_fb_zero-shot-rl-31.npz,1,flip,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9711512811,13.79591572,0.04271369438
+zs_fb_zero-shot-rl-31.npz,1,flip,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9986046164,3.027157064,0.9536855605
+zs_fb_zero-shot-rl-32.npz,2,stand,CQL implicit-reward projection,ReBRAC action-deviation penalty,5,0.993035936,6.76583444,0.07961750184
+zs_fb_zero-shot-rl-32.npz,2,stand,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,5,0.9913793033,7.528722681,-0.1355721994
+zs_fb_zero-shot-rl-32.npz,2,stand,CQL implicit-reward projection,Positive constant reward,5,0.9917358837,7.371152253,-0.09170025086
+zs_fb_zero-shot-rl-32.npz,2,stand,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9908501196,7.756700806,-0.2109190705
+zs_fb_zero-shot-rl-32.npz,2,stand,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,5,0.9892338285,8.415088527,-0.4136383403
+zs_fb_zero-shot-rl-32.npz,2,stand,ReBRAC action-deviation penalty,Positive constant reward,5,0.9848583747,9.983283376,-0.9937941334
+zs_fb_zero-shot-rl-32.npz,2,stand,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9851704726,9.879602005,-0.9562554454
+zs_fb_zero-shot-rl-32.npz,2,stand,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,5,0.9962746907,4.947134481,0.5110785554
+zs_fb_zero-shot-rl-32.npz,2,stand,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.996093122,5.066336699,0.4863212731
+zs_fb_zero-shot-rl-32.npz,2,stand,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9997081017,1.384407614,0.9615131095
+zs_fb_zero-shot-rl-32.npz,2,stand,CQL implicit-reward projection,ReBRAC action-deviation penalty,10,0.9721484883,13.55424036,0.07990903984
+zs_fb_zero-shot-rl-32.npz,2,stand,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,10,0.9657218282,15.04509363,-0.1365983922
+zs_fb_zero-shot-rl-32.npz,2,stand,CQL implicit-reward projection,Positive constant reward,10,0.9669728491,14.76643921,-0.09252379484
+zs_fb_zero-shot-rl-32.npz,2,stand,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9632914808,15.57251009,-0.2173052668
+zs_fb_zero-shot-rl-32.npz,2,stand,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,10,0.9584554524,16.57333005,-0.3787745254
+zs_fb_zero-shot-rl-32.npz,2,stand,ReBRAC action-deviation penalty,Positive constant reward,10,0.9397898022,19.98371365,-0.9935106277
+zs_fb_zero-shot-rl-32.npz,2,stand,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9411276965,19.75819109,-0.9540422967
+zs_fb_zero-shot-rl-32.npz,2,stand,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,10,0.9842579881,10.17979711,0.4768600432
+zs_fb_zero-shot-rl-32.npz,2,stand,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9837009426,10.35882576,0.4570017187
+zs_fb_zero-shot-rl-32.npz,2,stand,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9988007152,2.806352461,0.9601442407
+zs_fb_zero-shot-rl-32.npz,2,walk,CQL implicit-reward projection,ReBRAC action-deviation penalty,5,0.9927117813,6.921694884,0.03973264989
+zs_fb_zero-shot-rl-32.npz,2,walk,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,5,0.9924466051,7.046646271,0.005605816405
+zs_fb_zero-shot-rl-32.npz,2,walk,CQL implicit-reward projection,Positive constant reward,5,0.9920838988,7.21406764,-0.04114663901
+zs_fb_zero-shot-rl-32.npz,2,walk,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9912115506,7.601728212,-0.1621329388
+zs_fb_zero-shot-rl-32.npz,2,walk,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,5,0.9921482927,7.184627468,-0.03655231826
+zs_fb_zero-shot-rl-32.npz,2,walk,ReBRAC action-deviation penalty,Positive constant reward,5,0.9849005101,9.969347989,-0.9914652504
+zs_fb_zero-shot-rl-32.npz,2,walk,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9852885088,9.840107584,-0.9508171171
+zs_fb_zero-shot-rl-32.npz,2,walk,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,5,0.9936693274,6.450478579,0.165732899
+zs_fb_zero-shot-rl-32.npz,2,walk,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9937046891,6.43241891,0.1659001815
+zs_fb_zero-shot-rl-32.npz,2,walk,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9997038044,1.394561424,0.9608073459
+zs_fb_zero-shot-rl-32.npz,2,walk,CQL implicit-reward projection,ReBRAC action-deviation penalty,10,0.9710391308,13.82283631,0.03918735907
+zs_fb_zero-shot-rl-32.npz,2,walk,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,10,0.970488503,13.95427035,0.02307323944
+zs_fb_zero-shot-rl-32.npz,2,walk,CQL implicit-reward projection,Positive constant reward,10,0.9685735249,14.40221992,-0.04164880588
+zs_fb_zero-shot-rl-32.npz,2,walk,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9647640742,15.25506363,-0.1651373677
+zs_fb_zero-shot-rl-32.npz,2,walk,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,10,0.9699634365,14.07848256,0.003809096557
+zs_fb_zero-shot-rl-32.npz,2,walk,ReBRAC action-deviation penalty,Positive constant reward,10,0.9400407495,19.94159912,-0.9911527661
+zs_fb_zero-shot-rl-32.npz,2,walk,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9411297704,19.75783959,-0.9503337378
+zs_fb_zero-shot-rl-32.npz,2,walk,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,10,0.973607257,13.19288374,0.1254685558
+zs_fb_zero-shot-rl-32.npz,2,walk,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9734633564,13.22896068,0.122791206
+zs_fb_zero-shot-rl-32.npz,2,walk,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9988188998,2.784990799,0.9609099121
+zs_fb_zero-shot-rl-32.npz,2,run,CQL implicit-reward projection,ReBRAC action-deviation penalty,5,0.9929755285,6.795149394,0.07415527778
+zs_fb_zero-shot-rl-32.npz,2,run,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,5,0.992443523,7.048085612,0.001348681986
+zs_fb_zero-shot-rl-32.npz,2,run,CQL implicit-reward projection,Positive constant reward,5,0.9918521359,7.319052133,-0.07359792267
+zs_fb_zero-shot-rl-32.npz,2,run,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.991002078,7.691922967,-0.1878163992
+zs_fb_zero-shot-rl-32.npz,2,run,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,5,0.991410112,7.515238206,-0.1343349043
+zs_fb_zero-shot-rl-32.npz,2,run,ReBRAC action-deviation penalty,Positive constant reward,5,0.9848813335,9.975692621,-0.9905426072
+zs_fb_zero-shot-rl-32.npz,2,run,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9852162471,9.864304641,-0.9500758602
+zs_fb_zero-shot-rl-32.npz,2,run,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,5,0.994453271,6.037498743,0.2677439707
+zs_fb_zero-shot-rl-32.npz,2,run,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9943010106,6.119881641,0.2462362687
+zs_fb_zero-shot-rl-32.npz,2,run,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9996852712,1.43753115,0.9584989819
+zs_fb_zero-shot-rl-32.npz,2,run,CQL implicit-reward projection,ReBRAC action-deviation penalty,10,0.9720057732,13.58908622,0.07381299599
+zs_fb_zero-shot-rl-32.npz,2,run,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,10,0.9701100982,14.04389596,0.01274798734
+zs_fb_zero-shot-rl-32.npz,2,run,CQL implicit-reward projection,Positive constant reward,10,0.9675796916,14.62940181,-0.07394455677
+zs_fb_zero-shot-rl-32.npz,2,run,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9639167554,15.43849792,-0.1957142557
+zs_fb_zero-shot-rl-32.npz,2,run,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,10,0.9671928125,14.71691119,-0.08338497384
+zs_fb_zero-shot-rl-32.npz,2,run,ReBRAC action-deviation penalty,Positive constant reward,10,0.9399150989,19.96269673,-0.9899408287
+zs_fb_zero-shot-rl-32.npz,2,run,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9411370063,19.75661313,-0.9501781362
+zs_fb_zero-shot-rl-32.npz,2,run,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,10,0.9763657074,12.48153556,0.2185714037
+zs_fb_zero-shot-rl-32.npz,2,run,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9755344852,12.70001532,0.1907964819
+zs_fb_zero-shot-rl-32.npz,2,run,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9987544647,2.859965091,0.9586836194
+zs_fb_zero-shot-rl-32.npz,2,flip,CQL implicit-reward projection,ReBRAC action-deviation penalty,5,0.9927837834,6.887378042,0.04919730282
+zs_fb_zero-shot-rl-32.npz,2,flip,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,5,0.9918968891,7.298896744,-0.07060401872
+zs_fb_zero-shot-rl-32.npz,2,flip,CQL implicit-reward projection,Positive constant reward,5,0.9919829833,7.259966161,-0.05885355475
+zs_fb_zero-shot-rl-32.npz,2,flip,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9911872941,7.612226944,-0.1659731245
+zs_fb_zero-shot-rl-32.npz,2,flip,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,5,0.9923627746,7.085691229,-0.003528103258
+zs_fb_zero-shot-rl-32.npz,2,flip,ReBRAC action-deviation penalty,Positive constant reward,5,0.9848390601,9.989664826,-0.9914414281
+zs_fb_zero-shot-rl-32.npz,2,flip,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9851858552,9.874463913,-0.9492665454
+zs_fb_zero-shot-rl-32.npz,2,flip,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,5,0.993421031,6.575896018,0.1334558392
+zs_fb_zero-shot-rl-32.npz,2,flip,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9937471849,6.410648728,0.174983777
+zs_fb_zero-shot-rl-32.npz,2,flip,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),5,0.9997282888,1.335676293,0.9641637169
+zs_fb_zero-shot-rl-32.npz,2,flip,CQL implicit-reward projection,ReBRAC action-deviation penalty,10,0.9713502848,13.74801957,0.04946734567
+zs_fb_zero-shot-rl-32.npz,2,flip,CQL implicit-reward projection,ReBRAC penalty plus norm-matched constant reward,10,0.9680921653,14.51268921,-0.05393997089
+zs_fb_zero-shot-rl-32.npz,2,flip,CQL implicit-reward projection,Positive constant reward,10,0.9680305921,14.52676062,-0.05911877596
+zs_fb_zero-shot-rl-32.npz,2,flip,CQL implicit-reward projection,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9648968486,15.22612411,-0.1637860151
+zs_fb_zero-shot-rl-32.npz,2,flip,ReBRAC action-deviation penalty,ReBRAC penalty plus norm-matched constant reward,10,0.9709833966,13.83619566,0.03940857996
+zs_fb_zero-shot-rl-32.npz,2,flip,ReBRAC action-deviation penalty,Positive constant reward,10,0.9400362402,19.94235663,-0.9910216346
+zs_fb_zero-shot-rl-32.npz,2,flip,ReBRAC action-deviation penalty,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9413686914,19.71730464,-0.9482027598
+zs_fb_zero-shot-rl-32.npz,2,flip,ReBRAC penalty plus norm-matched constant reward,Positive constant reward,10,0.972527077,13.46137395,0.09184141279
+zs_fb_zero-shot-rl-32.npz,2,flip,ReBRAC penalty plus norm-matched constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9737722709,13.15139389,0.1323722828
+zs_fb_zero-shot-rl-32.npz,2,flip,Positive constant reward,Deterministic-policy next-state bonus (bilevel E2E-style),10,0.9989159946,2.668041575,0.9640337605

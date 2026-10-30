@@ -1,0 +1,8 @@
+metric,n_curves,n_training_seeds,n_tasks,n_mixed,n_nondecreasing,n_nonincreasing,n_constant,spearman_min,spearman_max,n_positive_net_change,n_negative_net_change
+return,12,3,4,12,0,0,0,-0.9666666667,0.35,1,11
+speed,12,3,4,12,0,0,0,-0.95,0.7,2,10
+upright,12,3,4,12,0,0,0,-0.8166666667,0.8166666667,3,9
+fall_frac,12,3,4,12,0,0,0,-0.9333333333,0.9666666667,9,3
+sat_frac,12,3,4,9,0,3,0,-1,-0.5833333333,0,12
+knn_dist,12,3,4,12,0,0,0,-0.8666666667,0.7666666667,5,7
+abs_action,12,3,4,10,0,2,0,-1,-0.6666666667,0,12
