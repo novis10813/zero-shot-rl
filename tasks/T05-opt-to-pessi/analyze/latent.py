@@ -2,6 +2,9 @@
 
 No model execution. Only the three zs_fb archives are read. Figures use the common
 10-degree slice; tables also retain the balanced 5-degree sensitivity slice.
+
+Run from the repository root:
+    PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.latent [--check]
 """
 
 import argparse
@@ -11,10 +14,10 @@ from pathlib import Path
 
 import numpy as np
 
-from analyze_q1_fb import (
-    MATCHED_ANGLES, METHODS, ROOT, SOURCES, TASKS, analyze as analyze_q1,
-    cosine, csv_text, summarize, tangent, unit,
-)
+from analyze.q1 import analyze as analyze_q1, summarize
+from common import (FIGURES, INPUTS, MATCHED_ANGLES, METHODS, OUTPUTS, SOURCES, TASKS, csv_text,
+                    write_or_check)
+from geometry import cosine, tangent, unit
 
 FAMILIES = tuple(METHODS)
 RESIDUAL_TOL = 1e-5  # norm relative to an already unit tangent; never amplify zero
@@ -289,33 +292,22 @@ def figures(tables):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, default=ROOT / "data")
-    parser.add_argument("--out-dir", type=Path, default=ROOT / "data")
-    parser.add_argument("--figure-dir", type=Path, default=ROOT / "figures")
+    parser.add_argument("--input-dir", type=Path, default=INPUTS)
+    parser.add_argument("--out-dir", type=Path, default=OUTPUTS)
+    parser.add_argument("--figure-dir", type=Path, default=FIGURES)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--check", action="store_true", help="Verify all CSV and PNG bytes without writing")
     mode.add_argument("--report-tables", action="store_true", help="Print report tables without writing")
     args = parser.parse_args()
-    tables = analyze(args.data_dir)
+    tables = analyze(args.input_dir)
     if args.report_tables:
         print(report_tables(tables))
         return
 
-    def output(path, content):
-        if args.check:
-            if not path.exists() or path.read_bytes() != content:
-                raise SystemExit(f"Stale or missing output: {path}")
-            print(f"Verified {path.name}")
-        else:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(content)
-            print(f"Wrote {path}")
-
     for filename, rows in tables.items():
-        output(args.out_dir / filename, csv_text(rows).encode())
+        write_or_check(args.out_dir / filename, csv_text(rows).encode(), args.check)
     for filename, content in figures(tables):
-        output(args.figure_dir / filename, content)
-
+        write_or_check(args.figure_dir / filename, content, args.check)
 
 if __name__ == "__main__":
     main()

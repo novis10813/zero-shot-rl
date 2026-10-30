@@ -1,4 +1,8 @@
-"""Paired Q2 analysis of saved standard-FB rollouts, without new evaluation."""
+"""Paired Q2 analysis of saved standard-FB rollouts, without new evaluation.
+
+Run from the repository root:
+    PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.q2 [--check]
+"""
 
 import argparse
 import csv
@@ -6,10 +10,9 @@ from pathlib import Path
 
 import numpy as np
 
-from analyze_q1_fb import (
-    MATCHED_ANGLES, METHODS, REPORT_LABELS, ROOT, SOURCES, TASKS, analyze as analyze_q1,
-    csv_text, report_tables as q1_report_tables, validate,
-)
+from analyze.q1 import analyze as analyze_q1, report_tables as q1_report_tables
+from common import (INPUTS, MATCHED_ANGLES, METHODS, OUTPUTS, REPORT_LABELS, SOURCES, TASKS,
+                    csv_text, validate, write_or_check)
 
 EPISODES = 20
 METRICS = ("return", "speed", "upright", "fall_frac", "sat_frac", "knn_dist", "abs_action")
@@ -32,7 +35,7 @@ def load_rollouts(path, data):
                 raise ValueError(f"{path}: mismatched {key}")
         for key, saved in (("strength", "strength"), ("target_angle", "target_angle"),
                            ("angle", "angle")):
-            # rollout_eval.py writes six significant digits.
+            # zero_shot_rl.rollout.evaluate writes six significant digits.
             if not np.isclose(float(record[key]), data[saved][row], rtol=7e-6, atol=1e-6, equal_nan=True):
                 raise ValueError(f"{path}: mismatched {key}")
         values = {metric: float(record[metric]) for metric in METRICS}
@@ -198,27 +201,18 @@ def report_tables(tables, q1):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, default=ROOT / "data")
-    parser.add_argument("--out-dir", type=Path, default=ROOT / "data")
+    parser.add_argument("--input-dir", type=Path, default=INPUTS)
+    parser.add_argument("--out-dir", type=Path, default=OUTPUTS)
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--report-tables", action="store_true")
     args = parser.parse_args()
-    outputs = analyze(args.data_dir)
+    outputs = analyze(args.input_dir)
     if args.report_tables:
-        for content in report_tables(outputs, analyze_q1(args.data_dir)).values():
+        for content in report_tables(outputs, analyze_q1(args.input_dir)).values():
             print(content, end="\n\n")
         return
-    if not args.check:
-        args.out_dir.mkdir(parents=True, exist_ok=True)
     for filename, rows in outputs.items():
-        path, content = args.out_dir / filename, csv_text(rows)
-        if args.check:
-            if not path.exists() or path.read_text() != content:
-                raise SystemExit(f"Stale or missing output: {path}")
-        else:
-            path.write_text(content)
-        print(f"{'Verified' if args.check else 'Wrote'} {filename}: {len(rows)} rows")
-
+        write_or_check(args.out_dir / filename, csv_text(rows).encode(), args.check)
 
 if __name__ == "__main__":
     main()

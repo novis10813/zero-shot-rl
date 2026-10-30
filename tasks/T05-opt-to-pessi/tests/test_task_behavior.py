@@ -6,11 +6,12 @@ import unittest
 
 import numpy as np
 
-from analyze_q1_fb import ROOT, SOURCES, csv_text
-from analyze_task_behavior_fb import (DT, EPISODES, STEPS, TRACE_KEYS, analyze, report_table,
-                                      rotation_metrics, selected_rows, trace_name, validate_trace)
+from analyze.task_behavior import (analyze, behavior_rows, report_table, rotation_metrics,
+                                   trace_name, validate_trace)
+from common import INPUTS, ROOT, SOURCES, csv_text
 from zero_shot_rl.rollout.env import make_env
 from zero_shot_rl.rollout.trace import publish_npz, torso_angle
+from zero_shot_rl.rollout.trace_format import DT, EPISODES, STEPS, TRACE_KEYS
 
 
 def wrap(angles):
@@ -57,28 +58,28 @@ class TaskBehaviorTests(unittest.TestCase):
 
     def test_selection_and_rejection(self):
         for _, source in SOURCES:
-            with np.load(ROOT / "data" / source, allow_pickle=False) as archive:
+            with np.load(INPUTS / source, allow_pickle=False) as archive:
                 data = dict(archive)
-            rows = selected_rows(data)
+            rows = behavior_rows(data)
             self.assertEqual(len(rows), 24)
             self.assertEqual(sum(data["family"][r] == "z_r" for r in rows), 4)
             bad = {k: v.copy() for k, v in data.items()}
             bad["converged"][rows[1]] = False
             with self.assertRaises(ValueError):
-                selected_rows(bad)
+                behavior_rows(bad)
 
     def test_saved_trace_tables_and_report(self):
-        tables = analyze(ROOT / "data")
+        tables = analyze(INPUTS)
         for name, rows in tables.items():
             self.assertEqual((ROOT / "data" / name).read_text(), csv_text(rows))
         self.assertIn(report_table(tables), (ROOT / "REPORT.md").read_text())
         episodes = tables["behavior_fb_episodes.csv"]
         for seed, source in SOURCES:
-            with np.load(ROOT / "data" / source, allow_pickle=False) as archive:
+            with np.load(INPUTS / source, allow_pickle=False) as archive:
                 data = dict(archive)
-            with np.load(ROOT / "data" / trace_name(seed), allow_pickle=False) as archive:
+            with np.load(INPUTS / trace_name(seed), allow_pickle=False) as archive:
                 trace = dict(archive)
-            for index, row in enumerate(selected_rows(data)):
+            for index, row in enumerate(behavior_rows(data)):
                 group = [r for r in episodes if r["training_seed"] == seed and r["source_row"] == row]
                 self.assertEqual(len(group), EPISODES)
                 self.assertEqual([r["episode"] for r in group], list(range(EPISODES)))
@@ -99,10 +100,10 @@ class TaskBehaviorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             directory = Path(directory)
             for seed, source in SOURCES:
-                with np.load(ROOT / "data" / source, allow_pickle=False) as archive:
+                with np.load(INPUTS / source, allow_pickle=False) as archive:
                     data = dict(archive)
                 np.savez(directory / source, **data)
-                rows = selected_rows(data)
+                rows = behavior_rows(data)
                 shape = (24, EPISODES, STEPS)
                 trace = {key: np.zeros(shape) for key in TRACE_KEYS}
                 trace.update(rows=np.array(rows), episodes=np.arange(EPISODES), dt=np.array(DT),

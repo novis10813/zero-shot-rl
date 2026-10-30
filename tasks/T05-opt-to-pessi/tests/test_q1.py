@@ -4,10 +4,9 @@ import unittest
 
 import numpy as np
 
-from analyze_q1_fb import (
-    MATCHED_ANGLES, METHODS, ROOT, SOURCES, TASKS, analyze, angle_deg, cosine,
-    report_tables, tangent, unit, validate,
-)
+from analyze.q1 import analyze, report_tables
+from common import INPUTS, MATCHED_ANGLES, METHODS, ROOT, SOURCES, TASKS, validate
+from geometry import angle_deg, cosine, tangent, unit
 
 
 class GeometryTests(unittest.TestCase):
@@ -43,7 +42,7 @@ class GeometryTests(unittest.TestCase):
             tangent([1, 0], [1, 0])
 
     def test_invalid_saved_norm_rejected(self):
-        with np.load(ROOT / "data" / SOURCES[0][1], allow_pickle=False) as archive:
+        with np.load(INPUTS / SOURCES[0][1], allow_pickle=False) as archive:
             data = dict(archive)
         data["z"] = data["z"] * 2
         with self.assertRaises(ValueError):
@@ -53,7 +52,7 @@ class GeometryTests(unittest.TestCase):
 class SavedDataTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.tables = analyze(ROOT / "data")
+        cls.tables = analyze(INPUTS)
 
     def test_standard_fb_only_and_exact_coverage(self):
         baseline = self.tables["q1_fb_baseline.csv"]
@@ -73,7 +72,7 @@ class SavedDataTests(unittest.TestCase):
 
     def test_independent_subset_and_pair_recomputation(self):
         for seed, source in SOURCES:
-            with np.load(ROOT / "data" / source, allow_pickle=False) as data:
+            with np.load(INPUTS / source, allow_pickle=False) as data:
                 for task in TASKS:
                     mask = data["task"] == task
                     base = data["z"][mask & (data["family"] == "z_r")][0].astype(float)
@@ -86,7 +85,7 @@ class SavedDataTests(unittest.TestCase):
                     np.testing.assert_allclose(got, expected, atol=1e-10)
         reverse_methods = {name: family for family, name in METHODS.items()}
         for row in self.tables["q1_fb_pairs.csv"]:
-            with np.load(ROOT / "data" / row["source"], allow_pickle=False) as data:
+            with np.load(INPUTS / row["source"], allow_pickle=False) as data:
                 mask = data["task"] == row["task"]
                 baseline = data["z"][mask & (data["family"] == "z_r")][0].astype(float)
                 vectors = []
@@ -114,7 +113,7 @@ class SavedDataTests(unittest.TestCase):
     def test_baseline_and_subset_summary_statistics(self):
         baselines, subsets = [], []
         for seed, source in SOURCES:
-            with np.load(ROOT / "data" / source, allow_pickle=False) as data:
+            with np.load(INPUTS / source, allow_pickle=False) as data:
                 for task in TASKS:
                     mask = data["task"] == task
                     base = data["z"][mask & (data["family"] == "z_r")][0].astype(float)

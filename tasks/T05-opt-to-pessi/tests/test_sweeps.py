@@ -2,6 +2,7 @@
 
 import copy
 import csv
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -12,14 +13,17 @@ from unittest.mock import patch
 import numpy as np
 from scipy.stats import spearmanr
 
-from analyze_q1_fb import METHODS, ROOT, SOURCES, TASKS, csv_text
-from analyze_q2_fb import EPISODES, METRICS
-from analyze_sweeps_fb import (
+from analyze.q2 import EPISODES, METRICS
+from analyze.sweeps import (
     AX_ANGLES, MISSING_FILE, NUMERIC_TOL, TARGETS, analyze, candidate_axis,
     load_missing, missing_keys, parse_missing_log, rank_correlation,
     report_tables, trend,
 )
+from common import INPUTS, METHODS, ROOT, SOURCES, TASKS, csv_text
 
+
+# Absolute paths: the inherited PYTHONPATH may be relative to the repository root.
+ENVIRONMENT = dict(os.environ, PYTHONPATH=os.pathsep.join((str(ROOT.parents[1]), str(ROOT))))
 
 class NumericalTests(unittest.TestCase):
     def test_trends_and_average_rank_ties(self):
@@ -67,13 +71,13 @@ class NumericalTests(unittest.TestCase):
 class SavedSweepTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.tables = analyze(ROOT / "data")
+        cls.tables = analyze(INPUTS)
         cls.data, cls.rollouts = {}, {}
         for seed, source in SOURCES:
-            with np.load(ROOT / "data" / source, allow_pickle=False) as archive:
+            with np.load(INPUTS / source, allow_pickle=False) as archive:
                 cls.data[seed] = dict(archive)
             rollout_source = source.replace("zs_fb_", "rollouts_fb_").replace(".npz", ".csv")
-            with (ROOT / "data" / rollout_source).open(newline="") as stream:
+            with (INPUTS / rollout_source).open(newline="") as stream:
                 cls.rollouts[seed] = {(int(r["row"]), int(r["episode"])): r
                                       for r in csv.DictReader(stream)}
 
@@ -91,7 +95,7 @@ class SavedSweepTests(unittest.TestCase):
         rows = self.tables["sweep_fb_coverage.csv"]
         self.assertEqual({(r["source"], r["task"], r["family"], r["target_angle_deg"]) for r in rows}, expected)
         self.assertEqual(sum(r["status"] == "saved" for r in rows), 279)
-        missing = load_missing(ROOT / "data")
+        missing = load_missing(INPUTS)
         self.assertEqual(len(missing), 81)
         self.assertEqual(sum(r["status"] == "unbracketed_grid" for r in missing.values()), 79)
         self.assertEqual(sum(r["status"] == "bisection_not_converged" for r in missing.values()), 2)
@@ -222,7 +226,7 @@ class SavedSweepTests(unittest.TestCase):
                 self.assertEqual(row[f"n_{label}"], sum(r["trend"] == label for r in curves))
 
     def test_missing_status_rejects_corrupt_or_extra_rows(self):
-        with (ROOT / "data" / MISSING_FILE).open(newline="") as stream:
+        with (INPUTS / MISSING_FILE).open(newline="") as stream:
             rows = list(csv.DictReader(stream))
         versions = [rows + rows[:1]]
         for key, value in (("source", "one-step.npz"), ("training_seed", "9"),
@@ -236,11 +240,11 @@ class SavedSweepTests(unittest.TestCase):
                 (path / MISSING_FILE).write_text(csv_text(version))
                 with self.assertRaises(ValueError):
                     load_missing(path)
-        missing = load_missing(ROOT / "data")
+        missing = load_missing(INPUTS)
         missing.pop(next(iter(missing)))
-        with patch("analyze_sweeps_fb.load_missing", return_value=missing):
+        with patch("analyze.sweeps.load_missing", return_value=missing):
             with self.assertRaises(ValueError):
-                analyze(ROOT / "data")
+                analyze(INPUTS)
 
     def test_saved_tables_and_report_are_reproducible(self):
         for name, rows in self.tables.items():
@@ -251,15 +255,15 @@ class SavedSweepTests(unittest.TestCase):
 
     def test_check_refuses_missing_or_stale_outputs_without_writing(self):
         with tempfile.TemporaryDirectory() as directory:
-            command = [sys.executable, str(ROOT / "analyze_sweeps_fb.py"), "--check",
+            command = [sys.executable, "-m", "analyze.sweeps", "--check",
                        "--out-dir", directory, "--figure-dir", directory]
-            result = subprocess.run(command, capture_output=True, text=True)
+            result = subprocess.run(command, capture_output=True, text=True, env=ENVIRONMENT)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("Stale or missing output", result.stderr)
             self.assertEqual(list(Path(directory).iterdir()), [])
             stale = Path(directory) / "sweep_fb_coverage.csv"
             stale.write_text("stale\n")
-            result = subprocess.run(command, capture_output=True, text=True)
+            result = subprocess.run(command, capture_output=True, text=True, env=ENVIRONMENT)
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(stale.read_text(), "stale\n")
 

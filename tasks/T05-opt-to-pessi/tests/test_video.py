@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-from analyze_q1_fb import METHODS, ROOT, SOURCES
+from common import INPUTS, METHODS, SOURCES
 from zero_shot_rl.latent.archive import family_rows
 from zero_shot_rl.rollout.video import record, verify_video, video_name
 
@@ -16,7 +16,7 @@ from zero_shot_rl.rollout.video import record, verify_video, video_name
 class VideoTests(unittest.TestCase):
     def test_saved_latent_coverage_and_names(self):
         for (_, source), count in zip(SOURCES, (100, 92, 99)):
-            with np.load(ROOT / "data" / source, allow_pickle=False) as data:
+            with np.load(INPUTS / source, allow_pickle=False) as data:
                 rows = family_rows(data, ("z_r", *METHODS))
                 self.assertEqual(len(rows), count)
                 names = [video_name(data, row) for row in rows]

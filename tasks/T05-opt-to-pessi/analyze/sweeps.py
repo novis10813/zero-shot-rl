@@ -1,8 +1,11 @@
 """Saved Standard-FB coefficient trajectories and candidate-AX behavior sweeps.
 
-No inference or rollout. Normal generation reads data/ only. --export-missing
+No inference or rollout. Normal generation reads data/inputs/ only. --export-missing
 extracts a sanitized missing-target input from the three archived inference logs.
 AX is a constructed rotation axis, not a validated conservatism scale.
+
+Run from the repository root:
+    PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.sweeps [--check]
 """
 
 import argparse
@@ -13,11 +16,11 @@ import re
 
 import numpy as np
 
-from analyze_q1_fb import (
-    METHODS, ROOT, SOURCES, TASKS, analyze as analyze_q1, angle_deg, cosine,
-    csv_text, tangent, unit,
-)
-from analyze_q2_fb import EPISODES, METRICS, aggregate_seeds, load_rollouts
+from analyze.q1 import analyze as analyze_q1
+from analyze.q2 import EPISODES, METRICS, aggregate_seeds, load_rollouts
+from common import (FIGURES, INPUTS, METHODS, MODELS, OUTPUTS, ROOT, SOURCES, TASKS, csv_text,
+                    write_or_check)
+from geometry import angle_deg, cosine, tangent, unit
 
 TARGETS = (5., 10., 20., 35., 50., 70.)
 AX_ANGLES = (-50., -35., -20., -10., 0., 10., 20., 35., 50.)
@@ -436,9 +439,9 @@ def figures(tables):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, default=ROOT / "data")
-    parser.add_argument("--out-dir", type=Path, default=ROOT / "data")
-    parser.add_argument("--figure-dir", type=Path, default=ROOT / "figures")
+    parser.add_argument("--input-dir", type=Path, default=INPUTS)
+    parser.add_argument("--out-dir", type=Path, default=OUTPUTS)
+    parser.add_argument("--figure-dir", type=Path, default=FIGURES)
     parser.add_argument("--log-dir", type=Path, default=ROOT.parent.parent / "artifacts" / ROOT.name)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--check", action="store_true")
@@ -447,37 +450,26 @@ def main():
     args = parser.parse_args()
     if args.export_missing:
         rows = []
-        analyze_q1(args.data_dir)
-        for seed, source in SOURCES:
-            with np.load(args.data_dir / source, allow_pickle=False) as archive:
+        analyze_q1(args.input_dir)
+        for (seed, source), model in zip(SOURCES, MODELS):
+            with np.load(args.input_dir / source, allow_pickle=False) as archive:
                 data = dict(archive)
-            job = source.removeprefix("zs_fb_").removesuffix(".npz")
-            rows.extend(parse_missing_log((args.log_dir / job / "output.log").read_text(), seed, source, data))
-        args.out_dir.mkdir(parents=True, exist_ok=True)
-        (args.out_dir / MISSING_FILE).write_text(csv_text(rows))
+            log = args.log_dir / model["job"] / "output.log"
+            rows.extend(parse_missing_log(log.read_text(), seed, source, data))
+        args.input_dir.mkdir(parents=True, exist_ok=True)
+        (args.input_dir / MISSING_FILE).write_text(csv_text(rows))
         print(f"Exported {len(rows)} structured missing-target records")
         return
-    tables = analyze(args.data_dir)
+    tables = analyze(args.input_dir)
     if args.report_tables:
         for text in report_tables(tables).values():
             print(text, end="\n\n")
         return
 
-    def output(path, content):
-        if args.check:
-            if not path.exists() or path.read_bytes() != content:
-                raise SystemExit(f"Stale or missing output: {path}")
-            print(f"Verified {path.name}")
-        else:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(content)
-            print(f"Wrote {path}")
-
     for name, rows in tables.items():
-        output(args.out_dir / name, csv_text(rows).encode())
+        write_or_check(args.out_dir / name, csv_text(rows).encode(), args.check)
     for name, content in figures(tables):
-        output(args.figure_dir / name, content)
-
+        write_or_check(args.figure_dir / name, content, args.check)
 
 if __name__ == "__main__":
     main()

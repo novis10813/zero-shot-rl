@@ -1,61 +1,18 @@
 """Q1 geometry of existing standard-FB latents, without inference or rollouts.
 
 Run from the repository root:
-    .venv/bin/python tasks/T05-opt-to-pessi/analyze_q1_fb.py
-    .venv/bin/python tasks/T05-opt-to-pessi/analyze_q1_fb.py --check
+    PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.q1 [--check]
 """
 
 import argparse
-import csv
-import io
 from itertools import combinations
 from pathlib import Path
 
 import numpy as np
 
-from zero_shot_rl.latent import archive
-
-ROOT = Path(__file__).resolve().parent
-TASKS = ("stand", "walk", "run", "flip")
-# Filenames and training seeds are recorded in exp/T05-zero-shot-rl-{30,31,32}.
-SOURCES = ((0, "zs_fb_zero-shot-rl-30.npz"),
-           (1, "zs_fb_zero-shot-rl-31.npz"),
-           (2, "zs_fb_zero-shot-rl-32.npz"))
-METHODS = {
-    "CQL": "CQL implicit-reward projection",
-    "ReBRAC": "ReBRAC action-deviation penalty",
-    "ReBRAC+E2E": "ReBRAC penalty plus norm-matched constant reward",
-    "E2E": "Positive constant reward",
-    "E2E-bi": "Deterministic-policy next-state bonus (bilevel E2E-style)",
-}
-# These two targets exist for every method, task and training seed.
-MATCHED_ANGLES = (5.0, 10.0)
-
-
-def unit(vector):
-    vector = np.asarray(vector, dtype=np.float64)
-    norm = np.linalg.norm(vector)
-    if not np.isfinite(vector).all() or norm <= 1e-12:
-        raise ValueError("Expected a finite, nonzero vector")
-    return vector / norm
-
-
-def cosine(a, b):
-    return float(np.clip(unit(a) @ unit(b), -1.0, 1.0))
-
-
-def angle_deg(a, b):
-    return float(np.degrees(np.arccos(cosine(a, b))))
-
-
-def tangent(z, baseline):
-    """Unit component orthogonal to the raw-reward baseline, not z - baseline."""
-    u = unit(baseline)
-    return unit(unit(z) - cosine(z, baseline) * u)
-
-
-def validate(data, source):
-    archive.validate(data, source, TASKS, 50)
+from common import (INPUTS, MATCHED_ANGLES, METHODS, OUTPUTS, REPORT_LABELS, SOURCES, TASKS,
+                    csv_text, validate, write_or_check)
+from geometry import angle_deg, cosine, tangent
 
 
 def summarize(rows, keys, metrics):
@@ -153,27 +110,6 @@ def analyze(data_dir):
     }
 
 
-def csv_text(rows):
-    if not rows:
-        raise ValueError("Refusing to write an empty table")
-    stream = io.StringIO(newline="")
-    writer = csv.DictWriter(stream, fieldnames=list(rows[0]), lineterminator="\n")
-    writer.writeheader()
-    for row in rows:
-        writer.writerow({k: format(v, ".10g") if isinstance(v, float) else v
-                         for k, v in row.items()})
-    return stream.getvalue()
-
-
-REPORT_LABELS = {
-        METHODS["CQL"]: "CQL 價值偏好動作分布修正",
-        METHODS["ReBRAC"]: "ReBRAC 動作偏離懲罰",
-        METHODS["ReBRAC+E2E"]: "ReBRAC 動作偏離懲罰＋長度配平的正常數 reward",
-        METHODS["E2E"]: "正常數 reward",
-        METHODS["E2E-bi"]: "確定性 policy 下一狀態 bonus（bilevel E2E-style）",
-    }
-
-
 def report_tables(tables):
     """Render the filled Q1 cells, keeping future behavioral results blank."""
     labels = REPORT_LABELS
@@ -216,31 +152,20 @@ def report_tables(tables):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, default=ROOT / "data")
-    parser.add_argument("--out-dir", type=Path, default=ROOT / "data")
+    parser.add_argument("--input-dir", type=Path, default=INPUTS)
+    parser.add_argument("--out-dir", type=Path, default=OUTPUTS)
     parser.add_argument("--report-tables", action="store_true",
                         help="Print Q1 report tables and subset result without writing files")
     parser.add_argument("--check", action="store_true",
                         help="Recompute and verify existing CSVs without writing")
     args = parser.parse_args()
-    outputs = analyze(args.data_dir)
+    outputs = analyze(args.input_dir)
     if args.report_tables:
         for content in report_tables(outputs).values():
             print(content, end="\n\n")
         return
-    if not args.check:
-        args.out_dir.mkdir(parents=True, exist_ok=True)
     for filename, rows in outputs.items():
-        path = args.out_dir / filename
-        content = csv_text(rows)
-        if args.check:
-            if not path.exists() or path.read_text() != content:
-                raise SystemExit(f"Stale or missing output: {path}")
-            print(f"Verified {filename}: {len(rows)} rows")
-        else:
-            path.write_text(content)
-            print(f"Wrote {path}: {len(rows)} rows")
-
+        write_or_check(args.out_dir / filename, csv_text(rows).encode(), args.check)
 
 if __name__ == "__main__":
     main()

@@ -1,21 +1,26 @@
-"""Task-specific metrics from NEW fixed-FB replay traces, never historical CSVs."""
+"""Task-specific metrics from NEW fixed-FB replay traces, never historical CSVs.
+
+Run from the repository root:
+    PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.task_behavior [--check]
+"""
 
 import argparse
 from pathlib import Path
 
 import numpy as np
 
-from analyze_q1_fb import METHODS, REPORT_LABELS, ROOT, SOURCES, TASKS, csv_text, validate
+from common import (INPUTS, METHODS, MODELS, OUTPUTS, REPORT_LABELS, SOURCES, TASKS, csv_text,
+                    validate, write_or_check)
 from zero_shot_rl.latent.archive import matched_rows
 from zero_shot_rl.rollout import trace_format
-from zero_shot_rl.rollout.trace_format import DT, EPISODES, STEPS, TRACE_KEYS
+from zero_shot_rl.rollout.trace_format import DT, EPISODES
 
 WALK_SPEED = 1.0
 METRICS = ("return", "speed", "net_displacement_estimate", "walk_speed_mae", "height", "upright",
            "positive_turns", "negative_turns", "net_turns", "angular_momentum")
 
 
-def selected_rows(data):
+def behavior_rows(data):
     """Exactly one raw latent and each of five 10-degree corrections per task."""
     return matched_rows(data, TASKS, ("z_r", *METHODS), 10.0)
 
@@ -63,11 +68,11 @@ def episode_metrics(trace, latent, episode):
 
 
 def trace_name(seed):
-    return f"behavior_fb_seed{seed}.npz"
+    return next(Path(m["trace"]).name for m in MODELS if m["training_seed"] == seed)
 
 
 def validate_trace(trace, data):
-    trace_format.validate_trace(trace, data, selected_rows(data))
+    trace_format.validate_trace(trace, data, behavior_rows(data))
 
 
 def analyze(data_dir):
@@ -79,7 +84,7 @@ def analyze(data_dir):
         with np.load(data_dir / trace_name(seed), allow_pickle=False) as archive:
             trace = dict(archive)  # decompress each array once, not once per episode
         validate_trace(trace, data)
-        for index, row in enumerate(selected_rows(data)):
+        for index, row in enumerate(behavior_rows(data)):
             common = dict(training_seed=seed, task=str(data["task"][row]),
                           family=str(data["family"][row]), source_row=row)
             for episode in range(EPISODES):
@@ -144,24 +149,17 @@ def report_table(tables):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, default=ROOT / "data")
+    parser.add_argument("--input-dir", type=Path, default=INPUTS)
+    parser.add_argument("--out-dir", type=Path, default=OUTPUTS)
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--report-tables", action="store_true")
     args = parser.parse_args()
-    tables = analyze(args.data_dir)
+    tables = analyze(args.input_dir)
     if args.report_tables:
         print(report_table(tables))
         return
     for name, rows in tables.items():
-        path, content = args.data_dir / name, csv_text(rows)
-        if args.check:
-            if not path.exists() or path.read_text() != content:
-                raise SystemExit(f"Stale or missing: {path}")
-            print(f"Verified {name}: {len(rows)} rows")
-        else:
-            path.write_text(content)
-            print(f"Wrote {name}: {len(rows)} rows")
-
+        write_or_check(args.out_dir / name, csv_text(rows).encode(), args.check)
 
 if __name__ == "__main__":
     main()

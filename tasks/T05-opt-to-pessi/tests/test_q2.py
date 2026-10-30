@@ -8,18 +8,19 @@ from unittest.mock import patch
 
 import numpy as np
 
-from analyze_q1_fb import ROOT, SOURCES, TASKS, METHODS, analyze as analyze_q1, report_tables as q1_report_tables
-from analyze_q2_fb import EPISODES, METRICS, analyze, load_rollouts, report_tables
+from analyze.q1 import analyze as analyze_q1, report_tables as q1_report_tables
+from analyze.q2 import EPISODES, METRICS, analyze, load_rollouts, report_tables
+from common import INPUTS, METHODS, ROOT, SOURCES, TASKS
 
 
 class Q2Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.tables = analyze(ROOT / "data")
+        cls.tables = analyze(INPUTS)
         cls.raw = {}
         for seed, source in SOURCES:
             source = source.replace("zs_fb_", "rollouts_fb_").replace(".npz", ".csv")
-            with (ROOT / "data" / source).open() as stream:
+            with (INPUTS / source).open() as stream:
                 cls.raw[source] = list(csv.DictReader(stream))
 
     def test_standard_fb_only_exact_coverage(self):
@@ -98,7 +99,7 @@ class Q2Tests(unittest.TestCase):
 
     def test_input_validation_rejects_corruption(self):
         source = SOURCES[0][1]
-        with np.load(ROOT / "data" / source, allow_pickle=False) as archive:
+        with np.load(INPUTS / source, allow_pickle=False) as archive:
             data = dict(archive)
         records = next(iter(self.raw.values()))
         bad_versions = [records[:-1], records + records[:1]]
@@ -120,14 +121,14 @@ class Q2Tests(unittest.TestCase):
                     load_rollouts(path, data)
 
     def test_rendering_joins_methods_by_label_not_order(self):
-        q1 = analyze_q1(ROOT / "data")
+        q1 = analyze_q1(INPUTS)
         expected = report_tables(self.tables, q1)
         def reordered(tables):
             result = q1_report_tables(tables)
             lines = result["comparison"].splitlines()
             result["comparison"] = "\n".join(lines[:2] + list(reversed(lines[2:])))
             return result
-        with patch("analyze_q2_fb.q1_report_tables", side_effect=reordered):
+        with patch("analyze.q2.q1_report_tables", side_effect=reordered):
             actual = report_tables(self.tables, q1)
         self.assertEqual(set(expected["comparison"].splitlines()),
                          set(actual["comparison"].splitlines()))
@@ -151,12 +152,12 @@ class Q2Tests(unittest.TestCase):
             f" | {100 * np.mean(changes['fall_frac']):+.2f}"
             f" | {100 * np.mean(changes['sat_frac']):+.2f}"
             f" | {np.mean(changes['knn_dist']):+.3f} |",
-            report_tables(self.tables, analyze_q1(ROOT / "data"))["behavior"],
+            report_tables(self.tables, analyze_q1(INPUTS))["behavior"],
         )
 
     def test_report_tables_match_recomputed_data(self):
         report = (ROOT / "REPORT.md").read_text()
-        tables = report_tables(self.tables, analyze_q1(ROOT / "data"))
+        tables = report_tables(self.tables, analyze_q1(INPUTS))
         for content in tables.values():
             self.assertIn(content, report)
         for row in tables["comparison"].splitlines()[2:]:

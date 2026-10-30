@@ -1,5 +1,6 @@
 """Analytic, independent saved-data and output checks for Standard-FB geometry."""
 
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -8,12 +9,16 @@ import unittest
 
 import numpy as np
 
-from analyze_latent_fb import (
+from analyze.latent import (
     FAMILIES, RESIDUAL_TOL, analyze, decomposition, heatmap_data, panel_rows,
     remove_constant, report_tables,
 )
-from analyze_q1_fb import MATCHED_ANGLES, ROOT, SOURCES, TASKS, analyze as analyze_q1, csv_text
+from analyze.q1 import analyze as analyze_q1
+from common import INPUTS, MATCHED_ANGLES, ROOT, SOURCES, TASKS, csv_text
 
+
+# Absolute paths: the inherited PYTHONPATH may be relative to the repository root.
+ENVIRONMENT = dict(os.environ, PYTHONPATH=os.pathsep.join((str(ROOT.parents[1]), str(ROOT))))
 
 class GeometryTests(unittest.TestCase):
     def test_antipodal_axis_is_uncentered(self):
@@ -66,7 +71,7 @@ class GeometryTests(unittest.TestCase):
 class SavedDataTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.tables = analyze(ROOT / "data")
+        cls.tables = analyze(INPUTS)
 
     def test_exact_coverage_and_q1_agreement(self):
         self.assertEqual(len(self.tables["latent_fb_pairs.csv"]), 240)
@@ -77,7 +82,7 @@ class SavedDataTests(unittest.TestCase):
         for rows in self.tables.values():
             if "source" in rows[0]:
                 self.assertEqual({r["source"] for r in rows}, {name for _, name in SOURCES})
-        q1 = analyze_q1(ROOT / "data")["q1_fb_pairs.csv"]
+        q1 = analyze_q1(INPUTS)["q1_fb_pairs.csv"]
         self.assertEqual(len(q1), 240)
         for row, reference in zip(self.tables["latent_fb_pairs.csv"], q1):
             for metric in ("latent_cosine", "tangent_cosine"):
@@ -85,7 +90,7 @@ class SavedDataTests(unittest.TestCase):
 
     def test_independent_residual_spectrum_and_pca_recomputation(self):
         for seed, source in SOURCES:
-            with np.load(ROOT / "data" / source, allow_pickle=False) as data:
+            with np.load(INPUTS / source, allow_pickle=False) as data:
                 for task in TASKS:
                     mask = data["task"] == task
                     raw = data["z"][mask & (data["family"] == "z_r")][0].astype(float)
@@ -198,15 +203,15 @@ class SavedDataTests(unittest.TestCase):
     def test_check_fails_without_writing_missing_or_stale_outputs(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory)
-            command = [sys.executable, str(ROOT / "analyze_latent_fb.py"), "--check",
+            command = [sys.executable, "-m", "analyze.latent", "--check",
                        "--out-dir", directory, "--figure-dir", directory]
-            result = subprocess.run(command, capture_output=True, text=True)
+            result = subprocess.run(command, capture_output=True, text=True, env=ENVIRONMENT)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("Stale or missing output", result.stderr)
             self.assertEqual(list(output.iterdir()), [])
             stale = output / "latent_fb_pairs.csv"
             stale.write_text("stale\n")
-            result = subprocess.run(command, capture_output=True, text=True)
+            result = subprocess.run(command, capture_output=True, text=True, env=ENVIRONMENT)
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(stale.read_text(), "stale\n")
 
