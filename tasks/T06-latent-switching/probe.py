@@ -1,10 +1,12 @@
 """Stage 0 probe: trust signals of a fixed standard FB against Monte Carlo returns.
 
 For every task, z_r and the CQL latent z_cql at --target_angle degrees are read from a
-T05 latent NPZ (zero_shot_rl.latent.infer). Their unnormalised forms z_hat_r = E_D[r B]
-and z_hat_cql are solved again with zero_shot_rl.latent.infer.build_solver, and must
-point within --max_angle_error degrees of the stored latents. In z_hat units,
-F^T z_hat is in reward units. For every probed (s, a), with F_k = F_k(s, a, z_r):
+T05 latent NPZ (zero_shot_rl.latent.infer); the policies use these directions. Their
+unnormalised forms z_hat_r = E_D[r B] and z_hat_cql are solved again with
+zero_shot_rl.latent.infer.build_solver and give the norms only: z_hat = |z_hat_solved|
+z / |z|, so F^T z_hat is in reward units. The inference set depends on the episode
+order of the dataset file, so a re-solve on another copy of the dataset differs by a
+few degrees; it must stay within --max_angle_error degrees of the stored latents. For every probed (s, a), with F_k = F_k(s, a, z_r):
 
     q_k  = F_k^T z_hat_r                  value of r, head k = 1, 2
     p_k  = F_k^T (z_hat_cql - z_hat_r)    value of the implicit CQL reward
@@ -43,6 +45,7 @@ from zero_shot_rl.latent.archive import matched_rows, validate
 from zero_shot_rl.latent.implicit import DISCOUNT, Simulator
 from zero_shot_rl.latent.infer import TASKS, build_solver, solver_arguments
 from zero_shot_rl.latent.solver import angle, normalized
+from zero_shot_rl.provenance import sha256
 
 TRAIN_STD = 0.2  # agents/fb/config.yaml std_dev_schedule; the actor clips at 0.3
 EPISODE = 1000
@@ -145,7 +148,7 @@ def main():
     parser.add_argument("--zs", type=str, required=True)
     parser.add_argument("--out", type=str, required=True)
     parser.add_argument("--target_angle", type=float, default=10.0)
-    parser.add_argument("--max_angle_error", type=float, default=0.5)
+    parser.add_argument("--max_angle_error", type=float, default=10.0)
     parser.add_argument("--n_states", type=int, default=1000)
     parser.add_argument("--horizon", type=int, default=300)
     parser.add_argument("--visited_episodes", type=int, default=10)
@@ -203,15 +206,18 @@ def main():
     latents = {"task": [], "z_hat_r": [], "z_hat_cql": [], "angle_r": [], "angle_cql": []}
     for task_i, task in enumerate(TASKS):
         row_r, row_cql = rows[task]
-        z_hat_r = iz.z_hat_r(task)
-        z_hat_cql, converged, _ = iz.solve("CQL", float(stored["strength"][row_cql]), z_hat_r)
-        z_r, z_cql = normalized(z_hat_r, d), normalized(z_hat_cql, d)
-        errors = (angle(z_r, torch.as_tensor(stored["z"][row_r], device=device)),
-                  angle(z_cql, torch.as_tensor(stored["z"][row_cql], device=device)))
-        print(f"{task}: angle to stored z_r {errors[0]:.3f}, z_cql {errors[1]:.3f}, "
-              f"z_cql to z_r {angle(z_cql, z_r):.2f}, converged {converged}", flush=True)
+        solved_r = iz.z_hat_r(task)
+        solved_cql, converged, _ = iz.solve("CQL", float(stored["strength"][row_cql]), solved_r)
+        z_r = normalized(torch.as_tensor(stored["z"][row_r], device=device), d)
+        z_cql = normalized(torch.as_tensor(stored["z"][row_cql], device=device), d)
+        errors = (angle(solved_r, z_r), angle(solved_cql, z_cql))
+        print(f"{task}: angle of re-solved to stored z_r {errors[0]:.3f}, z_cql "
+              f"{errors[1]:.3f}; stored z_cql to z_r {angle(z_cql, z_r):.2f}, "
+              f"converged {converged}", flush=True)
         if not converged or max(errors) > args.max_angle_error:
             raise ValueError(f"{task}: re-solved latents differ from {args.zs}")
+        z_hat_r = z_r * solved_r.norm() / z_r.norm()
+        z_hat_cql = z_cql * solved_cql.norm() / z_cql.norm()
         for key, value in zip(latents, (task, z_hat_r, z_hat_cql, *errors)):
             latents[key].append(value.cpu().numpy() if torch.is_tensor(value) else value)
 
@@ -261,6 +267,7 @@ def main():
         max_obs_err=obs_err,
         checkpoint=args.checkpoint,
         zs=args.zs,
+        dataset_sha256=sha256(Path(args.dataset_path)),
     )
     print(f"wrote {path}")
     sim.pool.close()
