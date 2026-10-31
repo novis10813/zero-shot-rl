@@ -1,11 +1,20 @@
 """Stage 0 analysis of the probe NPZs written by probe.py, without new evaluation.
 
-With q_hat = min(q1, q2) the agent's value of r and over = q_hat - G, it writes
+FB misestimates the value of a constant reward: c_k = F_k^T u_1 is near -1/(1-gamma)
+instead of 1/(1-gamma). Since z_hat_r = r_mean u_1 + E_D[(r - r_mean) B], the value of r
+with the constant part valued exactly is
 
-    stage0_signals.csv   Spearman correlation of each trust signal with over, per seed,
-                         task and source, and over all sources pooled ("all")
-    stage0_interval.csv  fraction of rows with q_hat + p <= G (lower), G <= q_hat (upper)
-                         and both, p = (p1 + p2) / 2 the implicit CQL reward value
+    q_k^corr = q_k + r_mean (1/(1-gamma) - c_k),    r_mean = mean reward of the task.
+
+With q_hat = min(q1, q2) the agent's value of r, over = q_hat - G, and q_hat^corr and
+over^corr likewise from the corrected heads, it writes
+
+    stage0_signals.csv   Spearman correlation of each trust signal with over^corr
+                         (rho_<signal>) and with over (rho_raw_<signal>), per seed, task
+                         and source, and over all sources pooled ("all")
+    stage0_interval.csv  fraction of rows with q_hat^corr + p <= G (lower),
+                         G <= q_hat^corr (upper) and both, p = (p1 + p2) / 2 the
+                         uncorrected implicit CQL reward value
     stage0_switch.csv    on paired states (policy/pess, visited/visited_pess): mean G when
                          the fraction f of states with the largest signal at the
                          optimistic action takes the pessimistic action instead
@@ -45,34 +54,47 @@ def signals(probe):
     }
 
 
-def overestimation(probe):
-    return np.minimum(probe["q1"], probe["q2"]) - probe["G"]
+def q_hat(probe, corrected=True):
+    """min(q1, q2), with the constant part of r valued exactly if corrected."""
+    if not corrected:
+        return np.minimum(probe["q1"], probe["q2"])
+    r_mean = dict(zip(probe["latent_task"], probe["latent_r_mean"]))
+    r_mean = np.array([r_mean[task] for task in probe["task"]])
+    return np.minimum(*(probe[f"q{k}"] + r_mean * (1 / (1 - DISCOUNT) - probe[f"c{k}"])
+                        for k in (1, 2)))
+
+
+def overestimation(probe, corrected=True):
+    return q_hat(probe, corrected) - probe["G"]
 
 
 def signal_rows(seed, probe):
-    over, u = overestimation(probe), signals(probe)
+    over, over_raw, u = overestimation(probe), overestimation(probe, False), signals(probe)
     rows = []
     for task in dict.fromkeys(probe["task"]):
         in_task = probe["task"] == task
         for source in [*dict.fromkeys(probe["source"]), "all"]:
             mask = in_task if source == "all" else in_task & (probe["source"] == source)
             row = {"seed": seed, "task": task, "source": source, "n": int(mask.sum()),
-                   "over_mean": over[mask].mean(), "G_mean": probe["G"][mask].mean()}
+                   "over_mean": over[mask].mean(), "over_raw_mean": over_raw[mask].mean(),
+                   "G_mean": probe["G"][mask].mean()}
             for name in SIGNALS:
                 row[f"rho_{name}"] = spearmanr(u[name][mask], over[mask]).statistic
+            for name in SIGNALS:
+                row[f"rho_raw_{name}"] = spearmanr(u[name][mask], over_raw[mask]).statistic
             rows.append(row)
     return rows
 
 
 def interval_rows(seed, probe):
-    q_hat = np.minimum(probe["q1"], probe["q2"])
-    lower = q_hat + (probe["p1"] + probe["p2"]) / 2
+    q_corr = q_hat(probe)
+    lower = q_corr + (probe["p1"] + probe["p2"]) / 2
     g = probe["G"]
     rows = []
     for task in dict.fromkeys(probe["task"]):
         for source in dict.fromkeys(probe["source"]):
             mask = (probe["task"] == task) & (probe["source"] == source)
-            below, above = lower[mask] <= g[mask], g[mask] <= q_hat[mask]
+            below, above = lower[mask] <= g[mask], g[mask] <= q_corr[mask]
             rows.append({"seed": seed, "task": task, "source": source, "n": int(mask.sum()),
                          "frac_lower": below.mean(), "frac_upper": above.mean(),
                          "frac_inside": (below & above).mean()})

@@ -5,7 +5,7 @@ import unittest
 
 import numpy as np
 
-from analyze.stage0 import (FRACTIONS, interval_rows, paired, signal_rows, signals,
+from analyze.stage0 import (FRACTIONS, interval_rows, paired, q_hat, signal_rows, signals,
                             switch_rows, switched_return)
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -29,7 +29,10 @@ def synthetic_probe(n=50, seed=0):
             probe["state"].append(perm)
             for key, value in values.items():
                 probe[key].append(value)
-    return {key: np.concatenate(value) for key, value in probe.items()}
+    probe = {key: np.concatenate(value) for key, value in probe.items()}
+    probe["latent_task"] = np.array(["stand", "walk"])
+    probe["latent_r_mean"] = np.array([0.4, 0.2])
+    return probe
 
 
 class Stage0Tests(unittest.TestCase):
@@ -43,8 +46,17 @@ class Stage0Tests(unittest.TestCase):
         self.assertAlmostEqual(u["const_dev"][0], 1.0)
         self.assertEqual(u["nn"][0], 0.5)
 
+    def test_constant_correction(self):
+        probe = synthetic_probe()
+        probe["c1"] = probe["c2"] = np.full(len(probe["G"]), -50.0)
+        shift = np.where(probe["task"] == "stand", 0.4, 0.2) * 100
+        np.testing.assert_allclose(q_hat(probe), q_hat(probe, False) + shift)
+        probe["c1"] = probe["c2"] = np.full(len(probe["G"]), 50.0)
+        np.testing.assert_allclose(q_hat(probe), q_hat(probe, False))
+
     def test_head_gap_tracks_overestimation(self):
         probe = synthetic_probe()
+        probe["c1"] = probe["c2"] = np.full(len(probe["G"]), 50.0)
         # make head 2 exceed G by the head gap: over = min(q1, q2) - G grows with |q1 - q2|
         probe["q2"] = probe["q1"] + np.abs(probe["q2"] - probe["q1"])
         probe["G"] = probe["q1"] - 3 * (probe["q2"] - probe["q1"])
@@ -55,12 +67,12 @@ class Stage0Tests(unittest.TestCase):
 
     def test_interval(self):
         probe = synthetic_probe()
-        q_hat = np.minimum(probe["q1"], probe["q2"])
-        lower = q_hat + (probe["p1"] + probe["p2"]) / 2
-        probe["G"] = (q_hat + lower) / 2
+        q_corr = q_hat(probe)
+        lower = q_corr + (probe["p1"] + probe["p2"]) / 2
+        probe["G"] = (q_corr + lower) / 2
         for row in interval_rows(0, probe):
             self.assertEqual(row["frac_inside"], 1.0)
-        probe["G"] = q_hat + 1
+        probe["G"] = q_corr + 1
         for row in interval_rows(0, probe):
             self.assertEqual((row["frac_lower"], row["frac_upper"]), (1.0, 0.0))
 
