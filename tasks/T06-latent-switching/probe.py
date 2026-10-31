@@ -12,6 +12,8 @@ few degrees; it must stay within --max_angle_error degrees of the stored latents
     p_k  = F_k^T (z_hat_cql - z_hat_r)    value of the implicit CQL reward
     c_k  = F_k^T u_1                      value of the constant reward 1 (exact: 1/(1-gamma))
     nn   nearest training (s, a), per-dimension standardised
+    r_mean  mean reward of the inference set; FB misestimates the value of its
+         constant part by r_mean (c_k - 1/(1-gamma))
     G    Monte Carlo return: set the simulator to s, take a, then follow the actor at z_r
          with the training noise (std 0.2) for --horizon steps, gamma = 0.98
 
@@ -203,7 +205,8 @@ def main():
 
     out = {key: [] for key in ("task", "source", "state", "q1", "q2", "p1", "p2", "c1", "c2",
                                "nn", "G")}
-    latents = {"task": [], "z_hat_r": [], "z_hat_cql": [], "angle_r": [], "angle_cql": []}
+    latents = {"task": [], "z_hat_r": [], "z_hat_cql": [], "angle_r": [], "angle_cql": [],
+               "r_mean": []}
     for task_i, task in enumerate(TASKS):
         row_r, row_cql = rows[task]
         solved_r = iz.z_hat_r(task)
@@ -218,7 +221,8 @@ def main():
             raise ValueError(f"{task}: re-solved latents differ from {args.zs}")
         z_hat_r = z_r * solved_r.norm() / z_r.norm()
         z_hat_cql = z_cql * solved_cql.norm() / z_cql.norm()
-        for key, value in zip(latents, (task, z_hat_r, z_hat_cql, *errors)):
+        r_mean = iz.rewards[task].mean()
+        for key, value in zip(latents, (task, z_hat_r, z_hat_cql, *errors, r_mean)):
             latents[key].append(value.cpu().numpy() if torch.is_tensor(value) else value)
 
         v_physics = rollouts.visited(z_r.cpu().numpy(), args.visited_episodes, args.horizon,
