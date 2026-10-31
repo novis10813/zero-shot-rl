@@ -28,11 +28,10 @@ AXIS_ANGLES = [-50, -35, -20, -10, 10, 20, 35, 50]
 Z_FAMILIES = ("CQL", "ReBRAC", "ReBRAC+E2E", "E2E-bi")
 
 
-def main():
-    parser = ArgumentParser()
+def solver_arguments(parser):
+    """Arguments of the inference set and the implicit-latent solver."""
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--dataset_path", type=str, required=True)
-    parser.add_argument("--out", type=str, required=True)
     parser.add_argument("--transitions", type=int, default=100000)
     parser.add_argument("--n_inference", type=int, default=100000)
     parser.add_argument("--n_mu_states", type=int, default=2048)
@@ -43,15 +42,13 @@ def main():
     parser.add_argument("--tol", type=float, default=1e-3)
     parser.add_argument("--max_iters", type=int, default=300)
     parser.add_argument("--bisect_iters", type=int, default=10)
-    parser.add_argument("--n_random", type=int, default=3)
-    parser.add_argument("--n_subsets", type=int, default=5)
     parser.add_argument("--workers", type=int, default=16)
-    parser.add_argument("--tasks", nargs="+", default=TASKS)
     parser.add_argument("--seed", type=int, default=0)
-    args = parser.parse_args()
 
-    sim = Simulator(args.workers)  # spawned before CUDA is initialised
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def build_solver(args, sim, device):
+    """Agent, inference buffer, inference set indices, the rng after drawing them, and
+    the FBImplicitZ solver, as used by main."""
     set_seed_everywhere(args.seed)
     agent = load_agent(Path(args.checkpoint), device)
     reward_constructor = RewardFunctionConstructor(
@@ -83,7 +80,21 @@ def main():
         "next_actions": storage["next_actions"][t_idx],
         "rewards": rewards,
     }
-    iz = FBImplicitZ(agent, data, sim, args)
+    return agent, buffer, idx, rng, FBImplicitZ(agent, data, sim, args)
+
+
+def main():
+    parser = ArgumentParser()
+    solver_arguments(parser)
+    parser.add_argument("--out", type=str, required=True)
+    parser.add_argument("--n_random", type=int, default=3)
+    parser.add_argument("--n_subsets", type=int, default=5)
+    parser.add_argument("--tasks", nargs="+", default=TASKS)
+    args = parser.parse_args()
+
+    sim = Simulator(args.workers)  # spawned before CUDA is initialised
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    agent, buffer, idx, rng, iz = build_solver(args, sim, device)
     d = iz.d
 
     rows = []
