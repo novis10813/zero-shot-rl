@@ -14,6 +14,9 @@ few degrees; it must stay within --max_angle_error degrees of the stored latents
     nn   nearest training (s, a), per-dimension standardised
     r_mean  mean reward of the inference set; FB misestimates the value of its
          constant part by r_mean (c_k - 1/(1-gamma))
+    q_ens, c_ens  q_k and c_k of each member of --ensemble (ensemble.py), if given,
+         of shape [rows, members]
+    obs, action   the probed (s, a)
     G    Monte Carlo return: set the simulator to s, take a, then follow the actor at z_r
          with the training noise (std 0.2) for --horizon steps, gamma = 0.98
 
@@ -48,6 +51,8 @@ from zero_shot_rl.latent.implicit import DISCOUNT, Simulator
 from zero_shot_rl.latent.infer import TASKS, build_solver, solver_arguments
 from zero_shot_rl.latent.solver import angle, normalized
 from zero_shot_rl.provenance import sha256
+
+from ensemble import load_ensemble
 
 TRAIN_STD = 0.2  # agents/fb/config.yaml std_dev_schedule; the actor clips at 0.3
 EPISODE = 1000
@@ -156,6 +161,7 @@ def main():
     parser.add_argument("--visited_episodes", type=int, default=10)
     parser.add_argument("--visited_every", type=int, default=10)
     parser.add_argument("--rollout_workers", type=int, default=16)
+    parser.add_argument("--ensemble", type=str, default=None)
     args = parser.parse_args()
     args.tasks = TASKS
 
@@ -166,6 +172,7 @@ def main():
     agent, buffer, _, _, iz = build_solver(args, sim, device)
     agent.eval()
     d = iz.d
+    ensemble = None if args.ensemble is None else load_ensemble(Path(args.ensemble), device)
 
     stored = np.load(args.zs)
     validate(stored, args.zs, TASKS, d)
@@ -204,7 +211,9 @@ def main():
             return policy(agent, obs, z.expand(len(obs), -1))
 
     out = {key: [] for key in ("task", "source", "state", "q1", "q2", "p1", "p2", "c1", "c2",
-                               "nn", "G")}
+                               "nn", "G", "obs", "action")}
+    if ensemble is not None:
+        out.update(q_ens=[], c_ens=[])
     latents = {"task": [], "z_hat_r": [], "z_hat_cql": [], "angle_r": [], "angle_cql": [],
                "r_mean": []}
     for task_i, task in enumerate(TASKS):
@@ -246,6 +255,11 @@ def main():
                 values["q" + k] = F @ z_hat_r
                 values["p" + k] = F @ (z_hat_cql - z_hat_r)
                 values["c" + k] = F @ iz.u_1
+            if ensemble is not None:
+                with torch.no_grad():
+                    F = ensemble(obs, actions, z_r.expand(len(obs), -1))
+                values["q_ens"], values["c_ens"] = (F @ z_hat_r).T, (F @ iz.u_1).T
+            values["obs"], values["action"] = obs, actions
             values["nn"] = nn_distance(obs, actions)
             values["G"] = rollouts.mc_returns(
                 task, z_r.cpu().numpy(), physics, actions.cpu().numpy(), args.horizon,
@@ -271,6 +285,7 @@ def main():
         max_obs_err=obs_err,
         checkpoint=args.checkpoint,
         zs=args.zs,
+        ensemble=str(args.ensemble),
         dataset_sha256=sha256(Path(args.dataset_path)),
     )
     print(f"wrote {path}")
