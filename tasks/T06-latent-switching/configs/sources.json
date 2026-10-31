@@ -25,5 +25,34 @@
       "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-42/200000.pt",
       "checkpoint_sha256": "229f7dae43ef6a52c288d2724aa303d7b3a4564eb9d557e6799a6e1a683b6e08"
     }
+  ],
+  "ensembles": [
+    {
+      "training_seed": 0,
+      "job": "zero-shot-rl-43",
+      "probe": "tasks/T06-latent-switching/data/inputs/probe_ens_zero-shot-rl-43.npz",
+      "ensemble": "artifacts/T06-latent-switching/zero-shot-rl-43/ensemble.pt",
+      "latents": "tasks/T05-opt-to-pessi/data/inputs/zs_fb_zero-shot-rl-30.npz",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-32/800000.pt",
+      "checkpoint_sha256": "2797c6587ded0677d1f57575f516683613b7734b05f40ac8b2ffb330ec52e81a"
+    },
+    {
+      "training_seed": 1,
+      "job": "zero-shot-rl-44",
+      "probe": "tasks/T06-latent-switching/data/inputs/probe_ens_zero-shot-rl-44.npz",
+      "ensemble": "artifacts/T06-latent-switching/zero-shot-rl-44/ensemble.pt",
+      "latents": "tasks/T05-opt-to-pessi/data/inputs/zs_fb_zero-shot-rl-31.npz",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-41/680000.pt",
+      "checkpoint_sha256": "7f6e641cc44244787a599c0b2de4b14e6310eaf0a36cda9c50162bf9c7cc91be"
+    },
+    {
+      "training_seed": 2,
+      "job": "zero-shot-rl-45",
+      "probe": "tasks/T06-latent-switching/data/inputs/probe_ens_zero-shot-rl-45.npz",
+      "ensemble": "artifacts/T06-latent-switching/zero-shot-rl-45/ensemble.pt",
+      "latents": "tasks/T05-opt-to-pessi/data/inputs/zs_fb_zero-shot-rl-32.npz",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-42/200000.pt",
+      "checkpoint_sha256": "229f7dae43ef6a52c288d2724aa303d7b3a4564eb9d557e6799a6e1a683b6e08"
+    }
   ]
 }
