@@ -1,8 +1,8 @@
 """Ensemble of forward networks for a fixed standard FB checkpoint.
 
 B and the actor of the checkpoint stay fixed. K forward networks F_k(s, a, z), each with
-its own preprocessors, one head, optimiser and Polyak target, are trained from random
-initialisations on independent minibatches with the measure loss of agents/fb/agent.py,
+its own preprocessors, one head and Polyak target, are trained from random
+initialisations on independent minibatches, as one batched network, with the measure loss of agents/fb/agent.py,
 without the minimum over heads:
 
     M_k(s, a, s'') = F_k(s, a, z)^T B(s'')
@@ -24,12 +24,11 @@ import math
 import time
 from argparse import ArgumentParser
 from pathlib import Path
+from types import SimpleNamespace
 
-import numpy as np
 import torch
 
 from agents.base import load_agent
-from agents.fb.base import AbstractPreprocessor, ForwardModel
 from agents.fb.replay_buffer import FBReplayBuffer
 from rewards import RewardFunctionConstructor
 from utils import set_seed_everywhere
@@ -43,59 +42,73 @@ ARCHITECTURE = (  # constructor arguments of FB that define one forward network
 )
 
 
-class ForwardNet(torch.nn.Module):
-    """One forward network: the obs-action and obs-z preprocessors and one head of
-    agents.fb.models.ForwardRepresentation."""
+class EnsembleLinear(torch.nn.Module):
+    """K independent linear layers applied as one batched matmul: [K, N, in] -> [K, N, out].
+    Each member is initialised like torch.nn.Linear."""
 
-    def __init__(self, observation_length, action_length, z_dimension,
+    def __init__(self, members, in_features, out_features, device):
+        super().__init__()
+        bound = 1 / math.sqrt(in_features)
+        self.weight = torch.nn.Parameter(
+            torch.empty(members, in_features, out_features, device=device).uniform_(-bound, bound)
+        )
+        self.bias = torch.nn.Parameter(
+            torch.empty(members, 1, out_features, device=device).uniform_(-bound, bound)
+        )
+
+    def forward(self, x):
+        return torch.baddbmm(self.bias, x, self.weight)
+
+
+def ensemble_mlp(members, input_dimension, output_dimension, hidden_dimension, hidden_layers,
+                 device, preprocessor=False):
+    """K copies of agents.base.AbstractMLP with ReLU activations."""
+    sizes = [input_dimension] + [hidden_dimension] * hidden_layers + [output_dimension]
+    layers = []
+    for i, (a, b) in enumerate(zip(sizes[:-1], sizes[1:])):
+        layers.append(EnsembleLinear(members, a, b, device))
+        if i < len(sizes) - 2 or preprocessor:
+            layers.append(torch.nn.ReLU())
+    return torch.nn.Sequential(*layers)
+
+
+class FEnsemble(torch.nn.Module):
+    """K independent forward networks, each with the obs-action and obs-z preprocessors and
+    one head of agents.fb.models.ForwardRepresentation. Inputs are [N, .], shared by all
+    members, or [K, N, .]; F has shape [K, N, z_dimension]."""
+
+    def __init__(self, members, device, observation_length, action_length, z_dimension,
                  preprocessor_hidden_dimension, preprocessor_output_dimension,
                  preprocessor_hidden_layers, preprocessor_activation, forward_hidden_dimension,
-                 forward_hidden_layers, forward_activation, device):
+                 forward_hidden_layers, forward_activation):
         super().__init__()
-        preprocessor = {
-            "observation_length": observation_length,
-            "hidden_dimension": preprocessor_hidden_dimension,
-            "feature_space_dimension": preprocessor_output_dimension,
-            "hidden_layers": preprocessor_hidden_layers,
-            "activation": preprocessor_activation,
-            "device": device,
-        }
-        self.obs_action_preprocessor = AbstractPreprocessor(
-            concatenated_variable_length=action_length, **preprocessor
+        if preprocessor_activation != "relu" or forward_activation != "relu":
+            raise NotImplementedError("only relu activations")
+        self.init_kwargs = {key: value for key, value in locals().items()
+                            if key not in ("self", "device", "__class__")}
+        self.members = members
+        preprocessor = {"output_dimension": preprocessor_output_dimension,
+                        "hidden_dimension": preprocessor_hidden_dimension,
+                        "hidden_layers": preprocessor_hidden_layers, "device": device,
+                        "preprocessor": True}
+        self.obs_action_preprocessor = ensemble_mlp(
+            members, observation_length + action_length, **preprocessor
         )
-        self.obs_z_preprocessor = AbstractPreprocessor(
-            concatenated_variable_length=z_dimension, **preprocessor
+        self.obs_z_preprocessor = ensemble_mlp(
+            members, observation_length + z_dimension, **preprocessor
         )
-        self.head = ForwardModel(
-            preprocessor_feature_space_dimension=preprocessor_output_dimension,
-            number_of_preprocessed_features=2,
-            z_dimension=z_dimension,
-            hidden_dimension=forward_hidden_dimension,
-            hidden_layers=forward_hidden_layers,
-            device=device,
-            activation=forward_activation,
-        )
+        self.head = ensemble_mlp(members, 2 * preprocessor_output_dimension, z_dimension,
+                                 forward_hidden_dimension, forward_hidden_layers, device)
 
     def forward(self, observation, action, z):
+        if observation.dim() == 2:
+            observation, action, z = (x.expand(self.members, -1, -1)
+                                      for x in (observation, action, z))
         h = torch.cat([
             self.obs_action_preprocessor(torch.cat([observation, action], -1)),
             self.obs_z_preprocessor(torch.cat([observation, z], -1)),
         ], -1)
         return self.head(h)
-
-
-class FEnsemble(torch.nn.Module):
-    """K independent forward networks; forward returns F of shape [K, N, z_dimension]."""
-
-    def __init__(self, members, device, **architecture):
-        super().__init__()
-        self.init_kwargs = {"members": members, **architecture}
-        self.members = torch.nn.ModuleList(
-            ForwardNet(device=device, **architecture) for _ in range(members)
-        )
-
-    def forward(self, observation, action, z):
-        return torch.stack([member(observation, action, z) for member in self.members])
 
 
 def save_ensemble(ensemble, path, **meta):
@@ -110,55 +123,71 @@ def load_ensemble(path, device):
     return ensemble
 
 
+def split(batch, members):
+    """A batch of members * N transitions as members independent batches of N."""
+    return SimpleNamespace(**{
+        key: getattr(batch, key).view(members, -1, *getattr(batch, key).shape[1:])
+        for key in ("observations", "next_observations", "actions", "discounts")
+    })
+
+
+def flat(fn, *xs):
+    """fn of [M, .] tensors applied to [..., .] tensors."""
+    shape = xs[0].shape[:-1]
+    return fn(*(x.reshape(-1, x.shape[-1]) for x in xs)).view(*shape, -1)
+
+
 class EnsembleTrainer:
-    """Trains an FEnsemble against the fixed B and actor of an FB agent."""
+    """Trains an FEnsemble against the fixed B and actor of an FB agent. The loss is the
+    sum of the members' losses, so with Adam and element-wise gradient clipping every
+    member trains as if alone."""
 
     def __init__(self, agent, ensemble, learning_rate=1e-4, tau=0.01, train_std=TRAIN_STD):
         self.agent, self.ensemble, self.tau, self.train_std = agent, ensemble, tau, train_std
         self.target = copy.deepcopy(ensemble).requires_grad_(False)
-        self.optimisers = [torch.optim.Adam(m.parameters(), lr=learning_rate)
-                           for m in ensemble.members]
+        self.optimiser = torch.optim.Adam(ensemble.parameters(), lr=learning_rate)
 
     def sample_z(self, observations):
-        """z as in FB.update: uniform on the sphere of radius sqrt(d), a z_mix_ratio share
-        replaced by the normalised B of other states in the batch."""
-        agent, n = self.agent, len(observations)
-        zs = agent.sample_z(size=n)
-        backward_input = observations[torch.randperm(n)]
-        mix = np.where(np.random.rand(n) < agent._z_mix_ratio)[0]
+        """z as in FB.update, for every batch of observations [..., N, obs]: uniform on the
+        sphere of radius sqrt(d), a z_mix_ratio share replaced by the normalised B of other
+        states in the same batch."""
+        agent, shape = self.agent, observations.shape[:-1]
+        zs = agent.sample_z(size=math.prod(shape)).view(*shape, -1)
+        perm = torch.rand(shape, device=observations.device).argsort(-1)
+        other = torch.gather(observations, -2, perm.unsqueeze(-1).expand_as(observations))
         with torch.no_grad():
-            mix_zs = agent.FB.backward_representation(backward_input[mix])
-        zs[mix] = math.sqrt(agent._z_dimension) * torch.nn.functional.normalize(mix_zs, dim=1)
-        return zs
+            mix_zs = flat(agent.FB.backward_representation, other)
+        mix_zs = math.sqrt(agent._z_dimension) * torch.nn.functional.normalize(mix_zs, dim=-1)
+        mix = torch.rand(shape, device=observations.device) < agent._z_mix_ratio
+        return torch.where(mix.unsqueeze(-1), mix_zs, zs)
 
-    def member_loss(self, k, batch):
+    def losses(self, batch):
+        """Loss of every member k on its batch, fields of shape [K, N, .]."""
         agent = self.agent
         zs = self.sample_z(batch.observations)
         with torch.no_grad():
-            next_actions, _ = agent.actor(batch.next_observations, zs, self.train_std,
-                                          sample=True)
-            B_next = agent.FB.backward_representation(batch.next_observations)
-            target_M = self.target.members[k](batch.next_observations, next_actions, zs) @ B_next.T
-        M = self.ensemble.members[k](batch.observations, batch.actions, zs) @ B_next.T
-        off_diagonal = ~torch.eye(len(M), dtype=torch.bool, device=M.device)
-        return (0.5 * (M - batch.discounts * target_M)[off_diagonal].pow(2).mean()
-                - M.diag().mean())
+            next_actions = flat(lambda o, z: agent.actor(o, z, self.train_std, sample=True)[0],
+                                batch.next_observations, zs)
+            B_next = flat(agent.FB.backward_representation, batch.next_observations)
+            target_M = self.target(batch.next_observations, next_actions, zs) @ B_next.mT
+        M = self.ensemble(batch.observations, batch.actions, zs) @ B_next.mT
+        off_diagonal = ~torch.eye(M.shape[-1], dtype=torch.bool, device=M.device)
+        td = (M - batch.discounts * target_M).pow(2)
+        return (0.5 * td[:, off_diagonal].mean(-1)
+                - torch.diagonal(M, dim1=-2, dim2=-1).mean(-1))
 
-    def update(self, batches):
-        """One step of every member, member k on batches[k]; returns the losses."""
-        losses = []
-        for k, (batch, optimiser) in enumerate(zip(batches, self.optimisers)):
-            loss = self.member_loss(k, batch)
-            optimiser.zero_grad(set_to_none=True)
-            loss.backward()
-            for param in self.ensemble.members[k].parameters():
-                if param.grad is not None:
-                    param.grad.data.clamp_(-1, 1)
-            optimiser.step()
-            losses.append(loss.item())
-        for param, target in zip(self.ensemble.parameters(), self.target.parameters()):
-            target.data.copy_(self.tau * param.data + (1 - self.tau) * target.data)
-        return losses
+    def update(self, batch):
+        """One step of every member; returns the losses, a [K] tensor."""
+        losses = self.losses(batch)
+        self.optimiser.zero_grad(set_to_none=True)
+        losses.sum().backward()
+        for param in self.ensemble.parameters():
+            param.grad.data.clamp_(-1, 1)
+        self.optimiser.step()
+        with torch.no_grad():
+            for param, target in zip(self.ensemble.parameters(), self.target.parameters()):
+                target.lerp_(param, self.tau)
+        return losses.detach()
 
 
 def main():
@@ -210,14 +239,14 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
     losses, start = [], time.time()
     for step in range(1, args.steps + 1):
-        losses.append(trainer.update([buffer.sample(args.batch_size)
-                                      for _ in range(args.members)]))
+        losses.append(trainer.update(split(buffer.sample(args.members * args.batch_size),
+                                           args.members)))
         if step % args.log_every == 0:
             with torch.no_grad():
                 F = ensemble(probe.observations, probe.actions, probe_z)
                 Q = torch.einsum("knd, nd -> kn", F, probe_z)
             c = (F @ u_1).mean(1)
-            print(f"step {step} loss {np.mean(losses):.3f} F^T u_1 per member "
+            print(f"step {step} loss {torch.stack(losses).mean():.3f} F^T u_1 per member "
                   f"{' '.join(f'{v:.2f}' for v in c.tolist())} std_k Q {Q.std(0).mean():.3f} "
                   f"{(time.time() - start) / step * 1000:.1f} ms/step", flush=True)
             losses = []
