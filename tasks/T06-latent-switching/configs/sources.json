@@ -86,5 +86,40 @@
       "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-42/200000.pt",
       "checkpoint_sha256": "229f7dae43ef6a52c288d2724aa303d7b3a4564eb9d557e6799a6e1a683b6e08"
     }
+  ],
+  "switch_rule_c": [
+    {
+      "training_seed": 0,
+      "job": "zero-shot-rl-49",
+      "task": "walk",
+      "cql_target_angle": 7.5,
+      "latents": "tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-46.npz",
+      "ensemble_job": "zero-shot-rl-43",
+      "rollouts": "tasks/T06-latent-switching/data/inputs/switch_zero-shot-rl-49.csv",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-32/800000.pt",
+      "checkpoint_sha256": "2797c6587ded0677d1f57575f516683613b7734b05f40ac8b2ffb330ec52e81a"
+    },
+    {
+      "training_seed": 1,
+      "job": "zero-shot-rl-50",
+      "task": "walk",
+      "cql_target_angle": 7.5,
+      "latents": "tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-47.npz",
+      "ensemble_job": "zero-shot-rl-44",
+      "rollouts": "tasks/T06-latent-switching/data/inputs/switch_zero-shot-rl-50.csv",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-41/680000.pt",
+      "checkpoint_sha256": "7f6e641cc44244787a599c0b2de4b14e6310eaf0a36cda9c50162bf9c7cc91be"
+    },
+    {
+      "training_seed": 2,
+      "job": "zero-shot-rl-51",
+      "task": "walk",
+      "cql_target_angle": 7.5,
+      "latents": "tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-48.npz",
+      "ensemble_job": "zero-shot-rl-45",
+      "rollouts": "tasks/T06-latent-switching/data/inputs/switch_zero-shot-rl-51.csv",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-42/200000.pt",
+      "checkpoint_sha256": "229f7dae43ef6a52c288d2724aa303d7b3a4564eb9d557e6799a6e1a683b6e08"
+    }
   ]
 }
