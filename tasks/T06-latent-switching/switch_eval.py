@@ -18,8 +18,9 @@ same state share: on walk u is about 50 while Q(a_opt) - Q(a_pess) has an interq
 range of about 0.3, so the default kappas span 0 to 0.1, where the share of a_pess moves
 from about one half to nearly all steps.
 
-Each condition, "opt" (always a_opt), "pess" (always a_pess) or a kappa of --kappas,
-runs --episodes deterministic episodes of 1000 steps; episode e starts from the reset
+Each condition, "opt" (always a_opt), "pess" (always a_pess), a kappa of --kappas, or
+"random" with a p of --random_ps (a_pess with probability p at every step, independent
+of the ensemble: the control for the rule's share of a_pess), runs --episodes deterministic episodes of 1000 steps; episode e starts from the reset
 of an environment seeded with e, as in zero_shot_rl.eval.latents. Per episode it records
 
     return     sum of the task reward
@@ -51,7 +52,7 @@ from zero_shot_rl.provenance import sha256
 
 FALL_HEIGHT = 0.6
 KAPPAS = [0.0, 0.001, 0.003, 0.01, 0.03, 0.1]
-FIELDS = ["condition", "kappa", "episode", "return", "pess_frac", "switches", "speed",
+FIELDS = ["condition", "kappa", "p", "episode", "return", "pess_frac", "switches", "speed",
           "fall_frac", "u_opt", "gap"]
 
 G = {}  # per-process state, filled before the pool forks
@@ -88,6 +89,8 @@ def rollout(condition):
     envs = [make_env(e) for e in range(n)]
     obs = np.stack([env.reset().observation["observations"] for env in envs])
     z_r, z_cql = (torch.as_tensor(z, dtype=torch.float32).expand(n, -1) for z in G["z"])
+    random_p = condition[1] if isinstance(condition, tuple) else None
+    rng = np.random.default_rng([6, round(1e6 * (random_p or 0))])
 
     rewards, pess, heights, speeds, u_opt, gap = (np.zeros((n, 1000)) for _ in range(6))
     for t in range(1000):
@@ -96,7 +99,10 @@ def rollout(condition):
             a_opt, a_pess = policy(agent, s, z_r), policy(agent, s, z_cql)
             q_opt, u = values(ensemble, s, a_opt, z_r)
             q_pess, _ = values(ensemble, s, a_pess, z_r)
-        take = choose_pess(q_opt, u, q_pess, condition)
+        if random_p is None:
+            take = choose_pess(q_opt, u, q_pess, condition)
+        else:
+            take = rng.random(n) < random_p
         actions = np.where(take[:, None], a_pess.numpy(), a_opt.numpy())
         pess[:, t], u_opt[:, t], gap[:, t] = take, u, q_opt - q_pess
         for i, env in enumerate(envs):
@@ -106,11 +112,15 @@ def rollout(condition):
             heights[i, t] = p.torso_height()
             speeds[i, t] = p.horizontal_velocity()
 
-    name = condition if isinstance(condition, str) else "switch"
-    kappa = np.nan if isinstance(condition, str) else condition
+    if random_p is not None:
+        name, kappa, p = "random", np.nan, random_p
+    elif isinstance(condition, str):
+        name, kappa, p = condition, np.nan, np.nan
+    else:
+        name, kappa, p = "switch", condition, np.nan
     return [
         {
-            "condition": name, "kappa": kappa, "episode": e, "return": rewards[e].sum(),
+            "condition": name, "kappa": kappa, "p": p, "episode": e, "return": rewards[e].sum(),
             "pess_frac": pess[e].mean(), "switches": int((np.diff(pess[e]) != 0).sum()),
             "speed": speeds[e].mean(), "fall_frac": (heights[e] < FALL_HEIGHT).mean(),
             "u_opt": u_opt[e].mean(), "gap": gap[e].mean(),
@@ -127,7 +137,8 @@ def main():
     parser.add_argument("--out", type=str, required=True)
     parser.add_argument("--task", type=str, default="walk")
     parser.add_argument("--angle", type=float, default=7.5)
-    parser.add_argument("--kappas", nargs="+", type=float, default=KAPPAS)
+    parser.add_argument("--kappas", nargs="*", type=float, default=KAPPAS)
+    parser.add_argument("--random_ps", nargs="*", type=float, default=[])
     parser.add_argument("--episodes", type=int, default=100)
     parser.add_argument("--workers", type=int, default=8)
     args = parser.parse_args()
@@ -149,7 +160,7 @@ def main():
              reward_fn=reward_constructor.reward_functions[args.task],
              z=latents(np.load(args.zs), args.task, args.angle))
 
-    conditions = ["opt", "pess", *args.kappas]
+    conditions = ["opt", "pess", *args.kappas, *(("random", p) for p in args.random_ps)]
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", newline="") as f, mp.get_context("fork").Pool(args.workers) as pool:
@@ -161,6 +172,7 @@ def main():
                                  for k, v in rec.items()})
             f.flush()
             print(f"{result[0]['condition']:6s} kappa {result[0]['kappa']:4g} "
+                  f"p {result[0]['p']:4g} "
                   f"return {np.mean([r['return'] for r in result]):6.1f} "
                   f"pess_frac {np.mean([r['pess_frac'] for r in result]):.3f} "
                   f"switches {np.mean([r['switches'] for r in result]):6.1f}", flush=True)
