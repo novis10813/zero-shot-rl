@@ -4,7 +4,7 @@
 # about 2 GB VRAM. On idlab1 (123 GB RAM, 2 x 32 GB) the jobs ran as four chains of
 # three with lab run, at most two per GPU, not as one sweep.
 on: idlab1
-command: PYTHONUNBUFFERED=1 uv run python main_exorl.py rebrac walker rnd --train_task {task} --eval_tasks {task} --wandb_logging False --dataset_path $HOME/zsrl-datasets/walker/rnd/dataset.npz --seed {seed}
+command: PYTHONUNBUFFERED=1 uv run python -m zero_shot_rl.main_exorl rebrac walker rnd --train_task {task} --eval_tasks {task} --wandb_logging False --dataset_path $HOME/zsrl-datasets/walker/rnd/dataset.npz --seed {seed}
 vram: 12G
 gpus: 1
 grid:

@@ -48,6 +48,13 @@ dev = [
 [tool.ruff]
 # Checks our code only; upstream files are left as the authors wrote them.
 include = ["zero_shot_rl/**/*.py", "tests/**/*.py", "tasks/**/*.py"]
+extend-exclude = [
+    "zero_shot_rl/main_exorl.py",
+    "zero_shot_rl/main_d4rl.py",
+    "zero_shot_rl/exorl_reformatter.py",
+    "zero_shot_rl/dmc.py",
+    "zero_shot_rl/utils.py",
+]
 target-version = "py39"
 
 [tool.ruff.lint]

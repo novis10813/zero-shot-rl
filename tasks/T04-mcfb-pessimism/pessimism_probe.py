@@ -31,7 +31,7 @@ import custom_dmc_tasks as cdmc
 from agents.base import load_agent
 from agents.fb.replay_buffer import FBReplayBuffer
 from rewards import RewardFunctionConstructor
-from utils import set_seed_everywhere
+from zero_shot_rl.utils import set_seed_everywhere
 
 TASKS = ["stand", "walk", "run", "flip"]
 TRAIN_STD, TRAIN_CLIP = 0.2, 0.3  # agents/*/config.yaml std_dev_schedule, std_dev_clip

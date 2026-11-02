@@ -1,7 +1,7 @@
 """
 One-off migration of the T01 checkpoints from pickled FB agents (.pickle) to the
 state_dict format of AbstractAgent.save (.pt). The constructor arguments are those
-main_exorl.py passes for `fb walker rnd` with default arguments. Each conversion is
+zero_shot_rl/main_exorl.py passes for `fb walker rnd` with default arguments. Each conversion is
 checked: the state_dicts must be identical and both agents must act identically.
 """
 
@@ -22,7 +22,7 @@ args = parser.parse_args()
 device = torch.device("cpu")
 with open("agents/fb/config.yaml", "rb") as f:
     config = yaml.safe_load(f)
-config.update({"z_dimension": 50, "discount": 0.98})  # main_exorl.py defaults
+config.update({"z_dimension": 50, "discount": 0.98})  # zero_shot_rl/main_exorl.py defaults
 
 for path in map(Path, args.pickles):
     old = torch.load(path, map_location=device, weights_only=False)

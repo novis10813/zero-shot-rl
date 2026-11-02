@@ -74,7 +74,7 @@ State coverage illustrations on `point_mass_maze` are provided in Figure 4. For 
 To download the `rnd` dataset on the `walker` domain, seperate their command line args with an `_` and run:  
 
 ```bash
-python exorl_reformatter.py walker_rnd
+python -m zero_shot_rl.exorl_reformatter walker_rnd
 ```
 
 this will create a single `dataset.npz` file in the `dataset/walker/rnd/buffer` directory.
@@ -85,7 +85,7 @@ _Figure 4: **State coverage** by dataset on `point_mass_maze`._
 
 To train a standard Value-Conservative Forward Backward Representation with the `rnd` (100k) dataset to solve all tasks in the `walker` domain, run:
 ```bash
-python main_exorl.py vcfb walker rnd --eval_task stand run walk flip
+python -m zero_shot_rl.main_exorl vcfb walker rnd --eval_task stand run walk flip
 ```
 
 ### D4RL
@@ -107,7 +107,7 @@ trained on the following datasets:
 You'll need to manually download the D4RL datasets following their instructions, rename them to `dataset.hdf5` and place them in the correct directory inside `/datasets` e.g. the `walker` `medium-expert` dataset should be saved to `datasets/walker/medium-expert/dataset.hdf5`.
 To train a standard Value-Conservative Forward Backward Representation with the `medium-expert` dataset on `walker`, run:
 ```bash
-python main_d4rl.py vcfb walker medium-expert
+python -m zero_shot_rl.main_d4rl vcfb walker medium-expert
 ```
 
 ## Citation

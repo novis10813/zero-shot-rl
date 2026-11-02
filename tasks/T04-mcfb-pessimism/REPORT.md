@@ -18,7 +18,7 @@ value uniform actions further below their true value than VC-FB's does.
 - FB, VC-FB, MC-FB and DVC-FB, seeds 0 to 2, 1M steps, paper hyperparameters.
 - DVC-FB follows eq. 19 of the paper's appendix B.1.6. $z = B(s_g)$ is used without gradient
   into $B$ (an implementation choice, see limitations).
-- Eval: IQM return per task every 20k steps, as logged by `main_exorl.py`. "Final" is the
+- Eval: IQM return per task every 20k steps, as logged by `zero_shot_rl/main_exorl.py`. "Final" is the
   1M-step model and "best" the step with the highest mean over the four tasks.
 - Probe on each final model: for 1000 training states (the same for all 12 models), compare
   the critic's value $\hat Q(s,a)$, rescaled to reward units, with a Monte Carlo return $G(s,a)$

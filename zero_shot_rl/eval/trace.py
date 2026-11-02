@@ -79,7 +79,7 @@ def publish_npz(path, trace):
 
 
 def source_files():
-    files = [REPO / "agents/base.py", REPO / "agents/utils.py", REPO / "utils.py", REPO / "dmc.py"]
+    files = [REPO / "agents/base.py", REPO / "agents/utils.py"]
     for folder in ("zero_shot_rl", "agents/fb", "custom_dmc_tasks", "rewards/walker"):
         files += sorted((REPO / folder).rglob("*.py"))
     files += sorted((REPO / "custom_dmc_tasks").rglob("*.xml"))
