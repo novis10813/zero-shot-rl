@@ -17,6 +17,13 @@ def make_env(seed):
     )
 
 
+def set_physics(env, state):
+    """reset_context runs mj_forward, so position-derived quantities match the state."""
+    env.reset()
+    with env.physics.reset_context():
+        env.physics.set_state(state)
+
+
 def policy(agent, obs, z):
     """Deterministic action: clipped actor mean."""
     action, _ = agent.actor(obs, z, 0.2, sample=False)

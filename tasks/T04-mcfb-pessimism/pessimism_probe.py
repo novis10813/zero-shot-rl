@@ -27,10 +27,10 @@ from pathlib import Path
 import numpy as np
 import torch
 
-import custom_dmc_tasks as cdmc
 from agents.base import load_agent
 from agents.fb.replay_buffer import FBReplayBuffer
 from rewards import RewardFunctionConstructor
+from zero_shot_rl.env.walker import make_env, set_physics
 from zero_shot_rl.utils import set_seed_everywhere
 
 TASKS = ["stand", "walk", "run", "flip"]
@@ -84,15 +84,6 @@ gap_uniform = torch.empty(
 prior_gen = torch.Generator(device).manual_seed(args.seed + 1)
 
 
-def make_env(seed):
-    return cdmc.make(
-        domain="walker",
-        task="flip",
-        environment_kwargs={"flat_observation": True},
-        task_kwargs={"random": seed},
-    )
-
-
 envs = []
 reward_fns = reward_constructor.reward_functions
 
@@ -101,13 +92,6 @@ def get_envs(n):
     while len(envs) < n:
         envs.append(make_env(args.seed + len(envs)))
     return envs[:n]
-
-
-def set_physics(env, state):
-    """reset_context runs mj_forward, so positions-derived quantities match the state."""
-    env.reset()
-    with env.physics.reset_context():
-        env.physics.set_state(state)
 
 
 def nn_distance(obs, exclude_self_idx=None):

@@ -45,7 +45,7 @@ import torch
 
 from agents.base import load_agent
 from rewards import RewardFunctionConstructor
-from zero_shot_rl.env.walker import make_env, policy
+from zero_shot_rl.env.walker import make_env, policy, set_physics
 from zero_shot_rl.latent.archive import matched_rows, validate
 from zero_shot_rl.latent.implicit import DISCOUNT, Simulator
 from zero_shot_rl.latent.infer import TASKS, build_solver, solver_arguments
@@ -67,13 +67,6 @@ def _init_worker(checkpoint):
     W["rewards"] = RewardFunctionConstructor(
         domain_name="walker", task_names=TASKS, seed=0, device=torch.device("cpu")
     ).reward_functions
-
-
-def set_physics(env, state):
-    """reset_context runs mj_forward, so position-derived quantities match the state."""
-    env.reset()
-    with env.physics.reset_context():
-        env.physics.set_state(state)
 
 
 def _mc_returns(job):
