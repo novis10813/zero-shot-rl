@@ -1,0 +1,9 @@
+# lab sweep spec: single-task CQL (agents/cql, upstream defaults) on walker rnd-100k,
+# one policy per task, seeds 0-2. Upper-bound baseline for the T06 switching rules.
+on: idlab1
+command: PYTHONUNBUFFERED=1 uv run python main_exorl.py cql walker rnd --train_task {task} --eval_tasks {task} --wandb_logging False --dataset_path $HOME/zsrl-datasets/walker/rnd/dataset.npz --seed {seed}
+vram: 10G
+gpus: 1
+grid:
+  task: [stand, walk, run, flip]
+  seed: [0, 1, 2]
