@@ -9,7 +9,7 @@ All commands run from the repository root. The dataset is the one built in
 
 ## 1. Code change: DVC-FB
 
-`zero_shot_rl/main_exorl.py dvcfb` trains Directed VC-FB (paper appendix B.1.6, eq. 19). It is
+`zero_shot_rl/train/main_exorl.py dvcfb` trains Directed VC-FB (paper appendix B.1.6, eq. 19). It is
 `agents/cfb/agent.py` with `dvcfb=True`: the VC-FB value penalty with every z replaced by
 $$z = \sqrt{d}\,\frac{B(s_g)}{\lVert B(s_g)\rVert},\quad s_g \sim \mathcal{D}$$
 where $s_g$ is a shuffled batch of next states. $z$ is computed without gradient, so the penalty
@@ -25,7 +25,7 @@ not launched as that sweep: each was submitted on its own with `lab run` (local 
 the same everywhere:
 
 ```bash
-PYTHONUNBUFFERED=1 uv run python -m zero_shot_rl.main_exorl <fb|vcfb|mcfb|dvcfb> walker rnd \
+PYTHONUNBUFFERED=1 uv run python -m zero_shot_rl.train.main_exorl <fb|vcfb|mcfb|dvcfb> walker rnd \
   --eval_tasks stand walk run flip --wandb_logging False \
   --dataset_path <dir>/walker/rnd/dataset.npz --seed <0|1|2>
 ```

@@ -1,4 +1,4 @@
-# ReBRAC paper Table 10 (Gym-MuJoCo) and CORL defaults. The CLI default of zero_shot_rl/main_exorl.py
+# ReBRAC paper Table 10 (Gym-MuJoCo) and CORL defaults. The CLI default of zero_shot_rl/train/main_exorl.py
 # overrides discount with 0.98, as for every other ExORL agent.
 name: "rebrac"
 learning_steps: 1000000

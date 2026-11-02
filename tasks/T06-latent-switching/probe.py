@@ -45,7 +45,7 @@ import torch
 
 from agents.base import load_agent
 from rewards import RewardFunctionConstructor
-from zero_shot_rl.eval.env import make_env, policy
+from zero_shot_rl.env.walker import make_env, policy
 from zero_shot_rl.latent.archive import matched_rows, validate
 from zero_shot_rl.latent.implicit import DISCOUNT, Simulator
 from zero_shot_rl.latent.infer import TASKS, build_solver, solver_arguments

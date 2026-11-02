@@ -1,7 +1,7 @@
 # T01: reproducing official FB on ExORL Walker RND-100k
 
 How to reproduce the results in [`REPORT.md`](REPORT.md): five seeds of the authors' FB
-(`zero_shot_rl/main_exorl.py fb`) on the ExORL `walker` / `rnd` dataset subsampled to 100k transitions,
+(`zero_shot_rl/train/main_exorl.py fb`) on the ExORL `walker` / `rnd` dataset subsampled to 100k transitions,
 evaluated zero-shot on `stand`, `walk`, `run` and `flip`. The authors publish no checkpoints,
 so the models are trained here.
 
@@ -15,7 +15,7 @@ later jobs can reuse it. Needed once per host.
 
 ```bash
 lab run --vram 0 -- 'D=$HOME/zsrl-datasets/walker/rnd; \
-  uv run python -u -m zero_shot_rl.exorl_reformatter walker_rnd && mkdir -p $D && \
+  uv run python -u -m zero_shot_rl.data.exorl_reformatter walker_rnd && mkdir -p $D && \
   mv datasets/walker/rnd/dataset.npz $D/'
 ```
 
@@ -37,7 +37,7 @@ lab sweep tasks/T01-fb-reproduction/configs/train_seeds.yaml
 or for a single seed:
 
 ```bash
-lab run --vram 10G -- 'PYTHONUNBUFFERED=1 uv run python -m zero_shot_rl.main_exorl fb walker rnd \
+lab run --vram 10G -- 'PYTHONUNBUFFERED=1 uv run python -m zero_shot_rl.train.main_exorl fb walker rnd \
   --eval_tasks stand walk run flip --wandb_logging False \
   --dataset_path $HOME/zsrl-datasets/walker/rnd/dataset.npz --seed 0'
 ```
@@ -122,7 +122,7 @@ logged and kept on disk.
 | Change | Why |
 |---|---|
 | `pyproject.toml` + `uv.lock`: Python 3.9, torch 2.7.1 (CUDA 12.8), `setuptools<70`. Other pins as in `requirements.txt`, minus the unused `gcloud` and `pylint` | torch 2.1.0 does not support Blackwell GPUs (sm_120). wandb 0.15.2 imports `pkg_resources` |
-| `zero_shot_rl/main_exorl.py --dataset_path` | read the dataset from outside the job's worktree |
+| `zero_shot_rl/train/main_exorl.py --dataset_path` | read the dataset from outside the job's worktree |
 | `agents/workspaces.py`: keep the best and the final checkpoint after training | the original deletes the best one unless it was uploaded to wandb, and never saves the final one |
 | `agents/workspaces.py`: log every evaluation's per-task IQM | without wandb, per-task scores were not recorded |
 | `agents/base.py`: checkpoints store class, constructor arguments and `state_dict` (`.pt`); `load_agent()` rebuilds the agent with `weights_only=True` | pickled whole agents break when the class changes and can run arbitrary code on load |

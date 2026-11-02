@@ -8,14 +8,19 @@ code, one report per task.
 ```
 agents/ rewards/ custom_dmc_tasks/       upstream code
 download.sh                              upstream dataset download, called by exorl_reformatter
-zero_shot_rl/                            our code, used by two or more tasks
-  main_exorl, main_d4rl,                 upstream entry points and helpers, moved from the
-  exorl_reformatter, dmc, utils          repo root
-  latent/                                FB latents from stored data, no simulator
+zero_shot_rl/                            shared code: upstream root modules and ours
+  train/                                 training entries (upstream): main_exorl, main_d4rl
+  data/                                  dataset preparation (upstream): exorl_reformatter
+  env/                                   environments
+                                         dmc (upstream DMC wrappers), walker (Walker env
+                                         and deterministic standard FB actor)
+  latent/                                FB latents from stored data, with single simulator steps
+                                         from stored physics, no rollouts
                                          solver, implicit, archive (library), infer (entry)
-  eval/                                  runs the simulator
-                                         env, trace_format (library), checkpoint, latents,
-                                         trace, video (entry)
+  eval/                                  rollouts in the simulator
+                                         trace_format (library), checkpoint, latents, trace,
+                                         video (entry)
+  utils.py                               seeding and BASE_DIR (upstream)
   provenance.py                          file hashes and no-clobber publication
 analysis/                                analysis tools used by two or more tasks
 tests/                                   component tests for zero_shot_rl/ and agents/
@@ -31,14 +36,16 @@ tasks/T<NN>-<name>/
 ```
 
 - The authors' code is the `upstream` remote (`enjeeneer/zero-shot-rl`); refer to it as
-  `upstream/main`. Their root modules (`main_exorl.py`, `main_d4rl.py`, `exorl_reformatter.py`,
-  `dmc.py`, `utils.py`) live in `zero_shot_rl/`. Other upstream files stay where they are.
-  Bringing their updates into `main` is a `chore/` PR that merges `upstream/main`. In that
-  merge, changes to the moved modules are applied to their `zero_shot_rl/` copies.
-- Run training from the repo root, e.g. `uv run python -m zero_shot_rl.main_exorl fb walker rnd`.
+  `upstream/main`. Their root modules live in `zero_shot_rl/`: `main_exorl.py` and
+  `main_d4rl.py` in `train/`, `exorl_reformatter.py` in `data/`, `dmc.py` in `env/`, and
+  `utils.py` at the top. Other upstream files stay where they are. Bringing their updates into
+  `main` is a `chore/` PR that merges `upstream/main`. In that merge, changes to the moved
+  modules are applied to their `zero_shot_rl/` copies.
+- Run training from the repo root, e.g. `uv run python -m zero_shot_rl.train.main_exorl fb walker rnd`.
   It reads `agents/<algo>/config.yaml` relative to the working directory.
-- Place a module in `zero_shot_rl/` by what it acts on: `latent/` for latents computed from
-  data, `eval/` for anything that runs the simulator. Each module's docstring states what it does
+- Place a module in `zero_shot_rl/` by what it does: `env/` for environments and the actors
+  that act in them, `latent/` for latents computed from stored data, `eval/` for rollouts in
+  the simulator. Each module's docstring states what it does
   and how to run it.
 - Run entry modules by full path from the repo root, e.g.
   `PYTHONPATH=. uv run python -m zero_shot_rl.latent.infer`. Task modules run with the task
