@@ -43,9 +43,25 @@ class DeviationTest(unittest.TestCase):
             ])
             rows = deviation.seed_rows(0, tmp / "dev.csv", tmp / "rollouts.csv",
                                        tmp / "switch.csv", tmp / "random.csv")
+            write(tmp / "final.csv", ["condition", "return"], [
+                {"condition": "opt", "return": 500}, {"condition": "opt", "return": 502},
+                *({"condition": c, "return": 1} for c in ("pess", "random", "switch")),
+            ])
+            with open(tmp / "dev.csv", "a", newline="") as f:
+                csv.writer(f).writerow(["candidate", "CQL 7.5", "", "", "", 9, 4])
+                csv.writer(f).writerow(["switch", "switch 0", 0, "", 0.4, 9, 5])
+            write(tmp / "switch.csv", ["condition", "kappa", "return"],
+                  [{"condition": "switch", "kappa": k, "return": 1} for k in ("0.01", "0")])
+            with open(tmp / "rollouts.csv", "a", newline="") as f:
+                csv.writer(f).writerow(["CQL", "7.5", 0, 1])
+            final = deviation.seed_rows(0, tmp / "dev.csv", tmp / "rollouts.csv",
+                                        tmp / "switch.csv", tmp / "random.csv",
+                                        tmp / "final.csv")
         got = {r["name"]: (r["return"], r["episodes"]) for r in rows}
         self.assertEqual(got, {"z_r 0": (100.5, 2), "T05 z_r": (200.5, 2),
                                "switch 0.01": (301.0, 2), "random 0.5": (400.0, 1)})
+        pure = [r for r in final if r["kind"] == "final" and r["name"] == "pure FB"]
+        self.assertEqual([(r["return"], r["dev_opt"]) for r in pure], [(501.0, "0")])
 
 
 if __name__ == "__main__":
