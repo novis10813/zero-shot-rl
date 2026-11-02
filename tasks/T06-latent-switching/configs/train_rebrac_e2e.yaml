@@ -1,7 +1,7 @@
 # lab sweep spec: single-task ReBRAC-E2E (agents/rebrac/config.yaml, e2e_beta_dq 0.001)
 # on walker rnd-100k, one policy per task, seeds 0-2. Submitted with --sync (the DiCOS
 # login node cannot clone the repo). Each job peaks at about 22 GB RAM.
-on: dicos
+on: dicos:a100-al9
 gpus: 1
 gpu_type: a100
 time: 30h
