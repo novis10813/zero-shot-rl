@@ -247,9 +247,9 @@ class SAC(AbstractAgent, metaclass=abc.ABCMeta):
         self.critic_optimiser.step()
 
         metrics = {
-            "train/critic_loss": critic_loss.detach().cpu().numpy(),
-            "train/Q1": current_Q1.mean().detach().cpu().numpy(),
-            "train/Q2": current_Q2.mean().detach().cpu().numpy(),
+            "train/critic_loss": critic_loss.detach().float().cpu().numpy(),
+            "train/Q1": current_Q1.mean().detach().float().cpu().numpy(),
+            "train/Q2": current_Q2.mean().detach().float().cpu().numpy(),
         }
 
         return metrics
@@ -284,9 +284,9 @@ class SAC(AbstractAgent, metaclass=abc.ABCMeta):
             alpha_metrics = self._update_alpha(log_prob)
 
         actor_metrics = {
-            "train/actor_loss": actor_loss.detach().cpu().numpy(),
-            "train/actor_Q": actor_Q.mean().detach().cpu().numpy(),
-            "train/log_prob": log_prob.mean().detach().cpu().numpy(),
+            "train/actor_loss": actor_loss.detach().float().cpu().numpy(),
+            "train/actor_Q": actor_Q.mean().detach().float().cpu().numpy(),
+            "train/log_prob": log_prob.mean().detach().float().cpu().numpy(),
         }
 
         metrics = {**actor_metrics, **alpha_metrics}
@@ -310,8 +310,8 @@ class SAC(AbstractAgent, metaclass=abc.ABCMeta):
         self.log_alpha_optimiser.step()
 
         metrics = {
-            "train/alpha": self.alpha.detach().cpu().numpy(),
-            "train/alpha_loss": alpha_loss.detach().cpu().numpy(),
+            "train/alpha": self.alpha.detach().float().cpu().numpy(),
+            "train/alpha_loss": alpha_loss.detach().float().cpu().numpy(),
         }
 
         return metrics

@@ -6,6 +6,7 @@ import torch
 import numpy as np
 from typing import List, Dict, Tuple
 
+from agents.base import Batch
 from agents.sac.agent import SAC
 
 
@@ -43,6 +44,7 @@ class CQL(SAC):
         cql_alpha: float,
         cql_target_penalty: float,
         cql_lagrange: bool = False,
+        bf16: bool = False,
     ):
         super().__init__(
             observation_length=observation_length,
@@ -76,12 +78,23 @@ class CQL(SAC):
         self.cql_target_penalty = cql_target_penalty
         self.cql_lagrange = cql_lagrange
         self.cql_alpha = cql_alpha
+        self.bf16 = bf16
 
         # lagrange multiplier for the CQL constraint
         self.log_cql_alpha = torch.zeros(1, requires_grad=True, device=self.device)
         self.cql_alpha_optimiser = torch.optim.Adam(
             [self.log_cql_alpha], lr=critic_learning_rate
         )
+
+    def update(self, batch: Batch, step: int) -> Dict[str, float]:
+        """
+        SAC update; with bf16, forward passes run under bfloat16 autocast while
+        parameters, gradients and optimiser states stay float32.
+        """
+        if not self.bf16:
+            return super().update(batch=batch, step=step)
+        with torch.autocast(device_type=self.device.type, dtype=torch.bfloat16):
+            return super().update(batch=batch, step=step)
 
     def _repeated_critic_apply(
         self,
@@ -231,31 +244,35 @@ class CQL(SAC):
         self.critic_optimiser.step()
 
         metrics = {
-            "train/critic_loss": critic_loss.detach().cpu().numpy(),
-            "train/Q1": current_Q1.mean().detach().cpu().numpy(),
-            "train/Q2": current_Q2.mean().detach().cpu().numpy(),
-            "train/cql_q1_rand": cql_random_q1.mean().detach().cpu().numpy(),
-            "train/cql_q2_rand": cql_random_q2.mean().detach().cpu().numpy(),
+            "train/critic_loss": critic_loss.detach().float().cpu().numpy(),
+            "train/Q1": current_Q1.mean().detach().float().cpu().numpy(),
+            "train/Q2": current_Q2.mean().detach().float().cpu().numpy(),
+            "train/cql_q1_rand": cql_random_q1.mean().detach().float().cpu().numpy(),
+            "train/cql_q2_rand": cql_random_q2.mean().detach().float().cpu().numpy(),
             "train/cql_q1_current_actions": cql_sampled_q1.mean()
             .detach()
+            .float()
             .cpu()
             .numpy(),
             "train/cql_q2_current_actions": cql_sampled_q2.mean()
             .detach()
+            .float()
             .cpu()
             .numpy(),
             "train/cql_q1_next_actions": cql_sampled_next_q1.mean()
             .detach()
+            .float()
             .cpu()
             .numpy(),
             "train/cql_q2_next_actions": cql_sampled_next_q2.mean()
             .detach()
+            .float()
             .cpu()
             .numpy(),
             "train/cql_alpha": cql_alpha,
-            "train/cql_alpha_loss": cql_alpha_loss.detach().cpu().numpy(),
-            "train/cql_penalty": cql_penalty.detach().cpu().numpy(),
-            "train/conservative_penalty": conservative_penalty.detach().cpu().numpy(),
+            "train/cql_alpha_loss": cql_alpha_loss.detach().float().cpu().numpy(),
+            "train/cql_penalty": cql_penalty.detach().float().cpu().numpy(),
+            "train/conservative_penalty": conservative_penalty.detach().float().cpu().numpy(),
         }
 
         return metrics

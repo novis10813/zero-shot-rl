@@ -50,6 +50,7 @@ parser.add_argument("--action_condition_index", type=int)
 parser.add_argument("--action_condition_value", type=float)
 parser.add_argument("--cql_alpha", type=float, default=0.01)
 parser.add_argument("--dataset_path", type=str, default=None)
+parser.add_argument("--bf16", type=str, default="False")
 args = parser.parse_args()
 
 if args.wandb_logging == "True":
@@ -195,6 +196,7 @@ if config["algorithm"] == "cql":
         cql_lagrange=config["lagrange"],
         cql_alpha=config["cql_alpha"],
         cql_target_penalty=config["target_conservative_penalty"],
+        bf16=config["bf16"] == "True",
     )
 
     replay_buffer = OfflineReplayBuffer(

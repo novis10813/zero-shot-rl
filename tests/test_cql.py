@@ -12,7 +12,7 @@ from agents.base import Batch
 from agents.cql.agent import CQL
 
 
-def make_agent(lagrange):
+def make_agent(lagrange, bf16=False):
     return CQL(
         observation_length=3, action_length=2, device=torch.device("cpu"), name="cql",
         batch_size=8, discount=0.98, critic_hidden_dimension=16, critic_hidden_layers=2,
@@ -22,7 +22,7 @@ def make_agent(lagrange):
         alpha_learning_rate=1e-4, alpha_betas=[0.9, 0.999], actor_update_frequency=1,
         init_temperature=0.1, learnable_temperature=True, activation="relu",
         action_range=[-1.0, 1.0], normalisation_samples=None, cql_n_samples=3,
-        cql_lagrange=lagrange, cql_alpha=0.01, cql_target_penalty=50.0,
+        cql_lagrange=lagrange, cql_alpha=0.01, cql_target_penalty=50.0, bf16=bf16,
     )
 
 
@@ -50,6 +50,15 @@ class CQLTests(unittest.TestCase):
             action = agent.act(observation, sample=False)
             self.assertEqual(action.shape, (2,))
             np.testing.assert_array_equal(action, agent.act(observation, sample=False))
+
+    def test_bf16_update_keeps_float32_parameters(self):
+        torch.manual_seed(0)
+        agent = make_agent(lagrange=False, bf16=True)
+        for step in range(3):
+            metrics = agent.update(make_batch(), step=step)
+        self.assertTrue(all(np.isfinite(float(v)) for v in metrics.values()))
+        for module in (agent.actor, agent.critic, agent.critic_target):
+            self.assertTrue(all(p.dtype == torch.float32 for p in module.parameters()))
 
 
 if __name__ == "__main__":
