@@ -17,6 +17,8 @@ from agents.cql.agent import CQL
 from agents.fb.agent import FB
 from agents.cfb.agent import CFB
 from agents.td3.agent import TD3
+from agents.rebrac.agent import ReBRAC
+from agents.rebrac.replay_buffer import ReBRACReplayBuffer
 from agents.gciql.agent import GCIQL
 from agents.sf.agent import SF
 from agents.fb.replay_buffer import FBReplayBuffer
@@ -84,6 +86,10 @@ else:
 working_dir = Path.cwd()
 if args.algorithm in ("vcfb", "mcfb", "dvcfb"):
     algo_dir = "calfb" if "cal" in args.algorithm else "cfb"
+    config_path = working_dir / "agents" / algo_dir / "config.yaml"
+    model_dir = working_dir / "agents" / algo_dir / "saved_models"
+elif args.algorithm in ("rebrac", "rebrac-e2e"):
+    algo_dir = "rebrac"
     config_path = working_dir / "agents" / algo_dir / "config.yaml"
     model_dir = working_dir / "agents" / algo_dir / "saved_models"
 elif args.algorithm in ("sf-lap", "sf-hilp"):
@@ -231,6 +237,43 @@ elif config["algorithm"] == "td3":
         dataset_path=dataset_path,
         transitions=config["dataset_transitions"],
         relabel=relabel,
+        task=config["train_task"],
+        device=config["device"],
+        discount=config["discount"],
+    )
+
+    z_inference_steps = None
+    train_std = None
+    eval_std = None
+
+elif config["algorithm"] in ("rebrac", "rebrac-e2e"):
+    agent = ReBRAC(
+        observation_length=observation_length,
+        action_length=action_length,
+        device=config["device"],
+        name=config["algorithm"],
+        hidden_dimension=config["hidden_dimension"],
+        hidden_layers=config["hidden_layers"],
+        ensemble_size=config["ensemble_size"],
+        actor_learning_rate=config["actor_learning_rate"],
+        critic_learning_rate=config["critic_learning_rate"],
+        batch_size=config["batch_size"],
+        discount=config["discount"],
+        tau=config["tau"],
+        policy_noise=config["policy_noise"],
+        noise_clip=config["noise_clip"],
+        policy_freq=config["policy_freq"],
+        actor_bc_coef=config["actor_bc_coef"],
+        critic_bc_coef=config["critic_bc_coef"],
+        e2e_beta_dq=(
+            config["e2e_beta_dq"] if config["algorithm"] == "rebrac-e2e" else 0.0
+        ),
+    )
+
+    replay_buffer = ReBRACReplayBuffer(
+        reward_constructor=reward_constructor,
+        dataset_path=dataset_path,
+        transitions=config["dataset_transitions"],
         task=config["train_task"],
         device=config["device"],
         discount=config["discount"],
