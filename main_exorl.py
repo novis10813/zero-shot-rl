@@ -51,6 +51,9 @@ parser.add_argument("--action_condition_value", type=float)
 parser.add_argument("--cql_alpha", type=float, default=0.01)
 parser.add_argument("--dataset_path", type=str, default=None)
 parser.add_argument("--bf16", type=str, default="False")
+# rebrac and rebrac-e2e: override the config.yaml BC coefficients when given
+parser.add_argument("--actor_bc_coef", type=float, default=None)
+parser.add_argument("--critic_bc_coef", type=float, default=None)
 args = parser.parse_args()
 
 if args.wandb_logging == "True":
@@ -106,7 +109,11 @@ time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 with open(config_path, "rb") as f:
     config = yaml.safe_load(f)
 
-config.update(vars(args))
+overrides = dict(vars(args))
+for key in ("actor_bc_coef", "critic_bc_coef"):
+    if overrides[key] is None:
+        del overrides[key]
+config.update(overrides)
 config["device"] = torch.device(
     "cuda"
     if torch.cuda.is_available()
