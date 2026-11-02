@@ -2,7 +2,7 @@
 
 import abc
 from pathlib import Path
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Union, Optional, Tuple
 
 import numpy as np
 import torch
@@ -144,9 +144,21 @@ class SAC(AbstractAgent, metaclass=abc.ABCMeta):
         )
         observation = observation.unsqueeze(0)
 
-        action, _ = self.actor(observation, sample=sample)
+        action, _ = self._sample_actions(observation, sample=sample)
 
         return action.detach().cpu().numpy().squeeze(0)
+
+    def _sample_actions(
+        self, observations: torch.Tensor, sample: bool
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Returns actions and their log probabilities [..., 1] under the actor's
+        squashed normal: a reparameterised sample if sample, else the mean.
+        """
+        dist = self.actor(observations)
+        actions = dist.rsample() if sample else dist.mean
+        log_prob = dist.log_prob(actions).sum(-1, keepdim=True)
+        return actions, log_prob
 
     def update(self, batch: Batch, step: int) -> Dict[str, float]:
         """
@@ -214,7 +226,7 @@ class SAC(AbstractAgent, metaclass=abc.ABCMeta):
 
         # get next actions and evaluate log prob
         with torch.no_grad():
-            next_actions, log_prob = self.actor(next_observations, sample=True)
+            next_actions, log_prob = self._sample_actions(next_observations, sample=True)
 
             # get Q targets via soft policy evaluation
             target_Q1, target_Q2 = self.critic_target(next_observations, next_actions)
@@ -252,7 +264,7 @@ class SAC(AbstractAgent, metaclass=abc.ABCMeta):
             metrics: dictionary of metrics for logging
         """
 
-        actions, log_prob = self.actor(observations, sample=True)
+        actions, log_prob = self._sample_actions(observations, sample=True)
 
         actor_Q1, actor_Q2 = self.critic(observations, actions)
 
