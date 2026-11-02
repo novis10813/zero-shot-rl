@@ -17,6 +17,7 @@ from agents.cql.agent import CQL
 from agents.fb.agent import FB
 from agents.cfb.agent import CFB
 from agents.td3.agent import TD3
+from agents.cql_exorl.agent import CQLExORL
 from agents.rebrac.agent import ReBRAC
 from agents.rebrac.replay_buffer import ReBRACReplayBuffer
 from agents.gciql.agent import GCIQL
@@ -94,6 +95,10 @@ if args.algorithm in ("vcfb", "mcfb", "dvcfb"):
     model_dir = working_dir / "agents" / algo_dir / "saved_models"
 elif args.algorithm in ("rebrac", "rebrac-e2e"):
     algo_dir = "rebrac"
+    config_path = working_dir / "agents" / algo_dir / "config.yaml"
+    model_dir = working_dir / "agents" / algo_dir / "saved_models"
+elif args.algorithm == "cql-exorl":
+    algo_dir = "cql_exorl"
     config_path = working_dir / "agents" / algo_dir / "config.yaml"
     model_dir = working_dir / "agents" / algo_dir / "saved_models"
 elif args.algorithm in ("sf-lap", "sf-hilp"):
@@ -283,6 +288,34 @@ elif config["algorithm"] in ("rebrac", "rebrac-e2e"):
         reward_constructor=reward_constructor,
         dataset_path=dataset_path,
         transitions=config["dataset_transitions"],
+        task=config["train_task"],
+        device=config["device"],
+        discount=config["discount"],
+    )
+
+    z_inference_steps = None
+    train_std = None
+    eval_std = None
+
+elif config["algorithm"] == "cql-exorl":
+    agent = CQLExORL(
+        observation_length=observation_length,
+        action_length=action_length,
+        device=config["device"],
+        name=config["algorithm"],
+        hidden_dimension=config["hidden_dimension"],
+        learning_rate=config["learning_rate"],
+        batch_size=config["batch_size"],
+        tau=config["tau"],
+        n_samples=config["n_samples"],
+        alpha=config["alpha"],
+    )
+
+    replay_buffer = OfflineReplayBuffer(
+        reward_constructor=reward_constructor,
+        dataset_path=dataset_path,
+        transitions=config["dataset_transitions"],
+        relabel=True,
         task=config["train_task"],
         device=config["device"],
         discount=config["discount"],
