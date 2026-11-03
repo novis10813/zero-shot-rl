@@ -93,6 +93,21 @@ PYTHONPATH=. MUJOCO_GL=egl uv run python -m zero_shot_rl.eval.switch \
 
 使用的 checkpoint 與 T06 相同（三個訓練 seed），路徑與雜湊見 `tasks/T06-latent-switching/configs/sources.json`。
 
+## Optimistic 與 pessimistic 的比較
+
+`run_opt_pess.sh` 是 sbatch 腳本，一個 array 任務對應一組（訓練 seed、動力學設定），共 15 個，每個任務跑 `EPISODES`（預設 50）個 episode，只跑 always-opt 與 always-pess。pess 是與 $z_r$ 夾角 7.5 度的 CQL latent。輸出為 `data/inputs/opt_pess_s<seed>_<設定>.csv`。腳本內的 checkpoint、ensemble 與 latent 路徑對應 T06，雜湊見 `tasks/T06-latent-switching/configs/sources.json`。
+
+```bash
+mkdir -p logs && sbatch tasks/T3.2-ood-robustness/run_opt_pess.sh
+```
+
+由 `data/inputs/` 產生 `data/opt_pess.csv`（[REPORT.md](REPORT.md) 的表格來源），`--check` 逐 byte 核對既有輸出：
+
+```bash
+PYTHONPATH=.:tasks/T3.2-ood-robustness uv run python -m analyze.opt_pess
+PYTHONPATH=.:tasks/T3.2-ood-robustness uv run python -m analyze.opt_pess --check
+```
+
 ## 測試
 
 ```bash
