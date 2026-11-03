@@ -31,7 +31,7 @@ import torch
 from agents.base import OfflineReplayBuffer, load_agent
 from ensemble import load_ensemble
 from switch_eval import KAPPAS, choose_pess, latents, values
-from zero_shot_rl.eval.env import policy
+from zero_shot_rl.env.walker import policy
 
 FIELDS = ["kind", "name", "kappa", "p", "dev_data", "dev_opt", "pess_frac"]
 
