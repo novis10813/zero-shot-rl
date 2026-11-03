@@ -23,7 +23,7 @@ import torch
 from agents.base import load_agent
 from zero_shot_rl.latent.archive import family_rows, validate
 from zero_shot_rl.provenance import no_clobber, sha256
-from zero_shot_rl.eval.env import render_episode, write_video
+from zero_shot_rl.env.walker import render_episode, write_video
 
 REPO = Path(__file__).resolve().parents[2]
 

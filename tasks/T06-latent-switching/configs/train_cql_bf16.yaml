@@ -3,7 +3,7 @@
 # (about 20 GB RAM and 17 GB VRAM per GPU pair after loading). On an RTX 5090 bf16 is
 # about 1.5x faster than float32 per update.
 on: idlab1
-command: PYTHONUNBUFFERED=1 uv run python main_exorl.py cql walker rnd --train_task {task} --eval_tasks {task} --wandb_logging False --dataset_path $HOME/zsrl-datasets/walker/rnd/dataset.npz --seed {seed} --bf16 True
+command: PYTHONUNBUFFERED=1 uv run python -m zero_shot_rl.train.main_exorl cql walker rnd --train_task {task} --eval_tasks {task} --wandb_logging False --dataset_path $HOME/zsrl-datasets/walker/rnd/dataset.npz --seed {seed} --bf16 True
 vram: 12G
 gpus: 1
 grid:

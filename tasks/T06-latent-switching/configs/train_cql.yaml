@@ -9,7 +9,7 @@ gpu_type: a100
 time: 30h
 cpus: 4
 mem: 40G
-command: PYTHONUNBUFFERED=1 uv run python main_exorl.py cql walker rnd --train_task {task} --eval_tasks {task} --wandb_logging False --dataset_path /ceph/work/IDLAB/$USER/zsrl-datasets/walker/rnd/dataset.npz --seed {seed}
+command: PYTHONUNBUFFERED=1 uv run python -m zero_shot_rl.train.main_exorl cql walker rnd --train_task {task} --eval_tasks {task} --wandb_logging False --dataset_path /ceph/work/IDLAB/$USER/zsrl-datasets/walker/rnd/dataset.npz --seed {seed}
 grid:
   task: [stand, walk, run, flip]
   seed: [0, 1, 2]

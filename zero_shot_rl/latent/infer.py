@@ -18,7 +18,7 @@ import torch
 from agents.base import load_agent
 from agents.fb.inference_buffer import FBInferenceReplayBuffer
 from rewards import RewardFunctionConstructor
-from utils import set_seed_everywhere
+from zero_shot_rl.utils import set_seed_everywhere
 from zero_shot_rl.latent.implicit import DISCOUNT, FBImplicitZ, Simulator, tangent
 from zero_shot_rl.latent.solver import angle, normalized
 

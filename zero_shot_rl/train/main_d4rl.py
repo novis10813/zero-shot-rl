@@ -15,7 +15,7 @@ from agents.cfb.agent import CFB
 from agents.cql.agent import CQL
 from agents.sf.agent import SF
 from agents.base import D4RLReplayBuffer
-from utils import set_seed_everywhere
+from zero_shot_rl.utils import set_seed_everywhere
 
 parser = ArgumentParser()
 parser.add_argument("algorithm", type=str)

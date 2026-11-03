@@ -17,7 +17,7 @@ from agents.base import load_agent
 from agents.fb.replay_buffer import FBReplayBuffer
 from agents.workspaces import OfflineRLWorkspace
 from rewards import RewardFunctionConstructor
-from utils import set_seed_everywhere
+from zero_shot_rl.utils import set_seed_everywhere
 
 parser = ArgumentParser()
 parser.add_argument("checkpoint", type=str)

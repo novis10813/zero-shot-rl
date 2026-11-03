@@ -5,7 +5,7 @@
 from argparse import ArgumentParser
 from os import listdir
 import numpy as np
-from utils import BASE_DIR
+from zero_shot_rl.utils import BASE_DIR
 from tqdm import tqdm
 from loguru import logger
 import subprocess

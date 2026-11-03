@@ -47,7 +47,7 @@ from agents.base import load_agent
 from agents.fb.agent import FB
 from ensemble import load_ensemble
 from rewards import RewardFunctionConstructor
-from zero_shot_rl.eval.env import make_env, policy
+from zero_shot_rl.env.walker import make_env, policy
 from zero_shot_rl.provenance import sha256
 
 FALL_HEIGHT = 0.6

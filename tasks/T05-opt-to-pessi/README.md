@@ -148,7 +148,7 @@ PYTHONPATH=.:tasks/T05-opt-to-pessi .venv/bin/python -m analyze.q2 --check
 
 `delta_` 一律是修正 latent 減原始 reward latent。`*_mean_mean` 是先對每個模型的 20 episodes 取平均，再對三個訓練 seeds 等權平均。`*_mean_min/max` 是三個 seed 平均的範圍，不是 episode 範圍或信賴區間。不混合任務，也不把 episodes 當額外的訓練 seeds。`delta_*_se` 是配對差樣本標準差除以 20 的平方根，僅衡量固定模型內初始狀態的變動，不包含模型訓練變異。報告列出跑步 CQL 與翻轉 ReBRAC 兩個例子，其餘 SE 可從 seed summary 查詢，不進行顯著性檢定或多重比較校正。三個選定模型的訓練步數不同，不能把模型間差異都歸因於隨機 seed。`delta_*_positive_episodes` 只是差值為正的次數，不代表成功次數，對低高度時間或飽和比例而言，正值也不表示較好。
 
-配對由 `zero_shot_rl/eval/env.py` 的 `make_env(e)` 與確定性 actor 確保相同初始化種子，沒有儲存初始物理狀態供獨立核對。CSV 與 NPZ 的列索引、任務、family、係數、角度及 20 episodes 覆蓋率會完整驗證。CSV 只有六位有效數字，不能藉數值微小非零就宣稱差異具統計或實務意義。輸出保留十位有效數字，報告採 Python 預設浮點格式化取位。`--check` 是本機相同 NumPy 環境下的逐字核對，其他 BLAS／NumPy 環境若出現末位差異，須先確認是數值精度而非輸入或演算法變更。
+配對由 `zero_shot_rl/env/walker.py` 的 `make_env(e)` 與確定性 actor 確保相同初始化種子，沒有儲存初始物理狀態供獨立核對。CSV 與 NPZ 的列索引、任務、family、係數、角度及 20 episodes 覆蓋率會完整驗證。CSV 只有六位有效數字，不能藉數值微小非零就宣稱差異具統計或實務意義。輸出保留十位有效數字，報告採 Python 預設浮點格式化取位。`--check` 是本機相同 NumPy 環境下的逐字核對，其他 BLAS／NumPy 環境若出現末位差異，須先確認是數值精度而非輸入或演算法變更。
 
 指標定義見 `zero_shot_rl/eval/latents.py`：`return` 是 1000 steps 的原始任務 reward 總和；`speed` 是平均水平速度；`upright` 是平均軀幹朝上分量；`fall_frac` 是軀幹高度低於 0.6 的時間比例；`sat_frac` 是動作分量絕對值大於 0.99 的比例；`abs_action` 是動作絕對值平均；`knn_dist` 是每維以資料集均值／標準差縮放後，狀態與動作拼接向量到最近訓練樣本的平均歐氏距離。實驗預設每 10 steps 計算最近鄰距離，所有 episodes 固定跑滿 1000 steps。`m7` 與 `q_corr` 不納入 Q2，後者本來就是每個 latent 跨 probes 的相關係數，不是每個 episode 的獨立測量。
 

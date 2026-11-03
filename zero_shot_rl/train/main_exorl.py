@@ -24,7 +24,7 @@ from agents.gciql.agent import GCIQL
 from agents.sf.agent import SF
 from agents.fb.replay_buffer import FBReplayBuffer
 from rewards import RewardFunctionConstructor
-from utils import set_seed_everywhere, BASE_DIR
+from zero_shot_rl.utils import set_seed_everywhere, BASE_DIR
 
 parser = ArgumentParser()
 parser.add_argument("algorithm", type=str)

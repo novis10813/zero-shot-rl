@@ -31,7 +31,7 @@ import torch
 from agents.base import load_agent
 from agents.fb.replay_buffer import FBReplayBuffer
 from rewards import RewardFunctionConstructor
-from utils import set_seed_everywhere
+from zero_shot_rl.utils import set_seed_everywhere
 from zero_shot_rl.provenance import sha256
 
 TRAIN_STD = 0.2  # agents/fb/config.yaml std_dev_schedule

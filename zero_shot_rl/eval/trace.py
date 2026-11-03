@@ -27,7 +27,7 @@ from agents.base import load_agent
 from agents.fb.agent import FB
 from zero_shot_rl.latent.archive import matched_rows, validate
 from zero_shot_rl.provenance import no_clobber, sha256, snapshot
-from zero_shot_rl.eval.env import make_env, policy
+from zero_shot_rl.env.walker import make_env, policy
 from zero_shot_rl.eval.trace_format import DT, EPISODES, STEPS, TRACE_KEYS, validate_trace
 
 REPO = Path(__file__).resolve().parents[2]
@@ -79,7 +79,7 @@ def publish_npz(path, trace):
 
 
 def source_files():
-    files = [REPO / "agents/base.py", REPO / "agents/utils.py", REPO / "utils.py", REPO / "dmc.py"]
+    files = [REPO / "agents/base.py", REPO / "agents/utils.py"]
     for folder in ("zero_shot_rl", "agents/fb", "custom_dmc_tasks", "rewards/walker"):
         files += sorted((REPO / folder).rglob("*.py"))
     files += sorted((REPO / "custom_dmc_tasks").rglob("*.xml"))
