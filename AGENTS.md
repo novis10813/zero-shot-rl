@@ -9,17 +9,19 @@ code, one report per task.
 agents/ rewards/ custom_dmc_tasks/       upstream code
 download.sh                              upstream dataset download, called by exorl_reformatter
 zero_shot_rl/                            shared code: upstream root modules and ours
-  train/                                 training entries (upstream): main_exorl, main_d4rl
+  train/                                 training entries: main_exorl, main_d4rl (upstream),
+                                         ensemble (forward ensemble for a fixed FB)
   data/                                  dataset preparation (upstream): exorl_reformatter
   env/                                   environments
                                          dmc (upstream DMC wrappers), walker (Walker env
                                          and deterministic standard FB actor)
   latent/                                FB latents from stored data, with single simulator steps
                                          from stored physics, no rollouts
-                                         solver, implicit, archive (library), infer (entry)
+                                         solver, implicit, archive, switch (library), infer,
+                                         deviation (entry)
   eval/                                  rollouts in the simulator
                                          trace_format (library), checkpoint, latents, trace,
-                                         video (entry)
+                                         video, switch (entry)
   utils.py                               seeding and BASE_DIR (upstream)
   provenance.py                          file hashes and no-clobber publication
 analysis/                                analysis tools used by two or more tasks

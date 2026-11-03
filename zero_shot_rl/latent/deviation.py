@@ -8,15 +8,17 @@ subsampling of OfflineReplayBuffer), with their dataset actions a_D, it writes p
     pess_frac fraction of states that take a_pess (rule C only)
 
 for these policies:
-    candidate   pi(s, z) for every row of the --zs NPZ (cql_sweep.py), named as in
-                analyze.selection ("z_r 0", "CQL 7.5", "T05 z_r", ...)
-    switch      rule C of switch_eval.py at each kappa of --kappas between z_r and the
-                CQL latent at --angle, with the --ensemble of the same checkpoint
+    candidate   pi(s, z) for every row of the --zs NPZ
+                (tasks/T06-latent-switching/cql_sweep.py), named as in
+                tasks/T06-latent-switching/analyze/selection.py ("z_r 0", "CQL 7.5",
+                "T05 z_r", ...)
+    switch      rule C (zero_shot_rl.latent.switch) at each kappa of --kappas between z_r
+                and the CQL latent at --angle, with the --ensemble of the same checkpoint
     random      a_pess with probability p: the deviation is the expectation
                 (1 - p) dev(a_opt) + p dev(a_pess)
 
 Usage (repo root):
-    PYTHONPATH=.:tasks/T06-latent-switching uv run python -m deviation \
+    PYTHONPATH=. uv run python -m zero_shot_rl.latent.deviation \
         --checkpoint <fb.pt> --ensemble <ensemble.pt> --zs <zs_sweep.npz> \
         --dataset_path <dir>/walker/rnd/dataset.npz --out <deviation.csv>
 """
@@ -29,9 +31,9 @@ import numpy as np
 import torch
 
 from agents.base import OfflineReplayBuffer, load_agent
-from ensemble import load_ensemble
-from switch_eval import KAPPAS, choose_pess, latents, values
 from zero_shot_rl.env.walker import policy
+from zero_shot_rl.latent.switch import KAPPAS, choose_pess, latents, values
+from zero_shot_rl.train.ensemble import load_ensemble
 
 FIELDS = ["kind", "name", "kappa", "p", "dev_data", "dev_opt", "pess_frac"]
 

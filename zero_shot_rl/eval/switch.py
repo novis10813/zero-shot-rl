@@ -1,15 +1,16 @@
 """Rule C: switch per step between the optimistic and pessimistic actions of a fixed FB.
 
 Neggatu et al. (arXiv 2503.12222) Algorithm 1, with the behaviour-cloning action
-replaced by the actor at a pessimistic latent. At every step s, with z_r and the CQL
-latent z_cql at --angle degrees from z_r (cql_sweep.py) for --task,
+replaced by the actor at a pessimistic latent (zero_shot_rl.latent.switch). At every
+step s, with z_r and the CQL latent z_cql at --angle degrees from z_r
+(tasks/T06-latent-switching/cql_sweep.py) for --task,
 
     a_opt  = pi(s, z_r),  a_pess = pi(s, z_cql)
     Q(a)   = mean_k F_k(s, a, z_r)^T z_r,  u(a) = std_k F_k(s, a, z_r)^T z_r
     take a_pess if Q(a_opt) - kappa u(a_opt) < Q(a_pess), else a_opt
 
-with F_k the members of an ensemble.py ensemble trained for the same checkpoint. z_r is
-the unit latent: the rule compares Q and kappa u, which both scale with |z_hat_r|, so
+with F_k the members of a zero_shot_rl.train.ensemble ensemble trained for the same
+checkpoint. z_r is the unit latent: the rule compares Q and kappa u, which both scale with |z_hat_r|, so
 the choice is the same in reward units, and Q, u and the gap below are in units of
 |z_hat_r|. The paper's sigma_D term is left out, since it needs returns.
 
@@ -31,7 +32,7 @@ of an environment seeded with e, as in zero_shot_rl.eval.latents. Per episode it
     gap        mean Q(a_opt) - Q(a_pess)
 
 Usage (repo root):
-    PYTHONPATH=.:tasks/T06-latent-switching MUJOCO_GL=egl uv run python -m switch_eval \
+    PYTHONPATH=. MUJOCO_GL=egl uv run python -m zero_shot_rl.eval.switch \
         --checkpoint <fb.pt> --ensemble <ensemble.pt> --zs <zs_sweep.npz> --out <switch.csv>
 """
 
@@ -45,41 +46,17 @@ import torch
 
 from agents.base import load_agent
 from agents.fb.agent import FB
-from ensemble import load_ensemble
 from rewards import RewardFunctionConstructor
 from zero_shot_rl.env.walker import make_env, policy
+from zero_shot_rl.latent.switch import KAPPAS, choose_pess, latents, values
 from zero_shot_rl.provenance import sha256
+from zero_shot_rl.train.ensemble import load_ensemble
 
 FALL_HEIGHT = 0.6
-KAPPAS = [0.0, 0.001, 0.003, 0.01, 0.03, 0.1]
 FIELDS = ["condition", "kappa", "p", "episode", "return", "pess_frac", "switches", "speed",
           "fall_frac", "u_opt", "gap"]
 
 G = {}  # per-process state, filled before the pool forks
-
-
-def choose_pess(q_opt, u_opt, q_pess, condition):
-    """Boolean mask of the states that take a_pess under a condition: "opt", "pess" or
-    a kappa."""
-    if condition == "opt":
-        return np.zeros(len(q_opt), dtype=bool)
-    if condition == "pess":
-        return np.ones(len(q_opt), dtype=bool)
-    return q_opt - condition * u_opt < q_pess
-
-
-def latents(zs, task, target_angle):
-    """Unit z_r and z_cql of a cql_sweep.py NPZ."""
-    in_task = zs["task"] == task
-    (r,) = np.flatnonzero(in_task & (zs["family"] == "z_r"))
-    (c,) = np.flatnonzero(in_task & (zs["family"] == "CQL") & (zs["target_angle"] == target_angle))
-    return zs["z"][r], zs["z"][c]
-
-
-def values(ensemble, obs, actions, z):
-    """Mean and std over members of F_k(s, a, z)^T z."""
-    q = ensemble(obs, actions, z) @ z[0]  # [K, N]
-    return q.mean(0).numpy(), q.std(0).numpy()
 
 
 def rollout(condition):

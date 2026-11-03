@@ -1,10 +1,10 @@
-"""Decision rule and latent selection of switch_eval."""
+"""Decision rule and latent selection of zero_shot_rl.latent.switch."""
 
 import unittest
 
 import numpy as np
 
-from switch_eval import choose_pess, latents
+from zero_shot_rl.latent.switch import choose_pess, latents
 
 
 class ChoosePessTests(unittest.TestCase):

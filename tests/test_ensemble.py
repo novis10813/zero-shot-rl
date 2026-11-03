@@ -9,10 +9,10 @@ import torch
 
 from agents.base import load_agent
 from agents.fb.base import AbstractPreprocessor
-from ensemble import (ARCHITECTURE, EnsembleTrainer, FEnsemble, ensemble_mlp, load_ensemble,
-                      save_ensemble)
+from zero_shot_rl.train.ensemble import (ARCHITECTURE, EnsembleTrainer, FEnsemble, ensemble_mlp,
+                                         load_ensemble, save_ensemble)
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[1]
 CHECKPOINT = ROOT / "artifacts/T04-mcfb-pessimism/zsrl-32/800000.pt"
 CPU = torch.device("cpu")
 

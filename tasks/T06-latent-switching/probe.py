@@ -14,8 +14,8 @@ few degrees; it must stay within --max_angle_error degrees of the stored latents
     nn   nearest training (s, a), per-dimension standardised
     r_mean  mean reward of the inference set; FB misestimates the value of its
          constant part by r_mean (c_k - 1/(1-gamma))
-    q_ens, c_ens  q_k and c_k of each member of --ensemble (ensemble.py), if given,
-         of shape [rows, members]
+    q_ens, c_ens  q_k and c_k of each member of --ensemble
+         (zero_shot_rl.train.ensemble), if given, of shape [rows, members]
     obs, action   the probed (s, a)
     G    Monte Carlo return: set the simulator to s, take a, then follow the actor at z_r
          with the training noise (std 0.2) for --horizon steps, gamma = 0.98
@@ -51,8 +51,7 @@ from zero_shot_rl.latent.implicit import DISCOUNT, Simulator
 from zero_shot_rl.latent.infer import TASKS, build_solver, solver_arguments
 from zero_shot_rl.latent.solver import angle, normalized
 from zero_shot_rl.provenance import sha256
-
-from ensemble import load_ensemble
+from zero_shot_rl.train.ensemble import load_ensemble
 
 TRAIN_STD = 0.2  # agents/fb/config.yaml std_dev_schedule; the actor clips at 0.3
 EPISODE = 1000

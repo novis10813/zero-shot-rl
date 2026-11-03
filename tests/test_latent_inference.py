@@ -174,7 +174,9 @@ class ImportTests(unittest.TestCase):
         script = """
 import importlib
 for name in ('zero_shot_rl.latent.infer', 'zero_shot_rl.eval.latents',
-             'zero_shot_rl.eval.video', 'zero_shot_rl.eval.trace'):
+             'zero_shot_rl.eval.video', 'zero_shot_rl.eval.trace',
+             'zero_shot_rl.eval.switch', 'zero_shot_rl.latent.deviation',
+             'zero_shot_rl.train.ensemble'):
     importlib.import_module(name)
 """
         environment = dict(os.environ)

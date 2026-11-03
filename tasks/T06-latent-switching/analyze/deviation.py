@@ -1,14 +1,15 @@
 """Walk return against action deviation of the policies of a fixed FB, per seed.
 
-It joins the deviations of deviation.py with the logged walk returns of the same
-policies:
+It joins the deviations of zero_shot_rl.latent.deviation with the logged walk returns of
+the same policies:
     candidate   every latent of the CQL angle sweep (rollouts CSV of
                 zero_shot_rl.eval.latents, 100 episodes)
-    switch      rule C at each kappa (switch_eval.py kappa sweep CSV, 100 episodes)
-    random      a_pess with probability 0.5 at every step (switch_eval.py --random_ps
-                CSV, 100 episodes)
-    final       the 300-episode comparison (switch_eval.py --episodes 300 --kappas 0
-                --random_ps 0.5): pure FB, always pess, random and Algo 1 (rule C at
+    switch      rule C at each kappa (zero_shot_rl.eval.switch kappa sweep CSV,
+                100 episodes)
+    random      a_pess with probability 0.5 at every step (zero_shot_rl.eval.switch
+                --random_ps CSV, 100 episodes)
+    final       the 300-episode comparison (zero_shot_rl.eval.switch --episodes 300
+                --kappas 0 --random_ps 0.5): pure FB, always pess, random and Algo 1 (rule C at
                 kappa 0), with the deviations of z_r, the CQL latent, random p 0.5 and
                 rule C at kappa 0
 and writes
@@ -38,7 +39,7 @@ FIELDS = ["seed", "kind", "name", "kappa", "p", "pess_frac", "dev_data", "dev_op
           "return", "return_se", "episodes"]
 RANDOM_P = "0.5"
 ANGLE = "7.5"  # the CQL latent of rule C
-# the 300-episode comparison: condition of switch_eval.py, name, deviation row
+# the 300-episode comparison: condition of zero_shot_rl.eval.switch, name, deviation row
 FINAL = (("opt", "pure FB", "z_r 0"), ("pess", "always pess", f"CQL {ANGLE}"),
          ("random", "random", f"random {RANDOM_P}"), ("switch", "Algo 1", "switch 0"))
 FINAL_COLORS = {"pure FB": "tab:red", "always pess": "tab:blue", "random": "tab:purple",
@@ -61,7 +62,7 @@ def candidate_returns(path):
 
 
 def switch_returns(switch_path, random_path):
-    """{name in deviation.py: returns} of rule C kappas and random p = 0.5."""
+    """{name in zero_shot_rl.latent.deviation: returns} of rule C kappas and random p = 0.5."""
     out = {}
     for row in read(switch_path):
         if row["condition"] == "switch":

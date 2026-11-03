@@ -15,7 +15,7 @@ Every --save_every steps it writes <out stem>_<step>.pt, and <out> at the end; l
 them with load_ensemble.
 
 Usage (repo root):
-    PYTHONPATH=.:tasks/T06-latent-switching uv run python -m ensemble \
+    PYTHONPATH=. uv run python -m zero_shot_rl.train.ensemble \
         --checkpoint <fb.pt> --dataset_path <dataset.npz> --out <ensemble.pt>
 """
 

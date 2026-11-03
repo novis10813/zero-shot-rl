@@ -1,7 +1,7 @@
 """Forward-ensemble analysis of the probe NPZs written by probe.py --ensemble.
 
-The members F_k of ensemble.py give, at every probed (s, a) and z_r, the values
-q_ens_k = F_k^T z_hat_r and c_ens_k = F_k^T u_1 (exact: 1/(1-gamma)). With
+The members F_k of zero_shot_rl.train.ensemble give, at every probed (s, a) and z_r, the
+values q_ens_k = F_k^T z_hat_r and c_ens_k = F_k^T u_1 (exact: 1/(1-gamma)). With
 std_ens = std_k q_ens_k, q_ens = mean_k q_ens_k and over the corrected overestimation of
 the FB checkpoint (analyze.stage0), it writes per seed, task and source, and over all
 sources pooled ("all"),
