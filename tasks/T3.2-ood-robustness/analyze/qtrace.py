@@ -12,6 +12,8 @@ config, and writes data/qtrace.csv with one row per config, pooled over the trai
     q_choice_gain  mean of (g of the action Q prefers) - g_opt over the points
     oracle_gain    mean of max(g_opt, g_pess) - g_opt over the points
     u_opt          mean ensemble std of q_opt over the 1000 steps of the always-opt episodes
+    q_opt          mean over the 1000 steps of the ensemble mean Q of a_opt; q_minus_clean and its
+                   standard error are paired with the clean config like u_minus_clean
     u_minus_clean  mean over (training seed, episode) of the episode's u_opt minus that of the same
                    episode in the clean config (same start state), with its standard error
 
@@ -34,17 +36,18 @@ CONFIGS = ["baseline", "friction_mild", "friction_strong", "actuator_mild", "act
 SEEDS = [0, 1, 2]
 FIELDS = (["config", "points", "mean_abs_dg", "agree", "agree_top_dq", "corr"]
           + [f"corr_seed{s}" for s in SEEDS]
-          + ["q_choice_gain", "oracle_gain", "u_opt", "u_minus_clean", "u_minus_clean_se"])
+          + ["q_choice_gain", "oracle_gain", "u_opt", "u_minus_clean", "u_minus_clean_se", "q_opt", "q_minus_clean",
+                                 "q_minus_clean_se"])
 
 
-def episode_u(input_dir, config):
-    """Per (training seed, episode) mean u_opt over the 1000 steps."""
-    return np.concatenate([np.load(input_dir / f"qtrace_s{s}_{config}.npz")["u_opt"].mean(1) for s in SEEDS])
+def episode_mean(input_dir, config, key):
+    """Per (training seed, episode) mean of a per-step trace over the 1000 steps."""
+    return np.concatenate([np.load(input_dir / f"qtrace_s{s}_{config}.npz")[key].mean(1) for s in SEEDS])
 
 
 def table(input_dir):
     rows = []
-    clean = episode_u(input_dir, "baseline")
+    clean_u, clean_q = (episode_mean(input_dir, "baseline", k) for k in ("u_opt", "q_opt"))
     for config in CONFIGS:
         dq, dg, go, gp, corr_seed, u = [], [], [], [], [], []
         for seed in SEEDS:
@@ -67,9 +70,11 @@ def table(input_dir):
             "q_choice_gain": (pick - go).mean(), "oracle_gain": (np.maximum(go, gp) - go).mean(),
             "u_opt": u.mean(),
         }
-        paired = episode_u(input_dir, config) - clean
-        row["u_minus_clean"] = paired.mean()
-        row["u_minus_clean_se"] = paired.std(ddof=1) / np.sqrt(len(paired)) if config != "baseline" else 0.0
+        for key, clean in (("u", clean_u), ("q", clean_q)):
+            paired = episode_mean(input_dir, config, f"{key}_opt") - clean
+            row[f"{key}_minus_clean"] = paired.mean()
+            row[f"{key}_minus_clean_se"] = paired.std(ddof=1) / np.sqrt(len(paired)) if config != "baseline" else 0.0
+        row["q_opt"] = episode_mean(input_dir, config, "q_opt").mean()
         row.update({f"corr_seed{s}": c for s, c in zip(SEEDS, corr_seed)})
         rows.append(row)
     return rows
