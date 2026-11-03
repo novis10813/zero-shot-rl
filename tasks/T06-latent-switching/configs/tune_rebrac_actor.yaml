@@ -1,0 +1,13 @@
+# lab sweep spec: actor BC coefficient of single-task ReBRAC on walker rnd-100k, walk only,
+# seed 0, 300k steps (the 1M-step runs flatten by 100k), critic_bc_coef fixed at the
+# config.yaml value 0.1. 0.03 is the config.yaml value. Submitted with --sync (the DiCOS
+# login node cannot clone the repo). Each job peaks at about 22 GB RAM.
+on: dicos:a100-al9
+gpus: 1
+gpu_type: a100
+time: 4h
+cpus: 4
+mem: 40G
+command: PYTHONUNBUFFERED=1 uv run python -m zero_shot_rl.train.main_exorl rebrac walker rnd --train_task walk --eval_tasks walk --wandb_logging False --dataset_path /ceph/work/IDLAB/$USER/zsrl-datasets/walker/rnd/dataset.npz --seed 0 --learning_steps 300000 --critic_bc_coef 0.1 --actor_bc_coef {actor_bc_coef}
+grid:
+  actor_bc_coef: [0.001, 0.003, 0.01, 0.03, 0.1]

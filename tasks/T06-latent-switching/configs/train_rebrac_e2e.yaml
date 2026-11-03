@@ -1,0 +1,13 @@
+# lab sweep spec: single-task ReBRAC-E2E (agents/rebrac/config.yaml, e2e_beta_dq 0.001)
+# on walker rnd-100k, one policy per task, seeds 0-2. Submitted with --sync (the DiCOS
+# login node cannot clone the repo). Each job peaks at about 22 GB RAM.
+on: dicos:a100-al9
+gpus: 1
+gpu_type: a100
+time: 30h
+cpus: 4
+mem: 40G
+command: PYTHONUNBUFFERED=1 uv run python -m zero_shot_rl.train.main_exorl rebrac-e2e walker rnd --train_task {task} --eval_tasks {task} --wandb_logging False --dataset_path /ceph/work/IDLAB/$USER/zsrl-datasets/walker/rnd/dataset.npz --seed {seed}
+grid:
+  task: [stand, walk, run, flip]
+  seed: [0, 1, 2]

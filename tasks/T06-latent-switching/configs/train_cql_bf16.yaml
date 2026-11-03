@@ -1,0 +1,11 @@
+# lab sweep spec: single-task CQL as train_cql.yaml, but with bfloat16 autocast in the
+# updates (--bf16 True), seed 0 only. Run on idlab1 with lab run, two jobs per GPU
+# (about 20 GB RAM and 17 GB VRAM per GPU pair after loading). On an RTX 5090 bf16 is
+# about 1.5x faster than float32 per update.
+on: idlab1
+command: PYTHONUNBUFFERED=1 uv run python -m zero_shot_rl.train.main_exorl cql walker rnd --train_task {task} --eval_tasks {task} --wandb_logging False --dataset_path $HOME/zsrl-datasets/walker/rnd/dataset.npz --seed {seed} --bf16 True
+vram: 12G
+gpus: 1
+grid:
+  task: [stand, walk, run, flip]
+  seed: [0]

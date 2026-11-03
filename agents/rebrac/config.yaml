@@ -1,0 +1,26 @@
+# ReBRAC paper Table 10 (Gym-MuJoCo) and CORL defaults. The CLI default of zero_shot_rl/train/main_exorl.py
+# overrides discount with 0.98, as for every other ExORL agent.
+name: "rebrac"
+learning_steps: 1000000
+batch_size: 1024
+eval_rollouts: 10
+eval_frequency: 20000
+seed: 42
+
+hidden_dimension: 256
+hidden_layers: 3
+ensemble_size: 2
+actor_learning_rate: 0.001
+critic_learning_rate: 0.001
+discount: 0.99
+tau: 0.005
+policy_noise: 0.2
+noise_clip: 0.5
+policy_freq: 2
+
+# no ExORL values in the paper: V-D4RL walker-walk-random (Table 12), all four tasks
+actor_bc_coef: 0.03
+critic_bc_coef: 0.1
+
+# used only by the rebrac-e2e algorithm (E2E paper main setting)
+e2e_beta_dq: 0.001

@@ -1,0 +1,205 @@
+{
+  "note": "Paths are relative to the repository root. Probe and checkpoint hashes are also recorded in the exp/T06-<job> tags.",
+  "models": [
+    {
+      "training_seed": 0,
+      "job": "zero-shot-rl-36",
+      "probe": "tasks/T06-latent-switching/data/inputs/probe_fb_zero-shot-rl-36.npz",
+      "latents": "tasks/T05-opt-to-pessi/data/inputs/zs_fb_zero-shot-rl-30.npz",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-32/800000.pt",
+      "checkpoint_sha256": "2797c6587ded0677d1f57575f516683613b7734b05f40ac8b2ffb330ec52e81a"
+    },
+    {
+      "training_seed": 1,
+      "job": "zero-shot-rl-37",
+      "probe": "tasks/T06-latent-switching/data/inputs/probe_fb_zero-shot-rl-37.npz",
+      "latents": "tasks/T05-opt-to-pessi/data/inputs/zs_fb_zero-shot-rl-31.npz",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-41/680000.pt",
+      "checkpoint_sha256": "7f6e641cc44244787a599c0b2de4b14e6310eaf0a36cda9c50162bf9c7cc91be"
+    },
+    {
+      "training_seed": 2,
+      "job": "zero-shot-rl-38",
+      "probe": "tasks/T06-latent-switching/data/inputs/probe_fb_zero-shot-rl-38.npz",
+      "latents": "tasks/T05-opt-to-pessi/data/inputs/zs_fb_zero-shot-rl-32.npz",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-42/200000.pt",
+      "checkpoint_sha256": "229f7dae43ef6a52c288d2724aa303d7b3a4564eb9d557e6799a6e1a683b6e08"
+    }
+  ],
+  "ensembles": [
+    {
+      "training_seed": 0,
+      "job": "zero-shot-rl-43",
+      "probe": "tasks/T06-latent-switching/data/inputs/probe_ens_zero-shot-rl-43.npz",
+      "ensemble": "artifacts/T06-latent-switching/zero-shot-rl-43/ensemble.pt",
+      "latents": "tasks/T05-opt-to-pessi/data/inputs/zs_fb_zero-shot-rl-30.npz",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-32/800000.pt",
+      "checkpoint_sha256": "2797c6587ded0677d1f57575f516683613b7734b05f40ac8b2ffb330ec52e81a"
+    },
+    {
+      "training_seed": 1,
+      "job": "zero-shot-rl-44",
+      "probe": "tasks/T06-latent-switching/data/inputs/probe_ens_zero-shot-rl-44.npz",
+      "ensemble": "artifacts/T06-latent-switching/zero-shot-rl-44/ensemble.pt",
+      "latents": "tasks/T05-opt-to-pessi/data/inputs/zs_fb_zero-shot-rl-31.npz",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-41/680000.pt",
+      "checkpoint_sha256": "7f6e641cc44244787a599c0b2de4b14e6310eaf0a36cda9c50162bf9c7cc91be"
+    },
+    {
+      "training_seed": 2,
+      "job": "zero-shot-rl-45",
+      "probe": "tasks/T06-latent-switching/data/inputs/probe_ens_zero-shot-rl-45.npz",
+      "ensemble": "artifacts/T06-latent-switching/zero-shot-rl-45/ensemble.pt",
+      "latents": "tasks/T05-opt-to-pessi/data/inputs/zs_fb_zero-shot-rl-32.npz",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-42/200000.pt",
+      "checkpoint_sha256": "229f7dae43ef6a52c288d2724aa303d7b3a4564eb9d557e6799a6e1a683b6e08"
+    }
+  ],
+  "cql_sweeps": [
+    {
+      "training_seed": 0,
+      "job": "zero-shot-rl-46",
+      "task": "walk",
+      "latents": "tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-46.npz",
+      "rollouts": "tasks/T06-latent-switching/data/inputs/rollouts_cql_sweep_zero-shot-rl-46.csv",
+      "stored_latents": "tasks/T05-opt-to-pessi/data/inputs/zs_fb_zero-shot-rl-30.npz",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-32/800000.pt",
+      "checkpoint_sha256": "2797c6587ded0677d1f57575f516683613b7734b05f40ac8b2ffb330ec52e81a"
+    },
+    {
+      "training_seed": 1,
+      "job": "zero-shot-rl-47",
+      "task": "walk",
+      "latents": "tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-47.npz",
+      "rollouts": "tasks/T06-latent-switching/data/inputs/rollouts_cql_sweep_zero-shot-rl-47.csv",
+      "stored_latents": "tasks/T05-opt-to-pessi/data/inputs/zs_fb_zero-shot-rl-31.npz",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-41/680000.pt",
+      "checkpoint_sha256": "7f6e641cc44244787a599c0b2de4b14e6310eaf0a36cda9c50162bf9c7cc91be"
+    },
+    {
+      "training_seed": 2,
+      "job": "zero-shot-rl-48",
+      "task": "walk",
+      "latents": "tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-48.npz",
+      "rollouts": "tasks/T06-latent-switching/data/inputs/rollouts_cql_sweep_zero-shot-rl-48.csv",
+      "stored_latents": "tasks/T05-opt-to-pessi/data/inputs/zs_fb_zero-shot-rl-32.npz",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-42/200000.pt",
+      "checkpoint_sha256": "229f7dae43ef6a52c288d2724aa303d7b3a4564eb9d557e6799a6e1a683b6e08"
+    }
+  ],
+  "switch_rule_c": [
+    {
+      "training_seed": 0,
+      "job": "zero-shot-rl-49",
+      "task": "walk",
+      "cql_target_angle": 7.5,
+      "latents": "tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-46.npz",
+      "ensemble_job": "zero-shot-rl-43",
+      "rollouts": "tasks/T06-latent-switching/data/inputs/switch_zero-shot-rl-49.csv",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-32/800000.pt",
+      "checkpoint_sha256": "2797c6587ded0677d1f57575f516683613b7734b05f40ac8b2ffb330ec52e81a"
+    },
+    {
+      "training_seed": 1,
+      "job": "zero-shot-rl-50",
+      "task": "walk",
+      "cql_target_angle": 7.5,
+      "latents": "tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-47.npz",
+      "ensemble_job": "zero-shot-rl-44",
+      "rollouts": "tasks/T06-latent-switching/data/inputs/switch_zero-shot-rl-50.csv",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-41/680000.pt",
+      "checkpoint_sha256": "7f6e641cc44244787a599c0b2de4b14e6310eaf0a36cda9c50162bf9c7cc91be"
+    },
+    {
+      "training_seed": 2,
+      "job": "zero-shot-rl-51",
+      "task": "walk",
+      "cql_target_angle": 7.5,
+      "latents": "tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-48.npz",
+      "ensemble_job": "zero-shot-rl-45",
+      "rollouts": "tasks/T06-latent-switching/data/inputs/switch_zero-shot-rl-51.csv",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-42/200000.pt",
+      "checkpoint_sha256": "229f7dae43ef6a52c288d2724aa303d7b3a4564eb9d557e6799a6e1a683b6e08"
+    }
+  ],
+  "switch_random_control": [
+    {
+      "training_seed": 0,
+      "job": "zero-shot-rl-52",
+      "task": "walk",
+      "cql_target_angle": 7.5,
+      "episodes": 100,
+      "conditions": "opt, pess, random p 0.5 0.75 0.97",
+      "latents": "tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-46.npz",
+      "ensemble_job": "zero-shot-rl-43",
+      "rollouts": "tasks/T06-latent-switching/data/inputs/switch_zero-shot-rl-52.csv",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-32/800000.pt",
+      "checkpoint_sha256": "2797c6587ded0677d1f57575f516683613b7734b05f40ac8b2ffb330ec52e81a"
+    },
+    {
+      "training_seed": 1,
+      "job": "zero-shot-rl-53",
+      "task": "walk",
+      "cql_target_angle": 7.5,
+      "episodes": 100,
+      "conditions": "opt, pess, random p 0.5 0.75 0.97",
+      "latents": "tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-47.npz",
+      "ensemble_job": "zero-shot-rl-44",
+      "rollouts": "tasks/T06-latent-switching/data/inputs/switch_zero-shot-rl-53.csv",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-41/680000.pt",
+      "checkpoint_sha256": "7f6e641cc44244787a599c0b2de4b14e6310eaf0a36cda9c50162bf9c7cc91be"
+    },
+    {
+      "training_seed": 2,
+      "job": "zero-shot-rl-54",
+      "task": "walk",
+      "cql_target_angle": 7.5,
+      "episodes": 100,
+      "conditions": "opt, pess, random p 0.5 0.75 0.97",
+      "latents": "tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-48.npz",
+      "ensemble_job": "zero-shot-rl-45",
+      "rollouts": "tasks/T06-latent-switching/data/inputs/switch_zero-shot-rl-54.csv",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-42/200000.pt",
+      "checkpoint_sha256": "229f7dae43ef6a52c288d2724aa303d7b3a4564eb9d557e6799a6e1a683b6e08"
+    },
+    {
+      "training_seed": 2,
+      "job": "zero-shot-rl-55",
+      "task": "walk",
+      "cql_target_angle": 7.5,
+      "episodes": 300,
+      "conditions": "opt, pess, kappa 0, random p 0.5",
+      "latents": "tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-48.npz",
+      "ensemble_job": "zero-shot-rl-45",
+      "rollouts": "tasks/T06-latent-switching/data/inputs/switch_zero-shot-rl-55.csv",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-42/200000.pt",
+      "checkpoint_sha256": "229f7dae43ef6a52c288d2724aa303d7b3a4564eb9d557e6799a6e1a683b6e08"
+    },
+    {
+      "training_seed": 0,
+      "job": "zero-shot-rl-56",
+      "task": "walk",
+      "cql_target_angle": 7.5,
+      "episodes": 300,
+      "conditions": "opt, pess, kappa 0, random p 0.5",
+      "latents": "tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-46.npz",
+      "ensemble_job": "zero-shot-rl-43",
+      "rollouts": "tasks/T06-latent-switching/data/inputs/switch_zero-shot-rl-56.csv",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-32/800000.pt",
+      "checkpoint_sha256": "2797c6587ded0677d1f57575f516683613b7734b05f40ac8b2ffb330ec52e81a"
+    },
+    {
+      "training_seed": 1,
+      "job": "zero-shot-rl-57",
+      "task": "walk",
+      "cql_target_angle": 7.5,
+      "episodes": 300,
+      "conditions": "opt, pess, kappa 0, random p 0.5",
+      "latents": "tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-47.npz",
+      "ensemble_job": "zero-shot-rl-44",
+      "rollouts": "tasks/T06-latent-switching/data/inputs/switch_zero-shot-rl-57.csv",
+      "checkpoint": "artifacts/T04-mcfb-pessimism/zsrl-41/680000.pt",
+      "checkpoint_sha256": "7f6e641cc44244787a599c0b2de4b14e6310eaf0a36cda9c50162bf9c7cc91be"
+    }
+  ]
+}

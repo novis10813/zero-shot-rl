@@ -1,0 +1,19 @@
+kind,name,kappa,p,dev_data,dev_opt,pess_frac
+candidate,z_r 0,,,10.7226,0,
+candidate,CQL 1,,,10.7139,0.004988,
+candidate,CQL 2.5,,,10.6985,0.0328624,
+candidate,CQL 5,,,10.6771,0.124302,
+candidate,CQL 7.5,,,10.6552,0.255029,
+candidate,CQL 10,,,10.6367,0.40906,
+candidate,CQL 15,,,10.5972,0.756986,
+candidate,CQL 20,,,10.5617,1.14183,
+candidate,T05 z_r,,,10.7304,0.0352117,
+candidate,T05 CQL 5,,,10.6804,0.237107,
+candidate,T05 CQL 10,,,10.6166,0.651773,
+switch,switch 0,0,,10.6825,0.138597,0.473
+switch,switch 0.001,0.001,,10.6799,0.141459,0.7568
+switch,switch 0.003,0.003,,10.6802,0.144993,0.8117
+switch,switch 0.01,0.01,,10.6804,0.156551,0.8846
+switch,switch 0.03,0.03,,10.6684,0.180026,0.945
+switch,switch 0.1,0.1,,10.6636,0.221893,0.9858
+random,random 0.5,,0.5,10.6889,0.127514,0.5

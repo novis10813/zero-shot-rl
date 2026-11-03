@@ -6,14 +6,23 @@ code, one report per task.
 ## Where code lives
 
 ```
-agents/ rewards/ custom_dmc_tasks/       upstream code: never moved or renamed
-dmc.py utils.py main_exorl.py main_d4rl.py exorl_reformatter.py
-zero_shot_rl/                            our code, used by two or more tasks
-  latent/                                FB latents from stored data, no simulator
-                                         solver, implicit, archive (library), infer (entry)
-  eval/                                  runs the simulator
-                                         env, trace_format (library), checkpoint, latents,
-                                         trace, video (entry)
+agents/ rewards/ custom_dmc_tasks/       upstream code
+download.sh                              upstream dataset download, called by exorl_reformatter
+zero_shot_rl/                            shared code: upstream root modules and ours
+  train/                                 training entries: main_exorl, main_d4rl (upstream),
+                                         ensemble (forward ensemble for a fixed FB)
+  data/                                  dataset preparation (upstream): exorl_reformatter
+  env/                                   environments
+                                         dmc (upstream DMC wrappers), walker (Walker env
+                                         and deterministic standard FB actor)
+  latent/                                FB latents from stored data, with single simulator steps
+                                         from stored physics, no rollouts
+                                         solver, implicit, archive, switch (library), infer,
+                                         deviation (entry)
+  eval/                                  rollouts in the simulator
+                                         trace_format (library), checkpoint, latents, trace,
+                                         video, switch (entry)
+  utils.py                               seeding and BASE_DIR (upstream)
   provenance.py                          file hashes and no-clobber publication
 analysis/                                analysis tools used by two or more tasks
 tests/                                   component tests for zero_shot_rl/ and agents/
@@ -29,19 +38,26 @@ tasks/T<NN>-<name>/
 ```
 
 - The authors' code is the `upstream` remote (`enjeeneer/zero-shot-rl`); refer to it as
-  `upstream/main`. Upstream files stay where they are, so merging `upstream/main` into `main`
-  stays easy. Bringing their updates into `main` is a `chore/` PR that merges `upstream/main`.
-- Place a module in `zero_shot_rl/` by what it acts on: `latent/` for latents computed from
-  data, `eval/` for anything that runs the simulator. Each module's docstring states what it does
+  `upstream/main`. Their root modules live in `zero_shot_rl/`: `main_exorl.py` and
+  `main_d4rl.py` in `train/`, `exorl_reformatter.py` in `data/`, `dmc.py` in `env/`, and
+  `utils.py` at the top. Other upstream files stay where they are. Bringing their updates into
+  `main` is a `chore/` PR that merges `upstream/main`. In that merge, changes to the moved
+  modules are applied to their `zero_shot_rl/` copies.
+- Run training from the repo root, e.g. `uv run python -m zero_shot_rl.train.main_exorl fb walker rnd`.
+  It reads `agents/<algo>/config.yaml` relative to the working directory.
+- Place a module in `zero_shot_rl/` by what it does: `env/` for environments and the actors
+  that act in them, `latent/` for latents computed from stored data, `eval/` for rollouts in
+  the simulator. Each module's docstring states what it does
   and how to run it.
 - Run entry modules by full path from the repo root, e.g.
   `PYTHONPATH=. uv run python -m zero_shot_rl.latent.infer`. Task modules run with the task
   directory on the path, e.g. `PYTHONPATH=.:tasks/T05-opt-to-pessi uv run python -m analyze.q1`.
 - New baselines go in new modules (for example `agents/<name>/`), not in edits to existing
   agents.
-- A change to an upstream file that can alter training or evaluation results goes behind a new
-  argument or config key whose default keeps the original behaviour.
-- Code in `zero_shot_rl/` and `tasks/` may be changed. If a change alters what an existing entry
+- A change to an upstream file, including the modules moved to `zero_shot_rl/`, that can alter
+  training or evaluation results goes behind a new argument or config key whose default keeps
+  the original behaviour.
+- Our code in `zero_shot_rl/` and `tasks/` may be changed. If a change alters what an existing entry
   module computes, say so in the commit message. Earlier results are reproduced from their `exp/`
   tags, not from `main`.
 - A task's analysis code moves to `analysis/` or `zero_shot_rl/` when a second task needs it, and
@@ -97,6 +113,7 @@ moves to a different commit; its message may be corrected by re-creating it on t
 | T01 FB reproduction on ExORL Walker RND-100k | `task/T01-fb-reproduction` | Report in `tasks/T01-fb-reproduction/` |
 | T04 MC-FB pessimism vs VC-FB and DVC-FB on ExORL Walker RND-100k | `task/T04-mcfb-pessimism` | Report in `tasks/T04-mcfb-pessimism/` |
 | T05 Implicit-reward latents and rollouts for standard FB on ExORL Walker RND-100k | `task/T05-opt-to-pessi` | Report in `tasks/T05-opt-to-pessi/` |
+| T06 Q-guided per-step switching between optimistic and pessimistic FB latents on ExORL Walker RND-100k | `task/T06-latent-switching` | Report in `tasks/T06-latent-switching/` |
 
 ## File rule
 

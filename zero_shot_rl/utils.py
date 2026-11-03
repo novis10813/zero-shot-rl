@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parents[1]
 
 
 def set_seed_everywhere(seed):

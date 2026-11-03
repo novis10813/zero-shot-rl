@@ -1,0 +1,14 @@
+# ExORL agent/cql.yaml and Yarats et al. (2022) Tables 3 and 4. The CLI default of
+# zero_shot_rl/train/main_exorl.py overrides discount with 0.98, the value Jeen et al. (2024) Table 5 gives.
+name: "cql-exorl"
+learning_steps: 1000000
+batch_size: 1024
+eval_rollouts: 10
+eval_frequency: 20000
+seed: 42
+
+hidden_dimension: 1024
+learning_rate: 0.0001
+tau: 0.01
+n_samples: 3
+alpha: 0.01

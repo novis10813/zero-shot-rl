@@ -4,8 +4,8 @@ import torch
 from typing import List, Dict, Tuple
 import numpy as np
 import custom_dmc_tasks as cdmc
-import dmc
-from utils import set_seed_everywhere
+from zero_shot_rl.env import dmc
+from zero_shot_rl.utils import set_seed_everywhere
 
 # NOTE: These default tasks aren't actually used;
 # we just need to specify one to get the env to load

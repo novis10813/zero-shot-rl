@@ -1,0 +1,12 @@
+# lab sweep spec: single-task ReBRAC (agents/rebrac/config.yaml) on walker rnd-100k,
+# one policy per task, seeds 0-2. Upper-bound baseline for the T06 switching rules.
+# Each job peaks at about 22 GB RAM and 10 GB VRAM while loading the dataset, then uses
+# about 2 GB VRAM. On idlab1 (123 GB RAM, 2 x 32 GB) the jobs ran as four chains of
+# three with lab run, at most two per GPU, not as one sweep.
+on: idlab1
+command: PYTHONUNBUFFERED=1 uv run python -m zero_shot_rl.train.main_exorl rebrac walker rnd --train_task {task} --eval_tasks {task} --wandb_logging False --dataset_path $HOME/zsrl-datasets/walker/rnd/dataset.npz --seed {seed}
+vram: 12G
+gpus: 1
+grid:
+  task: [stand, walk, run, flip]
+  seed: [0, 1, 2]

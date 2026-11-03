@@ -32,7 +32,7 @@ from agents.base import load_agent
 from agents.fb.agent import FB
 from agents.fb.replay_buffer import FBReplayBuffer
 from rewards import RewardFunctionConstructor
-from zero_shot_rl.eval.env import forward, make_env, policy, render_episode, write_video
+from zero_shot_rl.env.walker import forward, make_env, policy, render_episode, write_video
 
 DISCOUNT = 0.98  # agents/fb/config.yaml
 FALL_HEIGHT = 0.6
