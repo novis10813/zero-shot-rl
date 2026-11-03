@@ -113,6 +113,7 @@ moves to a different commit; its message may be corrected by re-creating it on t
 | T01 FB reproduction on ExORL Walker RND-100k | `task/T01-fb-reproduction` | Report in `tasks/T01-fb-reproduction/` |
 | T04 MC-FB pessimism vs VC-FB and DVC-FB on ExORL Walker RND-100k | `task/T04-mcfb-pessimism` | Report in `tasks/T04-mcfb-pessimism/` |
 | T05 Implicit-reward latents and rollouts for standard FB on ExORL Walker RND-100k | `task/T05-opt-to-pessi` | Report in `tasks/T05-opt-to-pessi/` |
+| T06 Q-guided per-step switching between optimistic and pessimistic FB latents on ExORL Walker RND-100k | `task/T06-latent-switching` | Report in `tasks/T06-latent-switching/` |
 
 ## File rule
 
