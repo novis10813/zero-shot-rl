@@ -108,6 +108,16 @@ PYTHONPATH=.:tasks/T3.2-ood-robustness uv run python -m analyze.opt_pess
 PYTHONPATH=.:tasks/T3.2-ood-robustness uv run python -m analyze.opt_pess --check
 ```
 
+## Random 與 Q-guided switching 的比較
+
+`run_switch.sh` 的結構同上，每個任務跑四個條件：always-opt、always-pess、random（每步以 $p=0.5$ 取 pess 動作）與 Q-guided switching（`zero_shot_rl.eval.switch` 的 rule C，$\kappa=0$，即只比較 $Q(a_{opt})$ 與 $Q(a_{pess})$，$\kappa$ 與 random 的設定同 T06 的最終比較）。Q 值由 T06 對應 checkpoint 的 ensemble 估計。輸出為 `data/inputs/switch_s<seed>_<設定>.csv`，其中 opt 與 pess 的 return 與 `opt_pess_*` 逐位元相同。
+
+```bash
+mkdir -p logs && sbatch tasks/T3.2-ood-robustness/run_switch.sh
+PYTHONPATH=.:tasks/T3.2-ood-robustness uv run python -m analyze.switch
+PYTHONPATH=.:tasks/T3.2-ood-robustness uv run python -m analyze.switch --check
+```
+
 ## 測試
 
 ```bash
