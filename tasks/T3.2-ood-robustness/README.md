@@ -118,6 +118,16 @@ PYTHONPATH=.:tasks/T3.2-ood-robustness uv run python -m analyze.switch
 PYTHONPATH=.:tasks/T3.2-ood-robustness uv run python -m analyze.switch --check
 ```
 
+## Q 的排序與 ensemble 分散度
+
+`zero_shot_rl.eval.qtrace` 沿著 always-opt 的軌跡逐步記錄兩個動作的 ensemble Q 與標準差 $u$，並每 25 步從該狀態分出兩支（第一步分別取 $a_{opt}$ 與 $a_{pess}$，之後都跟著 $\pi(\cdot,z_r)$ 走 100 步），得到實際折扣回報，用來檢查 Q 的排序是否與實際回報差一致。`run_qtrace.sh` 對每個（訓練 seed、動力學設定）跑 30 個 episode，輸出 `data/inputs/qtrace_s<seed>_<設定>.npz`。
+
+```bash
+mkdir -p logs && sbatch tasks/T3.2-ood-robustness/run_qtrace.sh
+PYTHONPATH=.:tasks/T3.2-ood-robustness uv run python -m analyze.qtrace
+PYTHONPATH=.:tasks/T3.2-ood-robustness uv run python -m analyze.qtrace --check
+```
+
 ## 測試
 
 ```bash
