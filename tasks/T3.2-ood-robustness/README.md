@@ -126,7 +126,10 @@ PYTHONPATH=.:tasks/T3.2-ood-robustness uv run python -m analyze.switch --check
 mkdir -p logs && sbatch tasks/T3.2-ood-robustness/run_qtrace.sh
 PYTHONPATH=.:tasks/T3.2-ood-robustness uv run python -m analyze.qtrace
 PYTHONPATH=.:tasks/T3.2-ood-robustness uv run python -m analyze.qtrace --check
+PYTHONPATH=.:tasks/T3.2-ood-robustness uv run python -m analyze.qtrace_plot
 ```
+
+最後一個命令畫 `figures/qtrace_series.png`：每個訓練 seed 與偏移類型一張圖，實線是 always-opt 實際動作的 ensemble Q（30 個 episode 平均），虛線是 $Q\pm u$，比較 clean、mild 與 strong。
 
 ## 測試
 
