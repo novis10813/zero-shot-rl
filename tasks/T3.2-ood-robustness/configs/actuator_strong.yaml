@@ -1,0 +1,9 @@
+# Actuator gear at 62% of XML (hip 62, knee 31, ankle 12.4). Interpolated between 64% (0.69) and 60% (0.57), not yet measured.
+base:
+  actuator_gear:
+    right_hip: 62
+    right_knee: 31
+    right_ankle: 12.4
+    left_hip: 62
+    left_knee: 31
+    left_ankle: 12.4

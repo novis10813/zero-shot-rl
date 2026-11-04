@@ -34,6 +34,8 @@ of an environment seeded with e, as in zero_shot_rl.eval.latents. Per episode it
 Usage (repo root):
     PYTHONPATH=. MUJOCO_GL=egl uv run python -m zero_shot_rl.eval.switch \
         --checkpoint <fb.pt> --ensemble <ensemble.pt> --zs <zs_sweep.npz> --out <switch.csv>
+
+--dynamics <yaml> runs the episodes in a shifted environment (zero_shot_rl.env.dynamics).
 """
 
 import csv
@@ -47,6 +49,7 @@ import torch
 from agents.base import load_agent
 from agents.fb.agent import FB
 from rewards import RewardFunctionConstructor
+from zero_shot_rl.env.dynamics import load_dynamics
 from zero_shot_rl.env.walker import make_env, policy
 from zero_shot_rl.latent.switch import KAPPAS, choose_pess, latents, values
 from zero_shot_rl.provenance import sha256
@@ -63,7 +66,7 @@ def rollout(condition):
     torch.set_num_threads(1)
     args, agent, ensemble, reward_fn = G["args"], G["agent"], G["ensemble"], G["reward_fn"]
     n = args.episodes
-    envs = [make_env(e) for e in range(n)]
+    envs = [make_env(e, args.dynamics) for e in range(n)]
     obs = np.stack([env.reset().observation["observations"] for env in envs])
     z_r, z_cql = (torch.as_tensor(z, dtype=torch.float32).expand(n, -1) for z in G["z"])
     random_p = condition[1] if isinstance(condition, tuple) else None
@@ -118,7 +121,10 @@ def main():
     parser.add_argument("--random_ps", nargs="*", type=float, default=[])
     parser.add_argument("--episodes", type=int, default=100)
     parser.add_argument("--workers", type=int, default=8)
+    parser.add_argument("--dynamics", type=str, default=None,
+                        help="yaml of zero_shot_rl.env.dynamics; default is the stock environment")
     args = parser.parse_args()
+    args.dynamics = load_dynamics(args.dynamics) if args.dynamics else None
 
     torch.set_num_threads(1)
     device = torch.device("cpu")

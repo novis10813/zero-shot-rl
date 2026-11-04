@@ -1,0 +1,9 @@
+# Actuator gear at 76% of XML (hip 76, knee 38, ankle 15.2). Standard FB keeps about 0.84 of its clean return.
+base:
+  actuator_gear:
+    right_hip: 76
+    right_knee: 38
+    right_ankle: 15.2
+    left_hip: 76
+    left_knee: 38
+    left_ankle: 15.2

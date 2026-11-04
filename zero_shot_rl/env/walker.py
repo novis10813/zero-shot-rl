@@ -6,9 +6,13 @@ import numpy as np
 import torch
 
 import custom_dmc_tasks as cdmc
+from zero_shot_rl.env.dynamics import make_shifted_env
 
 
-def make_env(seed):
+def make_env(seed, dynamics=None):
+    """`dynamics` is a config of zero_shot_rl.env.dynamics; None gives the stock environment."""
+    if dynamics is not None:
+        return make_shifted_env(seed, dynamics)
     return cdmc.make(
         domain="walker",
         task="flip",
