@@ -1,8 +1,8 @@
 # T3.2：Walker 動力學偏移的設定與重現
 
-本任務檢驗 Q-guided FB policy 選擇在動力學偏移下是否比在原始環境有更大的優勢。目前完成的部分是動力學偏移的設定（D1）與用標準 FB 校準偏移強度。任務目標見 [TASKS.md](TASKS.md)。
+本任務檢驗 Q-guided FB policy 選擇在動力學偏移下是否比在原始環境有更大的優勢。結果見 [REPORT.md](REPORT.md)，本文件說明動力學設定的格式，以及如何重現實驗與表格。
 
-模擬器與評估程式位於 repo 根目錄的 `zero_shot_rl/`，本任務目前只保留設定檔：
+模擬器與評估程式位於 repo 根目錄的 `zero_shot_rl/`，本任務保留設定、啟動腳本、分析與資料：
 
 | 路徑 | 內容 |
 |---|---|
@@ -11,7 +11,12 @@
 | `zero_shot_rl/eval/dynamics_sweep.py` | 以標準 FB 在固定的 $z_r$ 上，於多個動力學設定下 rollout，寫成 CSV |
 | `zero_shot_rl/eval/switch.py` | 新增 `--dynamics <yaml>`，在偏移環境中跑 opt、pess、random 與 Q-guided 條件 |
 | `tests/test_dynamics.py` | 動力學設定的元件測試 |
+| `zero_shot_rl/eval/qtrace.py` | 沿 always-opt 軌跡逐步記錄 ensemble Q 與標準差，並分支計算兩個動作的實際回報 |
 | `configs/` | 五個動力學設定 |
+| `run_opt_pess.sh`、`run_switch.sh`、`run_qtrace.sh` | 三組實驗的 sbatch 腳本，各 15 個 array 任務 |
+| `analyze/` | 從 `data/inputs/` 重建 `data/` 的 CSV 與 `figures/` 的 PNG |
+| `data/inputs/` | 三組實驗的逐 episode 輸出 |
+| `data/`、`figures/` | REPORT.md 的表格與圖的來源 |
 
 ## 動力學設定的格式
 
@@ -64,9 +69,9 @@ Task reward 由環境外部對 `env.physics` 計算，只讀狀態（torso 高�
 
 $$\text{比例} = \frac{\text{偏移下的平均 return}}{\text{baseline 的平均 return}}$$
 
-選值分三輪掃描，每輪縮小範圍，最後的設定以未用於選值的 episode 驗證。Mild 與 strong 設定都落在目標附近，誤差約 ±0.04，差距在抽樣雜訊內。
+選值分三輪掃描，每輪縮小範圍，最後的設定以未用於選值的 episode 驗證，驗證時的比例約在目標的 ±0.07 內。
 
-> 校準的輸出尚未存入 `data/`，所以比例目前不能由本目錄重現。存入後，這裡補上重算的命令。
+校準的掃描輸出沒有存入 `data/`，所以選值過程不能由本目錄重現。最終實驗中 optimistic 實際保留的 return 比例可由 `data/opt_pess.csv` 重算（各設定的 `opt_mean` 除以 baseline 的 `opt_mean`）：Friction Mild 0.86、Friction Strong 0.67、Actuator Mild 0.79、Actuator Strong 0.57。Actuator Strong 比目標 0.65 低，也低於驗證時測得的 0.66，差距的原因沒有查明，可能是抽樣雜訊。
 
 ## 執行
 
