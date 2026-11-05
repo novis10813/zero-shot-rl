@@ -39,8 +39,8 @@ def first_state(env_seed):
     return obs, joints
 
 
-def first_actions(checkpoint, obs, args, device):
-    """Action at `obs` of one checkpoint for every task: dict task -> [action_length]."""
+def inference_set(args, device):
+    """The dataset buffer and the task inference transitions, identical for every checkpoint."""
     set_seed_everywhere(args.seed)
     reward_constructor = RewardFunctionConstructor(
         domain_name="walker", task_names=TASKS, seed=args.seed, device=device
@@ -58,15 +58,27 @@ def first_actions(checkpoint, obs, args, device):
     observations_z, rewards_z = buffer.sample_task_inference_transitions(
         inference_steps=args.z_inference_steps
     )
+    return buffer, observations_z, rewards_z
+
+
+def load_with_zs(checkpoint, observations_z, rewards_z, args, device):
+    """The agent and its z per task."""
     agent = load_agent(Path(checkpoint), device)
     agent.eval()
     agent.std_dev_schedule = args.std_dev_eval
-    actions = {}
-    for task in TASKS:
-        z = agent.infer_z(observations_z, rewards_z[task])
-        action, _ = agent.act(obs, task=z, step=None, sample=False)
-        actions[task] = np.clip(action, -1.0, 1.0)
-    return actions
+    return agent, {t: agent.infer_z(observations_z, rewards_z[t]) for t in TASKS}
+
+
+def act(agent, obs, z):
+    action, _ = agent.act(obs, task=z, step=None, sample=False)
+    return np.clip(action, -1.0, 1.0)
+
+
+def first_actions(checkpoint, obs, args, device):
+    """Action at `obs` of one checkpoint for every task: dict task -> [action_length]."""
+    _, observations_z, rewards_z = inference_set(args, device)
+    agent, zs = load_with_zs(checkpoint, observations_z, rewards_z, args, device)
+    return {task: act(agent, obs, zs[task]) for task in TASKS}
 
 
 def plot(df, joints, path):
