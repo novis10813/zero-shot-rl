@@ -80,3 +80,19 @@ MUJOCO_GL=egl PYTHONPATH=. uv run python -m zero_shot_rl.eval.behavior_reward --
   --figure_prefix tasks/T3.3.1-action-evaluation/figures/reward_h1
 ```
 
+## Action difference heatmap
+
+`zero_shot_rl.eval.action_difference`: 200 states sampled from the 100k-transition training
+subsample; for each task and seed pair k, cell = VC-FB seed k action minus FB seed k action
+(deterministic actions, each agent with its own z).
+
+```bash
+A=artifacts/T04-mcfb-pessimism
+MUJOCO_GL=egl PYTHONPATH=. uv run python -m zero_shot_rl.eval.action_difference \
+  --checkpoints FB $A/zsrl-32/800000.pt $A/zsrl-41/680000.pt $A/zsrl-42/200000.pt \
+  --checkpoints VC-FB $A/zero-shot-rl-27/440000.pt $A/zsrl-27/420000.pt $A/zero-shot-rl-18/500000.pt \
+  --dataset_path datasets/walker/rnd/dataset.npz \
+  --out tasks/T3.3.1-action-evaluation/data/action_difference.csv \
+  --figure tasks/T3.3.1-action-evaluation/figures/action_difference.png
+```
+
