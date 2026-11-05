@@ -63,3 +63,20 @@ MUJOCO_GL=egl PYTHONPATH=. uv run python -m zero_shot_rl.eval.episode_returns \
 uv run python tasks/T3.3.1-action-evaluation/plot_return_vs_distance.py
 ```
 
+## Reward of the action against its distance
+
+`zero_shot_rl.eval.behavior_reward` keeps the physics state of the episode states used above,
+re-executes each checkpoint's action from that exact state and sums the task reward over
+`--horizon` steps (1: the reward after taking the action). Figures: reward difference
+(VC-FB minus FB) against distance difference, one dot per state.
+
+```bash
+A=artifacts/T04-mcfb-pessimism
+MUJOCO_GL=egl PYTHONPATH=. uv run python -m zero_shot_rl.eval.behavior_reward --horizon 1 \
+  --checkpoints FB $A/zsrl-32/800000.pt $A/zsrl-41/680000.pt $A/zsrl-42/200000.pt \
+  --checkpoints VC-FB $A/zero-shot-rl-27/440000.pt $A/zsrl-27/420000.pt $A/zero-shot-rl-18/500000.pt \
+  --dataset_path datasets/walker/rnd/dataset.npz \
+  --out tasks/T3.3.1-action-evaluation/data/reward_h1.csv \
+  --figure_prefix tasks/T3.3.1-action-evaluation/figures/reward_h1
+```
+
