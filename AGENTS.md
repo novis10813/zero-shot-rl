@@ -117,6 +117,8 @@ cleanup commit. They stay reachable through the `task/` branch history and `exp/
 - No checkpoint paths, hashes, host names or job logs in reports. Those go in `exp/` tag messages.
 - Every number and figure must be regenerable from the task's `data/` with a command in its
   `README.md`. Numbers from other sources (papers, other repos) name their source.
+- Scores of trained agents over seeds are aggregated with `analysis.table6_aggregate` (Table 6
+  of Jeen et al. 2024). Tasks up to T3.3.1 that used other aggregations keep them.
 
 ## Data and checkpoints
 
