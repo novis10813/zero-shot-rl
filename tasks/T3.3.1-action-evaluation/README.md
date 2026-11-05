@@ -47,3 +47,19 @@ MUJOCO_GL=egl PYTHONPATH=. uv run python -m zero_shot_rl.eval.behavior_rollout -
   --figure_prefix tasks/T3.3.1-action-evaluation/figures/rollout
 ```
 
+## Return difference against distance difference
+
+`zero_shot_rl.eval.episode_returns` runs one episode from each of the 50 initial states per
+checkpoint and task. `plot_return_vs_distance.py` plots, per (task, env seed, seed pair), the
+return difference (VC-FB minus FB) against the distance difference of `behavior_distance.csv`.
+
+```bash
+A=artifacts/T04-mcfb-pessimism
+MUJOCO_GL=egl PYTHONPATH=. uv run python -m zero_shot_rl.eval.episode_returns \
+  --checkpoints FB $A/zsrl-32/800000.pt $A/zsrl-41/680000.pt $A/zsrl-42/200000.pt \
+  --checkpoints VC-FB $A/zero-shot-rl-27/440000.pt $A/zsrl-27/420000.pt $A/zero-shot-rl-18/500000.pt \
+  --dataset_path datasets/walker/rnd/dataset.npz \
+  --out tasks/T3.3.1-action-evaluation/data/episode_returns.csv
+uv run python tasks/T3.3.1-action-evaluation/plot_return_vs_distance.py
+```
+
