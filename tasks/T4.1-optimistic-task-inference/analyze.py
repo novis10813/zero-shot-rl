@@ -115,7 +115,8 @@ def main_experiment():
     table, chosen = select(scores)
     table.to_csv(DATA / "hyperparameters.csv", index=False, float_format="%.6g")
     print("Cumulative return over 10 episodes (mean over tasks and seeds)")
-    print(table.to_string(index=False, float_format="%.1f"))
+    print(table.to_string(index=False, formatters={"param": "{:g}".format,
+                                                   "cumulative_return": "{:.0f}".format}))
     print("chosen:", chosen)
 
     main = relative(keep(scores, chosen), reference)
@@ -133,7 +134,7 @@ def main_experiment():
 
     fig, ax = plt.subplots(figsize=(5, 3.5))
     curve(ax, main, names, "Walker, stock dynamics")
-    ax.legend()
+    ax.legend(loc="lower right")
     fig.tight_layout()
     fig.savefig(FIGURES / "main_relative.png", dpi=150)
 
