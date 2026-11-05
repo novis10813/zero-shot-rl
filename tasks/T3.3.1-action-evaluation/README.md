@@ -81,13 +81,15 @@ MUJOCO_GL=egl PYTHONPATH=. uv run python -m zero_shot_rl.latent.action_differenc
   --out $T/data/action_difference.csv
 ```
 
-## Figures
+## Figures and report numbers
 
 `plot.py` draws every figure in `figures/` from `data/` (one figure per file, listed in its
-docstring) and prints the Spearman correlations of the difference plots.
+docstring) and prints the Spearman correlations of the difference plots. `summary.py` prints
+the other numbers of `REPORT.md`.
 
 ```bash
 uv run python $T/plot.py
+uv run python $T/summary.py
 ```
 
 ## Episode videos with actions and rewards
