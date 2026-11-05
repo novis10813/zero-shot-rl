@@ -14,6 +14,7 @@ MUJOCO_GL=egl PYTHONPATH=. uv run python -m zero_shot_rl.eval.first_action \
   --out tasks/T3.3.1-action-evaluation/data/first_action.csv \
   --figure tasks/T3.3.1-action-evaluation/figures/first_action.png
 ```
+
 ## Distance of first-step actions to the dataset behaviour
 
 Same checkpoints. Env seeds 0 to 49 give 50 initial states; each checkpoint's action at each
@@ -96,3 +97,22 @@ MUJOCO_GL=egl PYTHONPATH=. uv run python -m zero_shot_rl.eval.action_difference 
   --figure tasks/T3.3.1-action-evaluation/figures/action_difference.png
 ```
 
+## Episode videos with actions and rewards
+
+`zero_shot_rl.eval.record_episode` records one episode per checkpoint and task from env seed 0:
+per-step actions and rewards in `data/episode_actions.npz`, one mp4 per run under `artifacts/`
+(videos are not committed; only `FB_seed1_walk.mp4` and `VC-FB_seed1_walk.mp4` were kept).
+`compose_video.py` puts VC-FB (left) and FB (right) side by side: video, stacked actuator
+traces, per-step reward.
+
+```bash
+A=artifacts/T04-mcfb-pessimism
+V=artifacts/T3.3.1-action-evaluation/videos
+MUJOCO_GL=egl PYTHONPATH=. uv run python -m zero_shot_rl.eval.record_episode \
+  --checkpoints FB $A/zsrl-32/800000.pt $A/zsrl-41/680000.pt $A/zsrl-42/200000.pt \
+  --checkpoints VC-FB $A/zero-shot-rl-27/440000.pt $A/zsrl-27/420000.pt $A/zero-shot-rl-18/500000.pt \
+  --dataset_path datasets/walker/rnd/dataset.npz \
+  --out tasks/T3.3.1-action-evaluation/data/episode_actions.npz --video_dir $V
+uv run python tasks/T3.3.1-action-evaluation/compose_video.py --video_dir $V \
+  --task walk --seed 1 --window 100 --out $V/walk_seed1_w100.mp4
+```
