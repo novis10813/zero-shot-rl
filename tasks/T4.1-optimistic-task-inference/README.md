@@ -14,10 +14,11 @@ Models"（arXiv 2510.20264）。結果見 [REPORT.md](REPORT.md)，本文件說�
 | `zero_shot_rl/online/belief.py` | 帶 $\lambda$ 正則化的最小平方法，也就是 Bayesian linear regression 的後驗 $\mathcal{N}(\hat z, V^{-1})$，一次處理 n 個 run |
 | `zero_shot_rl/online/selectors.py` | FB（離線 z）、Random、UCB（OpTI-BFM）、TS（OpTI-BFM-TS）四種選 $w$ 的規則 |
 | `zero_shot_rl/online/fb.py` | 把 FB checkpoint 轉成論文的 $\phi$、$\psi$ 與 policy |
-| `zero_shot_rl/eval/online_inference.py` | 連續多個 episode 的線上推論；也存下前 n 筆 transition 的最小平方 $z$ |
+| `zero_shot_rl/eval/online_inference.py` | 連續多個 episode 的線上推論；也存下前 n 筆 transition 的最小平方 $z$，以及 `--predictions_dir` 的 belief 與預測 return |
+| `zero_shot_rl/eval/latent_ranking.py` | 固定候選 latent 的預測 return 與實際 return，用來看 $\psi$ 的排序與校準 |
 | `zero_shot_rl/eval/fixed_z_returns.py` | data efficiency：評估由前 n 筆 transition 推出的固定 $z$ |
 | `tests/test_online_inference.py` | belief 與 selector 的元件測試 |
-| `run_online.sh`、`run_fixed_z.sh` | 單一 seed 的啟動腳本，供 `configs/*.yaml` 的 `lab sweep` 呼叫 |
+| `run_online.sh`、`run_fixed_z.sh`、`run_ranking.sh` | 單一 seed 的啟動腳本，供 `configs/*.yaml` 的 `lab sweep` 呼叫 |
 | `analyze.py` | 從 `data/inputs/` 產生 `data/*.csv`、`figures/*.png` 與 REPORT.md 的數字 |
 
 ### 與論文的對應
@@ -82,6 +83,8 @@ lab sweep $T/configs/episodic_ucb.yaml  # OpTI-BFM-EP
 lab sweep $T/configs/dynamics_ts.yaml   # 四種 shift 下的 FB（離線 z）、Random、OpTI-BFM-TS
 lab sweep $T/configs/dynamics_ucb.yaml  # 四種 shift 下的 OpTI-BFM
 lab sweep $T/configs/fixed_z.yaml       # data efficiency，需要已提交的 data/inputs/main/*_z/
+lab sweep $T/configs/predictions.yaml   # OpTI-BFM 與 OpTI-BFM-TS 重跑並記錄 belief 與預測 return，五種環境
+lab sweep $T/configs/ranking.yaml       # 32 個固定候選 latent 的預測與實際 return，需要已提交的 data/inputs/predictions/
 ```
 
 每個 job 把結果寫在工作目錄的 `out/`，用 `lab fetch <job> out/` 取回後放進 `data/inputs/`：
@@ -109,6 +112,6 @@ PYTHONPATH=. uv run python tasks/T4.1-optimistic-task-inference/analyze.py
 ```
 
 它會寫出 `data/hyperparameters.csv`、`main.csv`、`episodic.csv`、`data_efficiency.csv`、
-`dynamics.csv`、`dynamics_summary.csv`、`dynamics_raw_returns.csv`、`dynamics_inference.csv` 與 `figures/` 的五張圖，並印出 REPORT.md 的數字。
+`ranking.csv`、`dynamics.csv`、`dynamics_summary.csv`、`dynamics_raw_returns.csv`、`dynamics_inference.csv` 與 `figures/` 的五張圖，並印出 REPORT.md 的數字。
 
 每個 job 的 commit 與 log 記錄在 `exp/T4.1-<job>` tag。
