@@ -4,6 +4,8 @@
     data/inputs/episodic/   the same with the -EP rules, 50 episodes
     data/inputs/dynamics/   the same in the four shifted Walkers of T3.2, <shift>.<part>_s<seed>.csv
     data/inputs/fixed_z/    zero_shot_rl.eval.fixed_z_returns
+    data/inputs/predictions/ beliefs and predicted returns of the online runs (not analyzed here)
+    data/inputs/ranking/    zero_shot_rl.eval.latent_ranking, ranking_<shift>_s<seed>.csv
 
 File names end in _s<seed>, the T04 FB seed. A run's score in an episode is its return; per
 seed, scores are averaged over the 10 runs. Relative performance divides by the FB (offline z) return
@@ -275,11 +277,51 @@ def dynamics(main):
     fig.savefig(FIGURES / "dynamics.png", dpi=150)
 
 
+def ranking():
+    """Predicted against actual discounted return of the 32 candidate latents of each run.
+
+    Per task and run: Spearman correlation, mean absolute error, actual return of the
+    candidate with the highest prediction over the best actual return, and the median of
+    prediction / actual over candidates with actual return above 1. Averaged over tasks, runs
+    and seeds (medians for the last).
+    """
+    frames = [pd.read_csv(f).assign(seed=int(f.stem[-1]), shift=f.stem[len("ranking_"):-3])
+              for f in sorted((INPUTS / "ranking").glob("ranking_*.csv"))]
+    wide = pd.concat(frames).pivot_table(
+        index=["shift", "seed", "task", "trial", "candidate"], columns="source", values="value")
+    sources = ["offline"] + [f"{m}@ep{e}" for m in ["OpTI-BFM", "OpTI-BFM-TS"] for e in [1, 3, 10]]
+    rows = []
+    for (shift, seed, task, trial), g in wide.groupby(["shift", "seed", "task", "trial"]):
+        actual = g["actual_discounted"]
+        for source in sources:
+            pred = g[source]
+            big = actual > 1
+            rows.append({"shift": shift, "seed": seed, "task": task, "source": source,
+                         "spearman": pred.corr(actual, method="spearman"),
+                         "mae": (pred - actual).abs().mean(),
+                         "top1": actual[pred.idxmax()] / actual.max(),
+                         "ratio": np.median(pred[big] / actual[big])})
+    runs = pd.DataFrame(rows)
+    table = runs.groupby(["shift", "source"]).agg(
+        spearman=("spearman", "mean"), mae=("mae", "mean"), top1=("top1", "mean"),
+        ratio=("ratio", "median")).reset_index()
+    table.to_csv(DATA / "ranking.csv", index=False, float_format="%.4g")
+    for metric in ["mae", "spearman", "ratio", "top1"]:
+        print(f"\nranking {metric}")
+        print(table.pivot(index="shift", columns="source", values=metric)
+              .reindex(index=SHIFTS, columns=sources).round(2).to_string())
+    print("\nactual discounted return of the candidates (mean, 25%, 75%)")
+    actual = wide["actual_discounted"].groupby("shift")
+    print(pd.concat([actual.mean(), actual.quantile(.25), actual.quantile(.75)], axis=1)
+          .reindex(SHIFTS).round(1).to_string())
+
+
 def main():
     FIGURES.mkdir(exist_ok=True)
     scores, reference, _ = main_experiment()
     episodic(scores, reference)
     data_efficiency()
+    ranking()
     dynamics(scores)
 
 

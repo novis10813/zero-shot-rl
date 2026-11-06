@@ -137,56 +137,60 @@ cosine 是 $\hat z$ 與 $z_r$ 的夾角，在所有環境下相近，動力學�
 
 ## 3. 預測誤差分析
 
-每個 task、每個 run 取 32 個固定候選 latent，各自 rollout 得到實際折扣 return，再與 $\psi(s_0,w)^\top c$ 的預測比較。
-offline 用乾淨資料推出的 reward 係數（誤差只來自 $\psi$ 與動力學），OpTI-BFM 與 OpTI-BFM-TS 用該 run 在第 1、3、10 個 episode 結束時的 belief。實驗進行中，以下表格尚無數據。
+每個 task、每個 run 取 32 個固定候選 latent，各自 rollout 得到實際折扣 return（候選的平均為 10 到 14），再與 $\psi(s_0,w)^\top c$ 比較。
+offline 用乾淨資料推出的 reward 係數（誤差只來自 $\psi$ 與動力學），OpTI-BFM 與 OpTI-BFM-TS 用該 run 在第 1、3、10 個 episode 結束時的 belief。數值為 4 個 task、10 個 run、3 個 seed 的平均。
 
 | 環境 | offline | OpTI-BFM ep 1 | OpTI-BFM ep 3 | OpTI-BFM ep 10 | OpTI-BFM-TS ep 1 | OpTI-BFM-TS ep 3 | OpTI-BFM-TS ep 10 |
 |---|---|---|---|---|---|---|---|
-| Normal | | | | | | | |
-| friction Mild | | | | | | | |
-| friction Strong | | | | | | | |
-| actuator Mild | | | | | | | |
-| actuator Strong | | | | | | | |
+| Normal | 27.6 | 15.9 | 19.0 | 20.2 | 20.5 | 20.6 | 20.8 |
+| friction Mild | 25.6 | 14.6 | 18.1 | 19.3 | 19.3 | 19.8 | 20.1 |
+| friction Strong | 24.8 | 12.8 | 18.1 | 20.0 | 18.5 | 19.7 | 20.2 |
+| actuator Mild | 26.1 | 13.1 | 17.9 | 19.7 | 18.4 | 19.8 | 20.1 |
+| actuator Strong | 25.0 | 12.4 | 16.4 | 19.5 | 17.0 | 20.1 | 20.2 |
 
-預測與實際折扣 return 的 Spearman（latent policy 排序是否一致）。
+預測與實際折扣 return 的平均絕對誤差，所有來源都在 12 到 28，與候選的平均 return 同一量級，原因是預測偏低（見校準表）。
 
 | 環境 | offline | OpTI-BFM ep 1 | OpTI-BFM ep 3 | OpTI-BFM ep 10 | OpTI-BFM-TS ep 1 | OpTI-BFM-TS ep 3 | OpTI-BFM-TS ep 10 |
 |---|---|---|---|---|---|---|---|
-| Normal | | | | | | | |
-| friction Mild | | | | | | | |
-| friction Strong | | | | | | | |
-| actuator Mild | | | | | | | |
-| actuator Strong | | | | | | | |
+| Normal | 0.68 | 0.37 | 0.60 | 0.66 | 0.61 | 0.65 | 0.67 |
+| friction Mild | 0.63 | 0.30 | 0.53 | 0.60 | 0.61 | 0.62 | 0.64 |
+| friction Strong | 0.60 | 0.27 | 0.53 | 0.61 | 0.60 | 0.62 | 0.63 |
+| actuator Mild | 0.65 | 0.33 | 0.55 | 0.63 | 0.55 | 0.63 | 0.64 |
+| actuator Strong | 0.62 | 0.25 | 0.46 | 0.58 | 0.42 | 0.57 | 0.60 |
 
-預測 return 除以實際 return 的中位數（校準，1 表示無偏）。
-
-| 環境 | offline | OpTI-BFM ep 10 | OpTI-BFM-TS ep 10 |
-|---|---|---|---|
-| Normal | | | |
-| friction Mild | | | |
-| friction Strong | | | |
-| actuator Mild | | | |
-| actuator Strong | | | |
+預測與實際折扣 return 的 Spearman（latent policy 排序是否一致），offline 在 0.60 到 0.68，OpTI-BFM-TS 第 10 個 episode 與 offline 相近，OpTI-BFM 第 1 個 episode 只有 0.25 到 0.37。
 
 | 環境 | offline | OpTI-BFM ep 10 | OpTI-BFM-TS ep 10 |
 |---|---|---|---|
-| Normal | | | |
-| friction Mild | | | |
-| friction Strong | | | |
-| actuator Mild | | | |
-| actuator Strong | | | |
+| Normal | -0.57 | -0.09 | -0.13 |
+| friction Mild | -0.74 | -0.18 | -0.24 |
+| friction Strong | -0.76 | -0.27 | -0.23 |
+| actuator Mild | -0.66 | -0.05 | -0.11 |
+| actuator Strong | -0.80 | -0.22 | -0.27 |
 
-預測排名第一的候選，其實際 return 除以 32 個候選中最佳的實際 return。
+預測 return 除以實際 return 的中位數（校準，1 表示無偏），offline 在所有環境都是負值，表示 $\psi$ 在標準環境下就把候選 return 預測成負的，線上 belief 的係數把偏差縮小但仍是負值。
+
+| 環境 | offline | OpTI-BFM ep 1 | OpTI-BFM ep 3 | OpTI-BFM ep 10 | OpTI-BFM-TS ep 1 | OpTI-BFM-TS ep 3 | OpTI-BFM-TS ep 10 |
+|---|---|---|---|---|---|---|---|
+| Normal | 0.67 | 0.51 | 0.65 | 0.67 | 0.62 | 0.66 | 0.67 |
+| friction Mild | 0.63 | 0.50 | 0.64 | 0.65 | 0.66 | 0.66 | 0.66 |
+| friction Strong | 0.68 | 0.58 | 0.67 | 0.71 | 0.71 | 0.72 | 0.73 |
+| actuator Mild | 0.67 | 0.50 | 0.63 | 0.63 | 0.61 | 0.65 | 0.65 |
+| actuator Strong | 0.69 | 0.48 | 0.59 | 0.63 | 0.56 | 0.64 | 0.64 |
+
+預測排名第一的候選，其實際 return 除以 32 個候選中最佳的實際 return，所有來源在 0.5 到 0.73，第 3 個 episode 之後與 offline 相近，沒有隨 episode 明顯改善。
 
 ## 4. 結論
 
-| 不確定性的來源 | 證據 | 狀態 |
+| 不確定性的來源 | 證據 | 結論 |
 |---|---|---|
-| reward 係數 $z$ | 5 種環境都在 2 到 5 個 episode 內達到 FB（離線 z）的 0.9 倍，cosine 不受動力學改變影響 | 已由第 2 節支持 |
-| $\psi$ 與動力學的誤差 | 只有 actuator Strong 低於 FB（離線 z），而且只有 seed 1 明顯低 | 待第 3 節驗證 |
+| reward 係數 $z$ | 5 種環境都在 2 到 5 個 episode 內達到 FB（離線 z）的 0.9 倍，第 10 個 episode 的 Spearman 與 top-1 比值都追上 offline | 線上推論能消除，約 10 個 episode |
+| $\psi$ 與動力學的誤差 | 係數已用乾淨資料推出的 offline，排序仍只有 0.60 到 0.68，top-1 比值 0.63 到 0.69，預測 return 為負值 | 存在，在標準環境下已經存在 |
+| 動力學改變的影響 | offline 的 Spearman 從 0.68（Normal）降到 0.60 至 0.65，actuator Strong 的 OpTI-BFM 第 3 個 episode 降到 0.46 | 影響小於 $\psi$ 本身的誤差，只有 actuator Strong 的線上表現低於 FB（離線 z） |
 | FB checkpoint 的品質 | seed 間的比值差距大於方法間的差距 | 已由第 2 節支持 |
 
-對 adaptive FB policy selection，目前資料支持 task 推論不是瓶頸，$\psi$ 的誤差是否為主要來源要等第 3 節的數據。
+線上 belief 的排序品質最多追到 offline 的水準，剩下的不確定性來自 $\psi$，所以 adaptive FB policy selection 若只靠更準的 $z$ 無法再改善，需要同時估計 $\psi$ 的不確定性。
+$\psi$ 的誤差來源（資料覆蓋不足或動力學不符）本實驗沒有分開測。
 
 ## 限制
 
