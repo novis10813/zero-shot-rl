@@ -232,6 +232,38 @@ def dynamics(main):
     table.to_csv(DATA / "dynamics_summary.csv", index=False, float_format="%.6g")
     print(table.to_string(index=False, float_format="%.0f"))
 
+    raw = scores.assign(window=np.where(scores["episode"] == 0, "episode 1",
+                                        np.where(scores["episode"] >= 5, "episodes 6-10", "")))
+    raw = raw[raw["window"] != ""]
+    raw = (raw.groupby(["window", "shift", "name", "task", "seed"])["return"].mean()
+           .groupby(["window", "shift", "name", "task"]).mean().unstack("task")[TASKS])
+    raw["mean"] = raw.mean(axis=1)
+    raw.to_csv(DATA / "dynamics_raw_returns.csv", float_format="%.6g")
+    print("\nRaw returns (mean over runs and seeds)")
+    print(raw.round(0).astype(int).to_string())
+
+    inference = []
+    for shift in SHIFTS:
+        for name in ["OpTI-BFM", "OpTI-BFM-TS"]:
+            g = scores[(scores["shift"] == shift) & (scores["name"] == name)]
+            curve_ = g.groupby("episode")["relative"].mean()
+            reached = int((curve_ >= 0.9).idxmax()) + 1 if (curve_ >= 0.9).any() else None
+            inference.append({"shift": shift, "name": name, "first_episode_at_0.9_oracle": reached})
+    cos = pd.concat([load("main/*.csv").assign(shift="baseline"),
+                     load("dynamics/*.csv").assign(shift=lambda x: x["file"].str.split(".").str[0])])
+    cos = cos[((cos["method"] == "ucb") & (cos["param"] == 0.001))
+              | ((cos["method"] == "ts") & (cos["param"] == 0.1))]
+    cos = cos[cos["period"] == 1]
+    cos = (cos.groupby(["shift", "method", "episode", "task", "seed"])["cos"].mean()
+           .groupby(["shift", "method", "episode"]).mean().unstack("episode")[[0, 1, 2, 4, 9]])
+    cos.columns = [f"cos_episode_{c + 1}" for c in cos.columns]
+    inference = pd.DataFrame(inference)
+    inference["method"] = inference["name"].map({"OpTI-BFM": "ucb", "OpTI-BFM-TS": "ts"})
+    inference = inference.merge(cos.reset_index(), on=["shift", "method"]).drop(columns="method")
+    inference.to_csv(DATA / "dynamics_inference.csv", index=False, float_format="%.6g")
+    print("\nTask inference per shift")
+    print(inference.to_string(index=False))
+
     fig, axes = plt.subplots(1, len(SHIFTS), figsize=(4 * len(SHIFTS), 3.5), sharey=True)
     for ax, shift in zip(axes, SHIFTS):
         curve(ax, scores[scores["shift"] == shift], ["Random", "OpTI-BFM", "OpTI-BFM-TS"],

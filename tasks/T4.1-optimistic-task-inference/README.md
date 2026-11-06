@@ -107,6 +107,6 @@ PYTHONPATH=. uv run python tasks/T4.1-optimistic-task-inference/analyze.py
 ```
 
 它會寫出 `data/hyperparameters.csv`、`main.csv`、`episodic.csv`、`data_efficiency.csv`、
-`dynamics.csv`、`dynamics_summary.csv` 與 `figures/` 的五張圖，並印出 REPORT.md 的數字。
+`dynamics.csv`、`dynamics_summary.csv`、`dynamics_raw_returns.csv`、`dynamics_inference.csv` 與 `figures/` 的五張圖，並印出 REPORT.md 的數字。
 
 每個 job 的 commit 與 log 記錄在 `exp/T4.1-<job>` tag。
