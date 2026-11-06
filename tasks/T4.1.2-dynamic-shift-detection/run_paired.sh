@@ -5,7 +5,7 @@
 #     SEED=0 CKPT_DIR=~/t05_fb_ckpt DATASET=~/zsrl-datasets/walker/rnd/dataset.npz \
 #         bash tasks/T4.1.2-dynamic-shift-detection/run_paired.sh
 # Writes out/scored_dataset_s$SEED.npz and out/scored_rollout_s$SEED.npz: the stock rollout of
-# episodes 0-19 replayed one step in every config of T3.2 and scored by the detector fitted on
+# episodes 0-19 replayed one step in every config of T3.2 and of configs/ and scored by the detector fitted on
 # the dataset, and by the one fitted on stock rollouts of episodes 100-119.
 set -eu
 
@@ -15,7 +15,8 @@ DATASET=${DATASET:?}
 
 CKPTS=(zsrl-32 zsrl-41 zsrl-42)   # T04 checkpoints of T06 (tasks/T06-latent-switching/configs/sources.json)
 CQL_SWEEPS=(46 47 48)
-CONFIGS=(baseline friction_mild friction_strong actuator_mild actuator_strong)
+CONFIGS=(baseline friction_mild friction_strong actuator_mild actuator_strong)   # tasks/T3.2-ood-robustness/configs
+HIGH=(friction_high_mild friction_high_strong actuator_high_mild actuator_high_strong)   # this task's configs
 CKPT=$CKPT_DIR/${CKPTS[$SEED]}.pt
 ZS=tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-${CQL_SWEEPS[$SEED]}.npz
 CFG=tasks/T3.2-ood-robustness/configs
@@ -24,6 +25,7 @@ export PYTHONPATH=. MUJOCO_GL=egl
 mkdir -p out
 DYN=()
 for c in "${CONFIGS[@]}"; do DYN+=("$CFG/$c.yaml"); done
+for c in "${HIGH[@]}"; do DYN+=("tasks/T4.1.2-dynamic-shift-detection/configs/$c.yaml"); done
 
 uv run python -m zero_shot_rl.eval.paired_step --checkpoint "$CKPT" --zs "$ZS" \
   --dynamics "${DYN[@]}" --episodes 20 --first_episode 0 --out "out/paired_raw_s$SEED.npz"

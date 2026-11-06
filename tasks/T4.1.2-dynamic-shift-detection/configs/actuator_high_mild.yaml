@@ -1,0 +1,9 @@
+# Actuator gear at 130% of XML (hip 130, knee 65, ankle 26). Not calibrated against return.
+base:
+  actuator_gear:
+    right_hip: 130
+    right_knee: 65
+    right_ankle: 26
+    left_hip: 130
+    left_knee: 65
+    left_ankle: 26

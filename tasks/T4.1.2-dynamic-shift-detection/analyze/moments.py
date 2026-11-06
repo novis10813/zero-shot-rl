@@ -21,7 +21,10 @@ from pathlib import Path
 import numpy as np
 
 TASK = Path(__file__).resolve().parents[1]
-CONFIGS = ["friction_mild", "friction_strong", "actuator_mild", "actuator_strong"]
+CONFIGS = [
+    "friction_mild", "friction_strong", "actuator_mild", "actuator_strong",
+    "friction_high_mild", "friction_high_strong", "actuator_high_mild", "actuator_high_strong",
+]
 DETECTORS = ["dataset", "rollout"]
 METRICS = ["mean_shift", "cov_scale", "logdet_diff"]
 EPS = 1e-6

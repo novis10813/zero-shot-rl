@@ -21,7 +21,10 @@ import numpy as np
 from scipy.stats import rankdata
 
 TASK = Path(__file__).resolve().parents[1]
-CONFIGS = ["friction_mild", "friction_strong", "actuator_mild", "actuator_strong"]
+CONFIGS = [
+    "friction_mild", "friction_strong", "actuator_mild", "actuator_strong",
+    "friction_high_mild", "friction_high_strong", "actuator_high_mild", "actuator_high_strong",
+]
 DETECTORS = ["dataset", "rollout"]
 FIELDS = ["detector", "seed", "config", "state_gap", "D_stock", "D_config", "diff_mean", "frac_pos", "auroc"]
 
