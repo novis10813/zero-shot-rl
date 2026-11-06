@@ -1,124 +1,124 @@
 method,param,period,task,seed,episode,return,name,relative,shift
-oracle,-1,1,flip,0,0,257.245,Oracle,0.882823,baseline
-oracle,-1,1,flip,0,1,307.042,Oracle,1.05372,baseline
-oracle,-1,1,flip,0,2,320.951,Oracle,1.10145,baseline
-oracle,-1,1,flip,0,3,284.619,Oracle,0.976766,baseline
-oracle,-1,1,flip,0,4,301.142,Oracle,1.03347,baseline
-oracle,-1,1,flip,0,5,298.32,Oracle,1.02379,baseline
-oracle,-1,1,flip,0,6,272.974,Oracle,0.936802,baseline
-oracle,-1,1,flip,0,7,300.419,Oracle,1.03099,baseline
-oracle,-1,1,flip,0,8,311.924,Oracle,1.07047,baseline
-oracle,-1,1,flip,0,9,259.253,Oracle,0.889714,baseline
-oracle,-1,1,flip,1,0,292.861,Oracle,0.981067,baseline
-oracle,-1,1,flip,1,1,306.534,Oracle,1.02687,baseline
-oracle,-1,1,flip,1,2,322.726,Oracle,1.08111,baseline
-oracle,-1,1,flip,1,3,301.166,Oracle,1.00889,baseline
-oracle,-1,1,flip,1,4,291.233,Oracle,0.975613,baseline
-oracle,-1,1,flip,1,5,290.822,Oracle,0.974238,baseline
-oracle,-1,1,flip,1,6,293.221,Oracle,0.982273,baseline
-oracle,-1,1,flip,1,7,303.245,Oracle,1.01586,baseline
-oracle,-1,1,flip,1,8,277.16,Oracle,0.928472,baseline
-oracle,-1,1,flip,1,9,306.156,Oracle,1.02561,baseline
-oracle,-1,1,flip,2,0,212.542,Oracle,1.16714,baseline
-oracle,-1,1,flip,2,1,169.181,Oracle,0.929028,baseline
-oracle,-1,1,flip,2,2,257.755,Oracle,1.41542,baseline
-oracle,-1,1,flip,2,3,172.016,Oracle,0.944596,baseline
-oracle,-1,1,flip,2,4,162.535,Oracle,0.892531,baseline
-oracle,-1,1,flip,2,5,125.578,Oracle,0.68959,baseline
-oracle,-1,1,flip,2,6,164.554,Oracle,0.90362,baseline
-oracle,-1,1,flip,2,7,213.746,Oracle,1.17375,baseline
-oracle,-1,1,flip,2,8,223.089,Oracle,1.22505,baseline
-oracle,-1,1,flip,2,9,120.058,Oracle,0.659278,baseline
-oracle,-1,1,run,0,0,187.59,Oracle,1.05687,baseline
-oracle,-1,1,run,0,1,154.395,Oracle,0.86985,baseline
-oracle,-1,1,run,0,2,188.005,Oracle,1.05921,baseline
-oracle,-1,1,run,0,3,177.21,Oracle,0.998386,baseline
-oracle,-1,1,run,0,4,188.154,Oracle,1.06005,baseline
-oracle,-1,1,run,0,5,174.394,Oracle,0.982525,baseline
-oracle,-1,1,run,0,6,165.027,Oracle,0.92975,baseline
-oracle,-1,1,run,0,7,181.284,Oracle,1.02134,baseline
-oracle,-1,1,run,0,8,174.007,Oracle,0.980345,baseline
-oracle,-1,1,run,0,9,184.894,Oracle,1.04168,baseline
-oracle,-1,1,run,1,0,250.775,Oracle,1.06555,baseline
-oracle,-1,1,run,1,1,210.017,Oracle,0.892373,baseline
-oracle,-1,1,run,1,2,238.838,Oracle,1.01484,baseline
-oracle,-1,1,run,1,3,238.724,Oracle,1.01435,baseline
-oracle,-1,1,run,1,4,237.819,Oracle,1.01051,baseline
-oracle,-1,1,run,1,5,237.053,Oracle,1.00725,baseline
-oracle,-1,1,run,1,6,244.139,Oracle,1.03736,baseline
-oracle,-1,1,run,1,7,241.535,Oracle,1.02629,baseline
-oracle,-1,1,run,1,8,234.307,Oracle,0.995582,baseline
-oracle,-1,1,run,1,9,220.26,Oracle,0.935896,baseline
-oracle,-1,1,run,2,0,202.922,Oracle,1.02299,baseline
-oracle,-1,1,run,2,1,210.478,Oracle,1.06108,baseline
-oracle,-1,1,run,2,2,203.466,Oracle,1.02573,baseline
-oracle,-1,1,run,2,3,206.661,Oracle,1.04184,baseline
-oracle,-1,1,run,2,4,198.842,Oracle,1.00242,baseline
-oracle,-1,1,run,2,5,172.636,Oracle,0.870305,baseline
-oracle,-1,1,run,2,6,180.993,Oracle,0.912437,baseline
-oracle,-1,1,run,2,7,199.04,Oracle,1.00342,baseline
-oracle,-1,1,run,2,8,207.129,Oracle,1.0442,baseline
-oracle,-1,1,run,2,9,201.454,Oracle,1.01559,baseline
-oracle,-1,1,stand,0,0,606.173,Oracle,0.981964,baseline
-oracle,-1,1,stand,0,1,626.998,Oracle,1.0157,baseline
-oracle,-1,1,stand,0,2,642.062,Oracle,1.0401,baseline
-oracle,-1,1,stand,0,3,644.835,Oracle,1.0446,baseline
-oracle,-1,1,stand,0,4,583.438,Oracle,0.945135,baseline
-oracle,-1,1,stand,0,5,653.994,Oracle,1.05943,baseline
-oracle,-1,1,stand,0,6,554.185,Oracle,0.897747,baseline
-oracle,-1,1,stand,0,7,633.326,Oracle,1.02595,baseline
-oracle,-1,1,stand,0,8,585.182,Oracle,0.947961,baseline
-oracle,-1,1,stand,0,9,642.87,Oracle,1.04141,baseline
-oracle,-1,1,stand,1,0,626.077,Oracle,0.875403,baseline
-oracle,-1,1,stand,1,1,763.387,Oracle,1.06739,baseline
-oracle,-1,1,stand,1,2,745.455,Oracle,1.04232,baseline
-oracle,-1,1,stand,1,3,713.91,Oracle,0.998214,baseline
-oracle,-1,1,stand,1,4,709.635,Oracle,0.992237,baseline
-oracle,-1,1,stand,1,5,731.303,Oracle,1.02253,baseline
-oracle,-1,1,stand,1,6,727.064,Oracle,1.01661,baseline
-oracle,-1,1,stand,1,7,702.513,Oracle,0.982278,baseline
-oracle,-1,1,stand,1,8,718.169,Oracle,1.00417,baseline
-oracle,-1,1,stand,1,9,714.359,Oracle,0.998842,baseline
-oracle,-1,1,stand,2,0,482.228,Oracle,0.928463,baseline
-oracle,-1,1,stand,2,1,573.302,Oracle,1.10381,baseline
-oracle,-1,1,stand,2,2,396.18,Oracle,0.762789,baseline
-oracle,-1,1,stand,2,3,482.897,Oracle,0.929751,baseline
-oracle,-1,1,stand,2,4,497.811,Oracle,0.958466,baseline
-oracle,-1,1,stand,2,5,527.317,Oracle,1.01527,baseline
-oracle,-1,1,stand,2,6,535.94,Oracle,1.03188,baseline
-oracle,-1,1,stand,2,7,620.909,Oracle,1.19547,baseline
-oracle,-1,1,stand,2,8,493.496,Oracle,0.950157,baseline
-oracle,-1,1,stand,2,9,583.754,Oracle,1.12394,baseline
-oracle,-1,1,walk,0,0,574.18,Oracle,1.00281,baseline
-oracle,-1,1,walk,0,1,489.052,Oracle,0.854134,baseline
-oracle,-1,1,walk,0,2,581.381,Oracle,1.01539,baseline
-oracle,-1,1,walk,0,3,584.982,Oracle,1.02168,baseline
-oracle,-1,1,walk,0,4,590.588,Oracle,1.03147,baseline
-oracle,-1,1,walk,0,5,560.15,Oracle,0.978308,baseline
-oracle,-1,1,walk,0,6,575.233,Oracle,1.00465,baseline
-oracle,-1,1,walk,0,7,618.044,Oracle,1.07942,baseline
-oracle,-1,1,walk,0,8,542.474,Oracle,0.947437,baseline
-oracle,-1,1,walk,0,9,609.619,Oracle,1.06471,baseline
-oracle,-1,1,walk,1,0,603.841,Oracle,1.06272,baseline
-oracle,-1,1,walk,1,1,518.318,Oracle,0.912209,baseline
-oracle,-1,1,walk,1,2,580.583,Oracle,1.02179,baseline
-oracle,-1,1,walk,1,3,575.2,Oracle,1.01232,baseline
-oracle,-1,1,walk,1,4,579.508,Oracle,1.0199,baseline
-oracle,-1,1,walk,1,5,588.158,Oracle,1.03512,baseline
-oracle,-1,1,walk,1,6,573.014,Oracle,1.00847,baseline
-oracle,-1,1,walk,1,7,602.029,Oracle,1.05953,baseline
-oracle,-1,1,walk,1,8,571.551,Oracle,1.00589,baseline
-oracle,-1,1,walk,1,9,489.815,Oracle,0.862045,baseline
-oracle,-1,1,walk,2,0,511.226,Oracle,1.01309,baseline
-oracle,-1,1,walk,2,1,517.921,Oracle,1.02636,baseline
-oracle,-1,1,walk,2,2,500.975,Oracle,0.992781,baseline
-oracle,-1,1,walk,2,3,484.484,Oracle,0.960101,baseline
-oracle,-1,1,walk,2,4,499.124,Oracle,0.989112,baseline
-oracle,-1,1,walk,2,5,531.047,Oracle,1.05237,baseline
-oracle,-1,1,walk,2,6,484.896,Oracle,0.960917,baseline
-oracle,-1,1,walk,2,7,522.912,Oracle,1.03625,baseline
-oracle,-1,1,walk,2,8,487.509,Oracle,0.966095,baseline
-oracle,-1,1,walk,2,9,506.086,Oracle,1.00291,baseline
+oracle,-1,1,flip,0,0,257.245,FB (offline z),0.882823,baseline
+oracle,-1,1,flip,0,1,307.042,FB (offline z),1.05372,baseline
+oracle,-1,1,flip,0,2,320.951,FB (offline z),1.10145,baseline
+oracle,-1,1,flip,0,3,284.619,FB (offline z),0.976766,baseline
+oracle,-1,1,flip,0,4,301.142,FB (offline z),1.03347,baseline
+oracle,-1,1,flip,0,5,298.32,FB (offline z),1.02379,baseline
+oracle,-1,1,flip,0,6,272.974,FB (offline z),0.936802,baseline
+oracle,-1,1,flip,0,7,300.419,FB (offline z),1.03099,baseline
+oracle,-1,1,flip,0,8,311.924,FB (offline z),1.07047,baseline
+oracle,-1,1,flip,0,9,259.253,FB (offline z),0.889714,baseline
+oracle,-1,1,flip,1,0,292.861,FB (offline z),0.981067,baseline
+oracle,-1,1,flip,1,1,306.534,FB (offline z),1.02687,baseline
+oracle,-1,1,flip,1,2,322.726,FB (offline z),1.08111,baseline
+oracle,-1,1,flip,1,3,301.166,FB (offline z),1.00889,baseline
+oracle,-1,1,flip,1,4,291.233,FB (offline z),0.975613,baseline
+oracle,-1,1,flip,1,5,290.822,FB (offline z),0.974238,baseline
+oracle,-1,1,flip,1,6,293.221,FB (offline z),0.982273,baseline
+oracle,-1,1,flip,1,7,303.245,FB (offline z),1.01586,baseline
+oracle,-1,1,flip,1,8,277.16,FB (offline z),0.928472,baseline
+oracle,-1,1,flip,1,9,306.156,FB (offline z),1.02561,baseline
+oracle,-1,1,flip,2,0,212.542,FB (offline z),1.16714,baseline
+oracle,-1,1,flip,2,1,169.181,FB (offline z),0.929028,baseline
+oracle,-1,1,flip,2,2,257.755,FB (offline z),1.41542,baseline
+oracle,-1,1,flip,2,3,172.016,FB (offline z),0.944596,baseline
+oracle,-1,1,flip,2,4,162.535,FB (offline z),0.892531,baseline
+oracle,-1,1,flip,2,5,125.578,FB (offline z),0.68959,baseline
+oracle,-1,1,flip,2,6,164.554,FB (offline z),0.90362,baseline
+oracle,-1,1,flip,2,7,213.746,FB (offline z),1.17375,baseline
+oracle,-1,1,flip,2,8,223.089,FB (offline z),1.22505,baseline
+oracle,-1,1,flip,2,9,120.058,FB (offline z),0.659278,baseline
+oracle,-1,1,run,0,0,187.59,FB (offline z),1.05687,baseline
+oracle,-1,1,run,0,1,154.395,FB (offline z),0.86985,baseline
+oracle,-1,1,run,0,2,188.005,FB (offline z),1.05921,baseline
+oracle,-1,1,run,0,3,177.21,FB (offline z),0.998386,baseline
+oracle,-1,1,run,0,4,188.154,FB (offline z),1.06005,baseline
+oracle,-1,1,run,0,5,174.394,FB (offline z),0.982525,baseline
+oracle,-1,1,run,0,6,165.027,FB (offline z),0.92975,baseline
+oracle,-1,1,run,0,7,181.284,FB (offline z),1.02134,baseline
+oracle,-1,1,run,0,8,174.007,FB (offline z),0.980345,baseline
+oracle,-1,1,run,0,9,184.894,FB (offline z),1.04168,baseline
+oracle,-1,1,run,1,0,250.775,FB (offline z),1.06555,baseline
+oracle,-1,1,run,1,1,210.017,FB (offline z),0.892373,baseline
+oracle,-1,1,run,1,2,238.838,FB (offline z),1.01484,baseline
+oracle,-1,1,run,1,3,238.724,FB (offline z),1.01435,baseline
+oracle,-1,1,run,1,4,237.819,FB (offline z),1.01051,baseline
+oracle,-1,1,run,1,5,237.053,FB (offline z),1.00725,baseline
+oracle,-1,1,run,1,6,244.139,FB (offline z),1.03736,baseline
+oracle,-1,1,run,1,7,241.535,FB (offline z),1.02629,baseline
+oracle,-1,1,run,1,8,234.307,FB (offline z),0.995582,baseline
+oracle,-1,1,run,1,9,220.26,FB (offline z),0.935896,baseline
+oracle,-1,1,run,2,0,202.922,FB (offline z),1.02299,baseline
+oracle,-1,1,run,2,1,210.478,FB (offline z),1.06108,baseline
+oracle,-1,1,run,2,2,203.466,FB (offline z),1.02573,baseline
+oracle,-1,1,run,2,3,206.661,FB (offline z),1.04184,baseline
+oracle,-1,1,run,2,4,198.842,FB (offline z),1.00242,baseline
+oracle,-1,1,run,2,5,172.636,FB (offline z),0.870305,baseline
+oracle,-1,1,run,2,6,180.993,FB (offline z),0.912437,baseline
+oracle,-1,1,run,2,7,199.04,FB (offline z),1.00342,baseline
+oracle,-1,1,run,2,8,207.129,FB (offline z),1.0442,baseline
+oracle,-1,1,run,2,9,201.454,FB (offline z),1.01559,baseline
+oracle,-1,1,stand,0,0,606.173,FB (offline z),0.981964,baseline
+oracle,-1,1,stand,0,1,626.998,FB (offline z),1.0157,baseline
+oracle,-1,1,stand,0,2,642.062,FB (offline z),1.0401,baseline
+oracle,-1,1,stand,0,3,644.835,FB (offline z),1.0446,baseline
+oracle,-1,1,stand,0,4,583.438,FB (offline z),0.945135,baseline
+oracle,-1,1,stand,0,5,653.994,FB (offline z),1.05943,baseline
+oracle,-1,1,stand,0,6,554.185,FB (offline z),0.897747,baseline
+oracle,-1,1,stand,0,7,633.326,FB (offline z),1.02595,baseline
+oracle,-1,1,stand,0,8,585.182,FB (offline z),0.947961,baseline
+oracle,-1,1,stand,0,9,642.87,FB (offline z),1.04141,baseline
+oracle,-1,1,stand,1,0,626.077,FB (offline z),0.875403,baseline
+oracle,-1,1,stand,1,1,763.387,FB (offline z),1.06739,baseline
+oracle,-1,1,stand,1,2,745.455,FB (offline z),1.04232,baseline
+oracle,-1,1,stand,1,3,713.91,FB (offline z),0.998214,baseline
+oracle,-1,1,stand,1,4,709.635,FB (offline z),0.992237,baseline
+oracle,-1,1,stand,1,5,731.303,FB (offline z),1.02253,baseline
+oracle,-1,1,stand,1,6,727.064,FB (offline z),1.01661,baseline
+oracle,-1,1,stand,1,7,702.513,FB (offline z),0.982278,baseline
+oracle,-1,1,stand,1,8,718.169,FB (offline z),1.00417,baseline
+oracle,-1,1,stand,1,9,714.359,FB (offline z),0.998842,baseline
+oracle,-1,1,stand,2,0,482.228,FB (offline z),0.928463,baseline
+oracle,-1,1,stand,2,1,573.302,FB (offline z),1.10381,baseline
+oracle,-1,1,stand,2,2,396.18,FB (offline z),0.762789,baseline
+oracle,-1,1,stand,2,3,482.897,FB (offline z),0.929751,baseline
+oracle,-1,1,stand,2,4,497.811,FB (offline z),0.958466,baseline
+oracle,-1,1,stand,2,5,527.317,FB (offline z),1.01527,baseline
+oracle,-1,1,stand,2,6,535.94,FB (offline z),1.03188,baseline
+oracle,-1,1,stand,2,7,620.909,FB (offline z),1.19547,baseline
+oracle,-1,1,stand,2,8,493.496,FB (offline z),0.950157,baseline
+oracle,-1,1,stand,2,9,583.754,FB (offline z),1.12394,baseline
+oracle,-1,1,walk,0,0,574.18,FB (offline z),1.00281,baseline
+oracle,-1,1,walk,0,1,489.052,FB (offline z),0.854134,baseline
+oracle,-1,1,walk,0,2,581.381,FB (offline z),1.01539,baseline
+oracle,-1,1,walk,0,3,584.982,FB (offline z),1.02168,baseline
+oracle,-1,1,walk,0,4,590.588,FB (offline z),1.03147,baseline
+oracle,-1,1,walk,0,5,560.15,FB (offline z),0.978308,baseline
+oracle,-1,1,walk,0,6,575.233,FB (offline z),1.00465,baseline
+oracle,-1,1,walk,0,7,618.044,FB (offline z),1.07942,baseline
+oracle,-1,1,walk,0,8,542.474,FB (offline z),0.947437,baseline
+oracle,-1,1,walk,0,9,609.619,FB (offline z),1.06471,baseline
+oracle,-1,1,walk,1,0,603.841,FB (offline z),1.06272,baseline
+oracle,-1,1,walk,1,1,518.318,FB (offline z),0.912209,baseline
+oracle,-1,1,walk,1,2,580.583,FB (offline z),1.02179,baseline
+oracle,-1,1,walk,1,3,575.2,FB (offline z),1.01232,baseline
+oracle,-1,1,walk,1,4,579.508,FB (offline z),1.0199,baseline
+oracle,-1,1,walk,1,5,588.158,FB (offline z),1.03512,baseline
+oracle,-1,1,walk,1,6,573.014,FB (offline z),1.00847,baseline
+oracle,-1,1,walk,1,7,602.029,FB (offline z),1.05953,baseline
+oracle,-1,1,walk,1,8,571.551,FB (offline z),1.00589,baseline
+oracle,-1,1,walk,1,9,489.815,FB (offline z),0.862045,baseline
+oracle,-1,1,walk,2,0,511.226,FB (offline z),1.01309,baseline
+oracle,-1,1,walk,2,1,517.921,FB (offline z),1.02636,baseline
+oracle,-1,1,walk,2,2,500.975,FB (offline z),0.992781,baseline
+oracle,-1,1,walk,2,3,484.484,FB (offline z),0.960101,baseline
+oracle,-1,1,walk,2,4,499.124,FB (offline z),0.989112,baseline
+oracle,-1,1,walk,2,5,531.047,FB (offline z),1.05237,baseline
+oracle,-1,1,walk,2,6,484.896,FB (offline z),0.960917,baseline
+oracle,-1,1,walk,2,7,522.912,FB (offline z),1.03625,baseline
+oracle,-1,1,walk,2,8,487.509,FB (offline z),0.966095,baseline
+oracle,-1,1,walk,2,9,506.086,FB (offline z),1.00291,baseline
 random,-1,1,flip,0,0,75.3833,Random,0.258704,baseline
 random,-1,1,flip,0,1,81.4098,Random,0.279385,baseline
 random,-1,1,flip,0,2,85.3699,Random,0.292976,baseline
@@ -479,126 +479,126 @@ ucb,0.001,1,walk,2,6,465.693,OpTI-BFM,0.922863,baseline
 ucb,0.001,1,walk,2,7,510.964,OpTI-BFM,1.01258,baseline
 ucb,0.001,1,walk,2,8,513.047,OpTI-BFM,1.0167,baseline
 ucb,0.001,1,walk,2,9,421.414,OpTI-BFM,0.835116,baseline
-oracle,-1,1,flip,0,0,172.527,Oracle,0.812046,actuator_mild
-oracle,-1,1,flip,0,1,250.539,Oracle,1.17923,actuator_mild
-oracle,-1,1,flip,0,2,241.04,Oracle,1.13452,actuator_mild
-oracle,-1,1,flip,0,3,165.047,Oracle,0.776841,actuator_mild
-oracle,-1,1,flip,0,4,199.636,Oracle,0.939643,actuator_mild
-oracle,-1,1,flip,0,5,192.364,Oracle,0.905415,actuator_mild
-oracle,-1,1,flip,0,6,198.69,Oracle,0.935188,actuator_mild
-oracle,-1,1,flip,0,7,236.591,Oracle,1.11358,actuator_mild
-oracle,-1,1,flip,0,8,238.228,Oracle,1.12129,actuator_mild
-oracle,-1,1,flip,0,9,229.932,Oracle,1.08224,actuator_mild
-oracle,-1,1,flip,1,0,269.943,Oracle,1.00343,actuator_mild
-oracle,-1,1,flip,1,1,276.049,Oracle,1.02613,actuator_mild
-oracle,-1,1,flip,1,2,269.597,Oracle,1.00214,actuator_mild
-oracle,-1,1,flip,1,3,243.434,Oracle,0.904889,actuator_mild
-oracle,-1,1,flip,1,4,281.781,Oracle,1.04743,actuator_mild
-oracle,-1,1,flip,1,5,269.418,Oracle,1.00148,actuator_mild
-oracle,-1,1,flip,1,6,267.369,Oracle,0.99386,actuator_mild
-oracle,-1,1,flip,1,7,261.796,Oracle,0.973145,actuator_mild
-oracle,-1,1,flip,1,8,269.259,Oracle,1.00088,actuator_mild
-oracle,-1,1,flip,1,9,281.563,Oracle,1.04662,actuator_mild
-oracle,-1,1,flip,2,0,144.84,Oracle,1.05183,actuator_mild
-oracle,-1,1,flip,2,1,128.929,Oracle,0.93629,actuator_mild
-oracle,-1,1,flip,2,2,151.995,Oracle,1.10379,actuator_mild
-oracle,-1,1,flip,2,3,149.194,Oracle,1.08346,actuator_mild
-oracle,-1,1,flip,2,4,164.968,Oracle,1.19801,actuator_mild
-oracle,-1,1,flip,2,5,134.29,Oracle,0.975217,actuator_mild
-oracle,-1,1,flip,2,6,89.7255,Oracle,0.65159,actuator_mild
-oracle,-1,1,flip,2,7,162.731,Oracle,1.18176,actuator_mild
-oracle,-1,1,flip,2,8,127.699,Oracle,0.927355,actuator_mild
-oracle,-1,1,flip,2,9,122.651,Oracle,0.890696,actuator_mild
-oracle,-1,1,run,0,0,141.285,Oracle,0.922037,actuator_mild
-oracle,-1,1,run,0,1,162.446,Oracle,1.06014,actuator_mild
-oracle,-1,1,run,0,2,164.51,Oracle,1.07361,actuator_mild
-oracle,-1,1,run,0,3,157.867,Oracle,1.03025,actuator_mild
-oracle,-1,1,run,0,4,155.851,Oracle,1.0171,actuator_mild
-oracle,-1,1,run,0,5,146.26,Oracle,0.954503,actuator_mild
-oracle,-1,1,run,0,6,147.686,Oracle,0.963814,actuator_mild
-oracle,-1,1,run,0,7,150.35,Oracle,0.981198,actuator_mild
-oracle,-1,1,run,0,8,159.908,Oracle,1.04357,actuator_mild
-oracle,-1,1,run,0,9,146.15,Oracle,0.953787,actuator_mild
-oracle,-1,1,run,1,0,192.179,Oracle,1.02086,actuator_mild
-oracle,-1,1,run,1,1,190.858,Oracle,1.01385,actuator_mild
-oracle,-1,1,run,1,2,187.903,Oracle,0.998152,actuator_mild
-oracle,-1,1,run,1,3,185.776,Oracle,0.986849,actuator_mild
-oracle,-1,1,run,1,4,185.045,Oracle,0.982968,actuator_mild
-oracle,-1,1,run,1,5,189.15,Oracle,1.00477,actuator_mild
-oracle,-1,1,run,1,6,194.496,Oracle,1.03317,actuator_mild
-oracle,-1,1,run,1,7,188.367,Oracle,1.00061,actuator_mild
-oracle,-1,1,run,1,8,177.185,Oracle,0.941218,actuator_mild
-oracle,-1,1,run,1,9,191.553,Oracle,1.01754,actuator_mild
-oracle,-1,1,run,2,0,119.037,Oracle,0.988061,actuator_mild
-oracle,-1,1,run,2,1,120.953,Oracle,1.00396,actuator_mild
-oracle,-1,1,run,2,2,116.246,Oracle,0.964893,actuator_mild
-oracle,-1,1,run,2,3,110.092,Oracle,0.913811,actuator_mild
-oracle,-1,1,run,2,4,122.448,Oracle,1.01637,actuator_mild
-oracle,-1,1,run,2,5,126.624,Oracle,1.05103,actuator_mild
-oracle,-1,1,run,2,6,114.96,Oracle,0.954216,actuator_mild
-oracle,-1,1,run,2,7,129.108,Oracle,1.07166,actuator_mild
-oracle,-1,1,run,2,8,120.169,Oracle,0.997453,actuator_mild
-oracle,-1,1,run,2,9,125.119,Oracle,1.03854,actuator_mild
-oracle,-1,1,stand,0,0,377.114,Oracle,1.04842,actuator_mild
-oracle,-1,1,stand,0,1,362.774,Oracle,1.00856,actuator_mild
-oracle,-1,1,stand,0,2,359.438,Oracle,0.999284,actuator_mild
-oracle,-1,1,stand,0,3,359.951,Oracle,1.00071,actuator_mild
-oracle,-1,1,stand,0,4,326.35,Oracle,0.907295,actuator_mild
-oracle,-1,1,stand,0,5,389.894,Oracle,1.08396,actuator_mild
-oracle,-1,1,stand,0,6,309.749,Oracle,0.86114,actuator_mild
-oracle,-1,1,stand,0,7,486.43,Oracle,1.35234,actuator_mild
-oracle,-1,1,stand,0,8,313.693,Oracle,0.872106,actuator_mild
-oracle,-1,1,stand,0,9,311.566,Oracle,0.866192,actuator_mild
-oracle,-1,1,stand,1,0,647.366,Oracle,1.00852,actuator_mild
-oracle,-1,1,stand,1,1,585.002,Oracle,0.911368,actuator_mild
-oracle,-1,1,stand,1,2,665.401,Oracle,1.03662,actuator_mild
-oracle,-1,1,stand,1,3,646.74,Oracle,1.00755,actuator_mild
-oracle,-1,1,stand,1,4,635.416,Oracle,0.989908,actuator_mild
-oracle,-1,1,stand,1,5,631.216,Oracle,0.983363,actuator_mild
-oracle,-1,1,stand,1,6,647.417,Oracle,1.0086,actuator_mild
-oracle,-1,1,stand,1,7,669.73,Oracle,1.04337,actuator_mild
-oracle,-1,1,stand,1,8,669.579,Oracle,1.04313,actuator_mild
-oracle,-1,1,stand,1,9,621.078,Oracle,0.96757,actuator_mild
-oracle,-1,1,stand,2,0,369.033,Oracle,0.954373,actuator_mild
-oracle,-1,1,stand,2,1,387.165,Oracle,1.00126,actuator_mild
-oracle,-1,1,stand,2,2,340.291,Oracle,0.880042,actuator_mild
-oracle,-1,1,stand,2,3,440.641,Oracle,1.13956,actuator_mild
-oracle,-1,1,stand,2,4,370.432,Oracle,0.957991,actuator_mild
-oracle,-1,1,stand,2,5,363.877,Oracle,0.94104,actuator_mild
-oracle,-1,1,stand,2,6,448.416,Oracle,1.15967,actuator_mild
-oracle,-1,1,stand,2,7,420.527,Oracle,1.08754,actuator_mild
-oracle,-1,1,stand,2,8,400.879,Oracle,1.03673,actuator_mild
-oracle,-1,1,stand,2,9,325.497,Oracle,0.841784,actuator_mild
-oracle,-1,1,walk,0,0,474.288,Oracle,0.980378,actuator_mild
-oracle,-1,1,walk,0,1,503.456,Oracle,1.04067,actuator_mild
-oracle,-1,1,walk,0,2,499.041,Oracle,1.03155,actuator_mild
-oracle,-1,1,walk,0,3,471.033,Oracle,0.97365,actuator_mild
-oracle,-1,1,walk,0,4,421.463,Oracle,0.871188,actuator_mild
-oracle,-1,1,walk,0,5,565.082,Oracle,1.16806,actuator_mild
-oracle,-1,1,walk,0,6,482.039,Oracle,0.996401,actuator_mild
-oracle,-1,1,walk,0,7,500.63,Oracle,1.03483,actuator_mild
-oracle,-1,1,walk,0,8,509.065,Oracle,1.05227,actuator_mild
-oracle,-1,1,walk,0,9,411.705,Oracle,0.851016,actuator_mild
-oracle,-1,1,walk,1,0,498.975,Oracle,1.0258,actuator_mild
-oracle,-1,1,walk,1,1,521.548,Oracle,1.07221,actuator_mild
-oracle,-1,1,walk,1,2,451.424,Oracle,0.928043,actuator_mild
-oracle,-1,1,walk,1,3,516.037,Oracle,1.06088,actuator_mild
-oracle,-1,1,walk,1,4,539.899,Oracle,1.10993,actuator_mild
-oracle,-1,1,walk,1,5,483.054,Oracle,0.993069,actuator_mild
-oracle,-1,1,walk,1,6,405.542,Oracle,0.833719,actuator_mild
-oracle,-1,1,walk,1,7,498.955,Oracle,1.02576,actuator_mild
-oracle,-1,1,walk,1,8,472.919,Oracle,0.972233,actuator_mild
-oracle,-1,1,walk,1,9,475.899,Oracle,0.978361,actuator_mild
-oracle,-1,1,walk,2,0,373.408,Oracle,1.01439,actuator_mild
-oracle,-1,1,walk,2,1,381.773,Oracle,1.03712,actuator_mild
-oracle,-1,1,walk,2,2,381.539,Oracle,1.03648,actuator_mild
-oracle,-1,1,walk,2,3,368.04,Oracle,0.999811,actuator_mild
-oracle,-1,1,walk,2,4,383.964,Oracle,1.04307,actuator_mild
-oracle,-1,1,walk,2,5,388.621,Oracle,1.05572,actuator_mild
-oracle,-1,1,walk,2,6,323.576,Oracle,0.87902,actuator_mild
-oracle,-1,1,walk,2,7,343.77,Oracle,0.933879,actuator_mild
-oracle,-1,1,walk,2,8,358.285,Oracle,0.973311,actuator_mild
-oracle,-1,1,walk,2,9,378.122,Oracle,1.0272,actuator_mild
+oracle,-1,1,flip,0,0,172.527,FB (offline z),0.812046,actuator_mild
+oracle,-1,1,flip,0,1,250.539,FB (offline z),1.17923,actuator_mild
+oracle,-1,1,flip,0,2,241.04,FB (offline z),1.13452,actuator_mild
+oracle,-1,1,flip,0,3,165.047,FB (offline z),0.776841,actuator_mild
+oracle,-1,1,flip,0,4,199.636,FB (offline z),0.939643,actuator_mild
+oracle,-1,1,flip,0,5,192.364,FB (offline z),0.905415,actuator_mild
+oracle,-1,1,flip,0,6,198.69,FB (offline z),0.935188,actuator_mild
+oracle,-1,1,flip,0,7,236.591,FB (offline z),1.11358,actuator_mild
+oracle,-1,1,flip,0,8,238.228,FB (offline z),1.12129,actuator_mild
+oracle,-1,1,flip,0,9,229.932,FB (offline z),1.08224,actuator_mild
+oracle,-1,1,flip,1,0,269.943,FB (offline z),1.00343,actuator_mild
+oracle,-1,1,flip,1,1,276.049,FB (offline z),1.02613,actuator_mild
+oracle,-1,1,flip,1,2,269.597,FB (offline z),1.00214,actuator_mild
+oracle,-1,1,flip,1,3,243.434,FB (offline z),0.904889,actuator_mild
+oracle,-1,1,flip,1,4,281.781,FB (offline z),1.04743,actuator_mild
+oracle,-1,1,flip,1,5,269.418,FB (offline z),1.00148,actuator_mild
+oracle,-1,1,flip,1,6,267.369,FB (offline z),0.99386,actuator_mild
+oracle,-1,1,flip,1,7,261.796,FB (offline z),0.973145,actuator_mild
+oracle,-1,1,flip,1,8,269.259,FB (offline z),1.00088,actuator_mild
+oracle,-1,1,flip,1,9,281.563,FB (offline z),1.04662,actuator_mild
+oracle,-1,1,flip,2,0,144.84,FB (offline z),1.05183,actuator_mild
+oracle,-1,1,flip,2,1,128.929,FB (offline z),0.93629,actuator_mild
+oracle,-1,1,flip,2,2,151.995,FB (offline z),1.10379,actuator_mild
+oracle,-1,1,flip,2,3,149.194,FB (offline z),1.08346,actuator_mild
+oracle,-1,1,flip,2,4,164.968,FB (offline z),1.19801,actuator_mild
+oracle,-1,1,flip,2,5,134.29,FB (offline z),0.975217,actuator_mild
+oracle,-1,1,flip,2,6,89.7255,FB (offline z),0.65159,actuator_mild
+oracle,-1,1,flip,2,7,162.731,FB (offline z),1.18176,actuator_mild
+oracle,-1,1,flip,2,8,127.699,FB (offline z),0.927355,actuator_mild
+oracle,-1,1,flip,2,9,122.651,FB (offline z),0.890696,actuator_mild
+oracle,-1,1,run,0,0,141.285,FB (offline z),0.922037,actuator_mild
+oracle,-1,1,run,0,1,162.446,FB (offline z),1.06014,actuator_mild
+oracle,-1,1,run,0,2,164.51,FB (offline z),1.07361,actuator_mild
+oracle,-1,1,run,0,3,157.867,FB (offline z),1.03025,actuator_mild
+oracle,-1,1,run,0,4,155.851,FB (offline z),1.0171,actuator_mild
+oracle,-1,1,run,0,5,146.26,FB (offline z),0.954503,actuator_mild
+oracle,-1,1,run,0,6,147.686,FB (offline z),0.963814,actuator_mild
+oracle,-1,1,run,0,7,150.35,FB (offline z),0.981198,actuator_mild
+oracle,-1,1,run,0,8,159.908,FB (offline z),1.04357,actuator_mild
+oracle,-1,1,run,0,9,146.15,FB (offline z),0.953787,actuator_mild
+oracle,-1,1,run,1,0,192.179,FB (offline z),1.02086,actuator_mild
+oracle,-1,1,run,1,1,190.858,FB (offline z),1.01385,actuator_mild
+oracle,-1,1,run,1,2,187.903,FB (offline z),0.998152,actuator_mild
+oracle,-1,1,run,1,3,185.776,FB (offline z),0.986849,actuator_mild
+oracle,-1,1,run,1,4,185.045,FB (offline z),0.982968,actuator_mild
+oracle,-1,1,run,1,5,189.15,FB (offline z),1.00477,actuator_mild
+oracle,-1,1,run,1,6,194.496,FB (offline z),1.03317,actuator_mild
+oracle,-1,1,run,1,7,188.367,FB (offline z),1.00061,actuator_mild
+oracle,-1,1,run,1,8,177.185,FB (offline z),0.941218,actuator_mild
+oracle,-1,1,run,1,9,191.553,FB (offline z),1.01754,actuator_mild
+oracle,-1,1,run,2,0,119.037,FB (offline z),0.988061,actuator_mild
+oracle,-1,1,run,2,1,120.953,FB (offline z),1.00396,actuator_mild
+oracle,-1,1,run,2,2,116.246,FB (offline z),0.964893,actuator_mild
+oracle,-1,1,run,2,3,110.092,FB (offline z),0.913811,actuator_mild
+oracle,-1,1,run,2,4,122.448,FB (offline z),1.01637,actuator_mild
+oracle,-1,1,run,2,5,126.624,FB (offline z),1.05103,actuator_mild
+oracle,-1,1,run,2,6,114.96,FB (offline z),0.954216,actuator_mild
+oracle,-1,1,run,2,7,129.108,FB (offline z),1.07166,actuator_mild
+oracle,-1,1,run,2,8,120.169,FB (offline z),0.997453,actuator_mild
+oracle,-1,1,run,2,9,125.119,FB (offline z),1.03854,actuator_mild
+oracle,-1,1,stand,0,0,377.114,FB (offline z),1.04842,actuator_mild
+oracle,-1,1,stand,0,1,362.774,FB (offline z),1.00856,actuator_mild
+oracle,-1,1,stand,0,2,359.438,FB (offline z),0.999284,actuator_mild
+oracle,-1,1,stand,0,3,359.951,FB (offline z),1.00071,actuator_mild
+oracle,-1,1,stand,0,4,326.35,FB (offline z),0.907295,actuator_mild
+oracle,-1,1,stand,0,5,389.894,FB (offline z),1.08396,actuator_mild
+oracle,-1,1,stand,0,6,309.749,FB (offline z),0.86114,actuator_mild
+oracle,-1,1,stand,0,7,486.43,FB (offline z),1.35234,actuator_mild
+oracle,-1,1,stand,0,8,313.693,FB (offline z),0.872106,actuator_mild
+oracle,-1,1,stand,0,9,311.566,FB (offline z),0.866192,actuator_mild
+oracle,-1,1,stand,1,0,647.366,FB (offline z),1.00852,actuator_mild
+oracle,-1,1,stand,1,1,585.002,FB (offline z),0.911368,actuator_mild
+oracle,-1,1,stand,1,2,665.401,FB (offline z),1.03662,actuator_mild
+oracle,-1,1,stand,1,3,646.74,FB (offline z),1.00755,actuator_mild
+oracle,-1,1,stand,1,4,635.416,FB (offline z),0.989908,actuator_mild
+oracle,-1,1,stand,1,5,631.216,FB (offline z),0.983363,actuator_mild
+oracle,-1,1,stand,1,6,647.417,FB (offline z),1.0086,actuator_mild
+oracle,-1,1,stand,1,7,669.73,FB (offline z),1.04337,actuator_mild
+oracle,-1,1,stand,1,8,669.579,FB (offline z),1.04313,actuator_mild
+oracle,-1,1,stand,1,9,621.078,FB (offline z),0.96757,actuator_mild
+oracle,-1,1,stand,2,0,369.033,FB (offline z),0.954373,actuator_mild
+oracle,-1,1,stand,2,1,387.165,FB (offline z),1.00126,actuator_mild
+oracle,-1,1,stand,2,2,340.291,FB (offline z),0.880042,actuator_mild
+oracle,-1,1,stand,2,3,440.641,FB (offline z),1.13956,actuator_mild
+oracle,-1,1,stand,2,4,370.432,FB (offline z),0.957991,actuator_mild
+oracle,-1,1,stand,2,5,363.877,FB (offline z),0.94104,actuator_mild
+oracle,-1,1,stand,2,6,448.416,FB (offline z),1.15967,actuator_mild
+oracle,-1,1,stand,2,7,420.527,FB (offline z),1.08754,actuator_mild
+oracle,-1,1,stand,2,8,400.879,FB (offline z),1.03673,actuator_mild
+oracle,-1,1,stand,2,9,325.497,FB (offline z),0.841784,actuator_mild
+oracle,-1,1,walk,0,0,474.288,FB (offline z),0.980378,actuator_mild
+oracle,-1,1,walk,0,1,503.456,FB (offline z),1.04067,actuator_mild
+oracle,-1,1,walk,0,2,499.041,FB (offline z),1.03155,actuator_mild
+oracle,-1,1,walk,0,3,471.033,FB (offline z),0.97365,actuator_mild
+oracle,-1,1,walk,0,4,421.463,FB (offline z),0.871188,actuator_mild
+oracle,-1,1,walk,0,5,565.082,FB (offline z),1.16806,actuator_mild
+oracle,-1,1,walk,0,6,482.039,FB (offline z),0.996401,actuator_mild
+oracle,-1,1,walk,0,7,500.63,FB (offline z),1.03483,actuator_mild
+oracle,-1,1,walk,0,8,509.065,FB (offline z),1.05227,actuator_mild
+oracle,-1,1,walk,0,9,411.705,FB (offline z),0.851016,actuator_mild
+oracle,-1,1,walk,1,0,498.975,FB (offline z),1.0258,actuator_mild
+oracle,-1,1,walk,1,1,521.548,FB (offline z),1.07221,actuator_mild
+oracle,-1,1,walk,1,2,451.424,FB (offline z),0.928043,actuator_mild
+oracle,-1,1,walk,1,3,516.037,FB (offline z),1.06088,actuator_mild
+oracle,-1,1,walk,1,4,539.899,FB (offline z),1.10993,actuator_mild
+oracle,-1,1,walk,1,5,483.054,FB (offline z),0.993069,actuator_mild
+oracle,-1,1,walk,1,6,405.542,FB (offline z),0.833719,actuator_mild
+oracle,-1,1,walk,1,7,498.955,FB (offline z),1.02576,actuator_mild
+oracle,-1,1,walk,1,8,472.919,FB (offline z),0.972233,actuator_mild
+oracle,-1,1,walk,1,9,475.899,FB (offline z),0.978361,actuator_mild
+oracle,-1,1,walk,2,0,373.408,FB (offline z),1.01439,actuator_mild
+oracle,-1,1,walk,2,1,381.773,FB (offline z),1.03712,actuator_mild
+oracle,-1,1,walk,2,2,381.539,FB (offline z),1.03648,actuator_mild
+oracle,-1,1,walk,2,3,368.04,FB (offline z),0.999811,actuator_mild
+oracle,-1,1,walk,2,4,383.964,FB (offline z),1.04307,actuator_mild
+oracle,-1,1,walk,2,5,388.621,FB (offline z),1.05572,actuator_mild
+oracle,-1,1,walk,2,6,323.576,FB (offline z),0.87902,actuator_mild
+oracle,-1,1,walk,2,7,343.77,FB (offline z),0.933879,actuator_mild
+oracle,-1,1,walk,2,8,358.285,FB (offline z),0.973311,actuator_mild
+oracle,-1,1,walk,2,9,378.122,FB (offline z),1.0272,actuator_mild
 random,-1,1,flip,0,0,62.1822,Random,0.292678,actuator_mild
 random,-1,1,flip,0,1,56.7877,Random,0.267287,actuator_mild
 random,-1,1,flip,0,2,58.1322,Random,0.273616,actuator_mild
@@ -959,126 +959,126 @@ ucb,0.001,1,walk,2,6,343.244,OpTI-BFM,0.93245,actuator_mild
 ucb,0.001,1,walk,2,7,338.568,OpTI-BFM,0.919748,actuator_mild
 ucb,0.001,1,walk,2,8,395.957,OpTI-BFM,1.07565,actuator_mild
 ucb,0.001,1,walk,2,9,371.405,OpTI-BFM,1.00895,actuator_mild
-oracle,-1,1,flip,0,0,136.044,Oracle,0.897884,actuator_strong
-oracle,-1,1,flip,0,1,115.807,Oracle,0.764317,actuator_strong
-oracle,-1,1,flip,0,2,187.639,Oracle,1.2384,actuator_strong
-oracle,-1,1,flip,0,3,146.036,Oracle,0.963826,actuator_strong
-oracle,-1,1,flip,0,4,120.409,Oracle,0.794694,actuator_strong
-oracle,-1,1,flip,0,5,143.878,Oracle,0.949587,actuator_strong
-oracle,-1,1,flip,0,6,169.068,Oracle,1.11584,actuator_strong
-oracle,-1,1,flip,0,7,134.769,Oracle,0.889466,actuator_strong
-oracle,-1,1,flip,0,8,169.829,Oracle,1.12086,actuator_strong
-oracle,-1,1,flip,0,9,191.687,Oracle,1.26512,actuator_strong
-oracle,-1,1,flip,1,0,260.839,Oracle,1.11394,actuator_strong
-oracle,-1,1,flip,1,1,195.835,Oracle,0.836331,actuator_strong
-oracle,-1,1,flip,1,2,244.475,Oracle,1.04405,actuator_strong
-oracle,-1,1,flip,1,3,252.945,Oracle,1.08023,actuator_strong
-oracle,-1,1,flip,1,4,217.349,Oracle,0.928207,actuator_strong
-oracle,-1,1,flip,1,5,219.799,Oracle,0.938669,actuator_strong
-oracle,-1,1,flip,1,6,248.389,Oracle,1.06077,actuator_strong
-oracle,-1,1,flip,1,7,258.459,Oracle,1.10377,actuator_strong
-oracle,-1,1,flip,1,8,221.607,Oracle,0.946391,actuator_strong
-oracle,-1,1,flip,1,9,221.902,Oracle,0.947651,actuator_strong
-oracle,-1,1,flip,2,0,105.035,Oracle,0.971496,actuator_strong
-oracle,-1,1,flip,2,1,104.72,Oracle,0.968582,actuator_strong
-oracle,-1,1,flip,2,2,125.036,Oracle,1.15649,actuator_strong
-oracle,-1,1,flip,2,3,99.0293,Oracle,0.915951,actuator_strong
-oracle,-1,1,flip,2,4,93.9341,Oracle,0.868824,actuator_strong
-oracle,-1,1,flip,2,5,116.777,Oracle,1.08011,actuator_strong
-oracle,-1,1,flip,2,6,100.851,Oracle,0.932798,actuator_strong
-oracle,-1,1,flip,2,7,109.567,Oracle,1.01342,actuator_strong
-oracle,-1,1,flip,2,8,116.185,Oracle,1.07463,actuator_strong
-oracle,-1,1,flip,2,9,110.03,Oracle,1.0177,actuator_strong
-oracle,-1,1,run,0,0,133.01,Oracle,1.05398,actuator_strong
-oracle,-1,1,run,0,1,130.663,Oracle,1.03538,actuator_strong
-oracle,-1,1,run,0,2,107.932,Oracle,0.855258,actuator_strong
-oracle,-1,1,run,0,3,129.076,Oracle,1.02281,actuator_strong
-oracle,-1,1,run,0,4,108.214,Oracle,0.857493,actuator_strong
-oracle,-1,1,run,0,5,121.837,Oracle,0.965441,actuator_strong
-oracle,-1,1,run,0,6,132.207,Oracle,1.04762,actuator_strong
-oracle,-1,1,run,0,7,139.155,Oracle,1.10267,actuator_strong
-oracle,-1,1,run,0,8,126.882,Oracle,1.00542,actuator_strong
-oracle,-1,1,run,0,9,133.004,Oracle,1.05393,actuator_strong
-oracle,-1,1,run,1,0,130.608,Oracle,0.985257,actuator_strong
-oracle,-1,1,run,1,1,144.178,Oracle,1.08762,actuator_strong
-oracle,-1,1,run,1,2,148.982,Oracle,1.12386,actuator_strong
-oracle,-1,1,run,1,3,120.56,Oracle,0.909459,actuator_strong
-oracle,-1,1,run,1,4,127.59,Oracle,0.962486,actuator_strong
-oracle,-1,1,run,1,5,119.671,Oracle,0.902747,actuator_strong
-oracle,-1,1,run,1,6,123.654,Oracle,0.932798,actuator_strong
-oracle,-1,1,run,1,7,126.789,Oracle,0.956443,actuator_strong
-oracle,-1,1,run,1,8,143.127,Oracle,1.07969,actuator_strong
-oracle,-1,1,run,1,9,140.468,Oracle,1.05964,actuator_strong
-oracle,-1,1,run,2,0,83.5691,Oracle,1.10967,actuator_strong
-oracle,-1,1,run,2,1,69.7597,Oracle,0.926299,actuator_strong
-oracle,-1,1,run,2,2,77.3985,Oracle,1.02773,actuator_strong
-oracle,-1,1,run,2,3,71.6999,Oracle,0.952061,actuator_strong
-oracle,-1,1,run,2,4,79.3199,Oracle,1.05324,actuator_strong
-oracle,-1,1,run,2,5,68.2129,Oracle,0.90576,actuator_strong
-oracle,-1,1,run,2,6,72.6577,Oracle,0.96478,actuator_strong
-oracle,-1,1,run,2,7,74.7054,Oracle,0.991971,actuator_strong
-oracle,-1,1,run,2,8,73.276,Oracle,0.97299,actuator_strong
-oracle,-1,1,run,2,9,82.5022,Oracle,1.0955,actuator_strong
-oracle,-1,1,stand,0,0,286.905,Oracle,1.13494,actuator_strong
-oracle,-1,1,stand,0,1,181.829,Oracle,0.719283,actuator_strong
-oracle,-1,1,stand,0,2,247.564,Oracle,0.979318,actuator_strong
-oracle,-1,1,stand,0,3,268.735,Oracle,1.06307,actuator_strong
-oracle,-1,1,stand,0,4,277.246,Oracle,1.09673,actuator_strong
-oracle,-1,1,stand,0,5,237.534,Oracle,0.939639,actuator_strong
-oracle,-1,1,stand,0,6,285.847,Oracle,1.13076,actuator_strong
-oracle,-1,1,stand,0,7,234.266,Oracle,0.926711,actuator_strong
-oracle,-1,1,stand,0,8,341.814,Oracle,1.35215,actuator_strong
-oracle,-1,1,stand,0,9,166.184,Oracle,0.657394,actuator_strong
-oracle,-1,1,stand,1,0,579.476,Oracle,1.03407,actuator_strong
-oracle,-1,1,stand,1,1,557.494,Oracle,0.994845,actuator_strong
-oracle,-1,1,stand,1,2,539.63,Oracle,0.962968,actuator_strong
-oracle,-1,1,stand,1,3,523.222,Oracle,0.933687,actuator_strong
-oracle,-1,1,stand,1,4,531.136,Oracle,0.94781,actuator_strong
-oracle,-1,1,stand,1,5,579.087,Oracle,1.03338,actuator_strong
-oracle,-1,1,stand,1,6,568.323,Oracle,1.01417,actuator_strong
-oracle,-1,1,stand,1,7,590.028,Oracle,1.0529,actuator_strong
-oracle,-1,1,stand,1,8,557.505,Oracle,0.994865,actuator_strong
-oracle,-1,1,stand,1,9,577.925,Oracle,1.0313,actuator_strong
-oracle,-1,1,stand,2,0,285.876,Oracle,1.02148,actuator_strong
-oracle,-1,1,stand,2,1,284.796,Oracle,1.01762,actuator_strong
-oracle,-1,1,stand,2,2,320.356,Oracle,1.14468,actuator_strong
-oracle,-1,1,stand,2,3,224.748,Oracle,0.803057,actuator_strong
-oracle,-1,1,stand,2,4,234.935,Oracle,0.839454,actuator_strong
-oracle,-1,1,stand,2,5,385.453,Oracle,1.37728,actuator_strong
-oracle,-1,1,stand,2,6,251.866,Oracle,0.899953,actuator_strong
-oracle,-1,1,stand,2,7,293.206,Oracle,1.04767,actuator_strong
-oracle,-1,1,stand,2,8,296.834,Oracle,1.06063,actuator_strong
-oracle,-1,1,stand,2,9,220.588,Oracle,0.788192,actuator_strong
-oracle,-1,1,walk,0,0,433.663,Oracle,1.03662,actuator_strong
-oracle,-1,1,walk,0,1,424.577,Oracle,1.0149,actuator_strong
-oracle,-1,1,walk,0,2,455.707,Oracle,1.08932,actuator_strong
-oracle,-1,1,walk,0,3,481.512,Oracle,1.151,actuator_strong
-oracle,-1,1,walk,0,4,304.157,Oracle,0.727052,actuator_strong
-oracle,-1,1,walk,0,5,464.295,Oracle,1.10984,actuator_strong
-oracle,-1,1,walk,0,6,431.476,Oracle,1.03139,actuator_strong
-oracle,-1,1,walk,0,7,411.514,Oracle,0.983678,actuator_strong
-oracle,-1,1,walk,0,8,426.632,Oracle,1.01981,actuator_strong
-oracle,-1,1,walk,0,9,349.893,Oracle,0.836378,actuator_strong
-oracle,-1,1,walk,1,0,406.515,Oracle,1.06919,actuator_strong
-oracle,-1,1,walk,1,1,336.802,Oracle,0.885831,actuator_strong
-oracle,-1,1,walk,1,2,352.148,Oracle,0.926193,actuator_strong
-oracle,-1,1,walk,1,3,433.982,Oracle,1.14143,actuator_strong
-oracle,-1,1,walk,1,4,430.928,Oracle,1.13339,actuator_strong
-oracle,-1,1,walk,1,5,355.315,Oracle,0.934523,actuator_strong
-oracle,-1,1,walk,1,6,359.535,Oracle,0.94562,actuator_strong
-oracle,-1,1,walk,1,7,329.712,Oracle,0.867183,actuator_strong
-oracle,-1,1,walk,1,8,346.345,Oracle,0.910931,actuator_strong
-oracle,-1,1,walk,1,9,450.82,Oracle,1.18571,actuator_strong
-oracle,-1,1,walk,2,0,255.897,Oracle,1.072,actuator_strong
-oracle,-1,1,walk,2,1,218.607,Oracle,0.915789,actuator_strong
-oracle,-1,1,walk,2,2,200.322,Oracle,0.839192,actuator_strong
-oracle,-1,1,walk,2,3,258.634,Oracle,1.08347,actuator_strong
-oracle,-1,1,walk,2,4,242.371,Oracle,1.01534,actuator_strong
-oracle,-1,1,walk,2,5,250.072,Oracle,1.0476,actuator_strong
-oracle,-1,1,walk,2,6,231.267,Oracle,0.968823,actuator_strong
-oracle,-1,1,walk,2,7,247.98,Oracle,1.03884,actuator_strong
-oracle,-1,1,walk,2,8,260.504,Oracle,1.0913,actuator_strong
-oracle,-1,1,walk,2,9,221.434,Oracle,0.927634,actuator_strong
+oracle,-1,1,flip,0,0,136.044,FB (offline z),0.897884,actuator_strong
+oracle,-1,1,flip,0,1,115.807,FB (offline z),0.764317,actuator_strong
+oracle,-1,1,flip,0,2,187.639,FB (offline z),1.2384,actuator_strong
+oracle,-1,1,flip,0,3,146.036,FB (offline z),0.963826,actuator_strong
+oracle,-1,1,flip,0,4,120.409,FB (offline z),0.794694,actuator_strong
+oracle,-1,1,flip,0,5,143.878,FB (offline z),0.949587,actuator_strong
+oracle,-1,1,flip,0,6,169.068,FB (offline z),1.11584,actuator_strong
+oracle,-1,1,flip,0,7,134.769,FB (offline z),0.889466,actuator_strong
+oracle,-1,1,flip,0,8,169.829,FB (offline z),1.12086,actuator_strong
+oracle,-1,1,flip,0,9,191.687,FB (offline z),1.26512,actuator_strong
+oracle,-1,1,flip,1,0,260.839,FB (offline z),1.11394,actuator_strong
+oracle,-1,1,flip,1,1,195.835,FB (offline z),0.836331,actuator_strong
+oracle,-1,1,flip,1,2,244.475,FB (offline z),1.04405,actuator_strong
+oracle,-1,1,flip,1,3,252.945,FB (offline z),1.08023,actuator_strong
+oracle,-1,1,flip,1,4,217.349,FB (offline z),0.928207,actuator_strong
+oracle,-1,1,flip,1,5,219.799,FB (offline z),0.938669,actuator_strong
+oracle,-1,1,flip,1,6,248.389,FB (offline z),1.06077,actuator_strong
+oracle,-1,1,flip,1,7,258.459,FB (offline z),1.10377,actuator_strong
+oracle,-1,1,flip,1,8,221.607,FB (offline z),0.946391,actuator_strong
+oracle,-1,1,flip,1,9,221.902,FB (offline z),0.947651,actuator_strong
+oracle,-1,1,flip,2,0,105.035,FB (offline z),0.971496,actuator_strong
+oracle,-1,1,flip,2,1,104.72,FB (offline z),0.968582,actuator_strong
+oracle,-1,1,flip,2,2,125.036,FB (offline z),1.15649,actuator_strong
+oracle,-1,1,flip,2,3,99.0293,FB (offline z),0.915951,actuator_strong
+oracle,-1,1,flip,2,4,93.9341,FB (offline z),0.868824,actuator_strong
+oracle,-1,1,flip,2,5,116.777,FB (offline z),1.08011,actuator_strong
+oracle,-1,1,flip,2,6,100.851,FB (offline z),0.932798,actuator_strong
+oracle,-1,1,flip,2,7,109.567,FB (offline z),1.01342,actuator_strong
+oracle,-1,1,flip,2,8,116.185,FB (offline z),1.07463,actuator_strong
+oracle,-1,1,flip,2,9,110.03,FB (offline z),1.0177,actuator_strong
+oracle,-1,1,run,0,0,133.01,FB (offline z),1.05398,actuator_strong
+oracle,-1,1,run,0,1,130.663,FB (offline z),1.03538,actuator_strong
+oracle,-1,1,run,0,2,107.932,FB (offline z),0.855258,actuator_strong
+oracle,-1,1,run,0,3,129.076,FB (offline z),1.02281,actuator_strong
+oracle,-1,1,run,0,4,108.214,FB (offline z),0.857493,actuator_strong
+oracle,-1,1,run,0,5,121.837,FB (offline z),0.965441,actuator_strong
+oracle,-1,1,run,0,6,132.207,FB (offline z),1.04762,actuator_strong
+oracle,-1,1,run,0,7,139.155,FB (offline z),1.10267,actuator_strong
+oracle,-1,1,run,0,8,126.882,FB (offline z),1.00542,actuator_strong
+oracle,-1,1,run,0,9,133.004,FB (offline z),1.05393,actuator_strong
+oracle,-1,1,run,1,0,130.608,FB (offline z),0.985257,actuator_strong
+oracle,-1,1,run,1,1,144.178,FB (offline z),1.08762,actuator_strong
+oracle,-1,1,run,1,2,148.982,FB (offline z),1.12386,actuator_strong
+oracle,-1,1,run,1,3,120.56,FB (offline z),0.909459,actuator_strong
+oracle,-1,1,run,1,4,127.59,FB (offline z),0.962486,actuator_strong
+oracle,-1,1,run,1,5,119.671,FB (offline z),0.902747,actuator_strong
+oracle,-1,1,run,1,6,123.654,FB (offline z),0.932798,actuator_strong
+oracle,-1,1,run,1,7,126.789,FB (offline z),0.956443,actuator_strong
+oracle,-1,1,run,1,8,143.127,FB (offline z),1.07969,actuator_strong
+oracle,-1,1,run,1,9,140.468,FB (offline z),1.05964,actuator_strong
+oracle,-1,1,run,2,0,83.5691,FB (offline z),1.10967,actuator_strong
+oracle,-1,1,run,2,1,69.7597,FB (offline z),0.926299,actuator_strong
+oracle,-1,1,run,2,2,77.3985,FB (offline z),1.02773,actuator_strong
+oracle,-1,1,run,2,3,71.6999,FB (offline z),0.952061,actuator_strong
+oracle,-1,1,run,2,4,79.3199,FB (offline z),1.05324,actuator_strong
+oracle,-1,1,run,2,5,68.2129,FB (offline z),0.90576,actuator_strong
+oracle,-1,1,run,2,6,72.6577,FB (offline z),0.96478,actuator_strong
+oracle,-1,1,run,2,7,74.7054,FB (offline z),0.991971,actuator_strong
+oracle,-1,1,run,2,8,73.276,FB (offline z),0.97299,actuator_strong
+oracle,-1,1,run,2,9,82.5022,FB (offline z),1.0955,actuator_strong
+oracle,-1,1,stand,0,0,286.905,FB (offline z),1.13494,actuator_strong
+oracle,-1,1,stand,0,1,181.829,FB (offline z),0.719283,actuator_strong
+oracle,-1,1,stand,0,2,247.564,FB (offline z),0.979318,actuator_strong
+oracle,-1,1,stand,0,3,268.735,FB (offline z),1.06307,actuator_strong
+oracle,-1,1,stand,0,4,277.246,FB (offline z),1.09673,actuator_strong
+oracle,-1,1,stand,0,5,237.534,FB (offline z),0.939639,actuator_strong
+oracle,-1,1,stand,0,6,285.847,FB (offline z),1.13076,actuator_strong
+oracle,-1,1,stand,0,7,234.266,FB (offline z),0.926711,actuator_strong
+oracle,-1,1,stand,0,8,341.814,FB (offline z),1.35215,actuator_strong
+oracle,-1,1,stand,0,9,166.184,FB (offline z),0.657394,actuator_strong
+oracle,-1,1,stand,1,0,579.476,FB (offline z),1.03407,actuator_strong
+oracle,-1,1,stand,1,1,557.494,FB (offline z),0.994845,actuator_strong
+oracle,-1,1,stand,1,2,539.63,FB (offline z),0.962968,actuator_strong
+oracle,-1,1,stand,1,3,523.222,FB (offline z),0.933687,actuator_strong
+oracle,-1,1,stand,1,4,531.136,FB (offline z),0.94781,actuator_strong
+oracle,-1,1,stand,1,5,579.087,FB (offline z),1.03338,actuator_strong
+oracle,-1,1,stand,1,6,568.323,FB (offline z),1.01417,actuator_strong
+oracle,-1,1,stand,1,7,590.028,FB (offline z),1.0529,actuator_strong
+oracle,-1,1,stand,1,8,557.505,FB (offline z),0.994865,actuator_strong
+oracle,-1,1,stand,1,9,577.925,FB (offline z),1.0313,actuator_strong
+oracle,-1,1,stand,2,0,285.876,FB (offline z),1.02148,actuator_strong
+oracle,-1,1,stand,2,1,284.796,FB (offline z),1.01762,actuator_strong
+oracle,-1,1,stand,2,2,320.356,FB (offline z),1.14468,actuator_strong
+oracle,-1,1,stand,2,3,224.748,FB (offline z),0.803057,actuator_strong
+oracle,-1,1,stand,2,4,234.935,FB (offline z),0.839454,actuator_strong
+oracle,-1,1,stand,2,5,385.453,FB (offline z),1.37728,actuator_strong
+oracle,-1,1,stand,2,6,251.866,FB (offline z),0.899953,actuator_strong
+oracle,-1,1,stand,2,7,293.206,FB (offline z),1.04767,actuator_strong
+oracle,-1,1,stand,2,8,296.834,FB (offline z),1.06063,actuator_strong
+oracle,-1,1,stand,2,9,220.588,FB (offline z),0.788192,actuator_strong
+oracle,-1,1,walk,0,0,433.663,FB (offline z),1.03662,actuator_strong
+oracle,-1,1,walk,0,1,424.577,FB (offline z),1.0149,actuator_strong
+oracle,-1,1,walk,0,2,455.707,FB (offline z),1.08932,actuator_strong
+oracle,-1,1,walk,0,3,481.512,FB (offline z),1.151,actuator_strong
+oracle,-1,1,walk,0,4,304.157,FB (offline z),0.727052,actuator_strong
+oracle,-1,1,walk,0,5,464.295,FB (offline z),1.10984,actuator_strong
+oracle,-1,1,walk,0,6,431.476,FB (offline z),1.03139,actuator_strong
+oracle,-1,1,walk,0,7,411.514,FB (offline z),0.983678,actuator_strong
+oracle,-1,1,walk,0,8,426.632,FB (offline z),1.01981,actuator_strong
+oracle,-1,1,walk,0,9,349.893,FB (offline z),0.836378,actuator_strong
+oracle,-1,1,walk,1,0,406.515,FB (offline z),1.06919,actuator_strong
+oracle,-1,1,walk,1,1,336.802,FB (offline z),0.885831,actuator_strong
+oracle,-1,1,walk,1,2,352.148,FB (offline z),0.926193,actuator_strong
+oracle,-1,1,walk,1,3,433.982,FB (offline z),1.14143,actuator_strong
+oracle,-1,1,walk,1,4,430.928,FB (offline z),1.13339,actuator_strong
+oracle,-1,1,walk,1,5,355.315,FB (offline z),0.934523,actuator_strong
+oracle,-1,1,walk,1,6,359.535,FB (offline z),0.94562,actuator_strong
+oracle,-1,1,walk,1,7,329.712,FB (offline z),0.867183,actuator_strong
+oracle,-1,1,walk,1,8,346.345,FB (offline z),0.910931,actuator_strong
+oracle,-1,1,walk,1,9,450.82,FB (offline z),1.18571,actuator_strong
+oracle,-1,1,walk,2,0,255.897,FB (offline z),1.072,actuator_strong
+oracle,-1,1,walk,2,1,218.607,FB (offline z),0.915789,actuator_strong
+oracle,-1,1,walk,2,2,200.322,FB (offline z),0.839192,actuator_strong
+oracle,-1,1,walk,2,3,258.634,FB (offline z),1.08347,actuator_strong
+oracle,-1,1,walk,2,4,242.371,FB (offline z),1.01534,actuator_strong
+oracle,-1,1,walk,2,5,250.072,FB (offline z),1.0476,actuator_strong
+oracle,-1,1,walk,2,6,231.267,FB (offline z),0.968823,actuator_strong
+oracle,-1,1,walk,2,7,247.98,FB (offline z),1.03884,actuator_strong
+oracle,-1,1,walk,2,8,260.504,FB (offline z),1.0913,actuator_strong
+oracle,-1,1,walk,2,9,221.434,FB (offline z),0.927634,actuator_strong
 random,-1,1,flip,0,0,43.7686,Random,0.28887,actuator_strong
 random,-1,1,flip,0,1,42.1523,Random,0.278202,actuator_strong
 random,-1,1,flip,0,2,49.9425,Random,0.329617,actuator_strong
@@ -1439,126 +1439,126 @@ ucb,0.001,1,walk,2,6,223.513,OpTI-BFM,0.936344,actuator_strong
 ucb,0.001,1,walk,2,7,254.712,OpTI-BFM,1.06704,actuator_strong
 ucb,0.001,1,walk,2,8,234.388,OpTI-BFM,0.9819,actuator_strong
 ucb,0.001,1,walk,2,9,240.67,OpTI-BFM,1.00822,actuator_strong
-oracle,-1,1,flip,0,0,239.363,Oracle,1.07675,friction_mild
-oracle,-1,1,flip,0,1,227.716,Oracle,1.02436,friction_mild
-oracle,-1,1,flip,0,2,226.132,Oracle,1.01723,friction_mild
-oracle,-1,1,flip,0,3,233.185,Oracle,1.04896,friction_mild
-oracle,-1,1,flip,0,4,209.441,Oracle,0.94215,friction_mild
-oracle,-1,1,flip,0,5,243.044,Oracle,1.09331,friction_mild
-oracle,-1,1,flip,0,6,246.743,Oracle,1.10995,friction_mild
-oracle,-1,1,flip,0,7,186.545,Oracle,0.839155,friction_mild
-oracle,-1,1,flip,0,8,208.22,Oracle,0.936659,friction_mild
-oracle,-1,1,flip,0,9,202.619,Oracle,0.911465,friction_mild
-oracle,-1,1,flip,1,0,281.715,Oracle,0.957681,friction_mild
-oracle,-1,1,flip,1,1,298.377,Oracle,1.01432,friction_mild
-oracle,-1,1,flip,1,2,316.867,Oracle,1.07718,friction_mild
-oracle,-1,1,flip,1,3,304.558,Oracle,1.03533,friction_mild
-oracle,-1,1,flip,1,4,283.565,Oracle,0.963968,friction_mild
-oracle,-1,1,flip,1,5,271.689,Oracle,0.923598,friction_mild
-oracle,-1,1,flip,1,6,291.564,Oracle,0.991162,friction_mild
-oracle,-1,1,flip,1,7,299.182,Oracle,1.01706,friction_mild
-oracle,-1,1,flip,1,8,283.984,Oracle,0.965395,friction_mild
-oracle,-1,1,flip,1,9,310.138,Oracle,1.0543,friction_mild
-oracle,-1,1,flip,2,0,166.471,Oracle,1.17153,friction_mild
-oracle,-1,1,flip,2,1,131.19,Oracle,0.923242,friction_mild
-oracle,-1,1,flip,2,2,119.784,Oracle,0.842973,friction_mild
-oracle,-1,1,flip,2,3,159.267,Oracle,1.12084,friction_mild
-oracle,-1,1,flip,2,4,127.441,Oracle,0.896863,friction_mild
-oracle,-1,1,flip,2,5,145.516,Oracle,1.02407,friction_mild
-oracle,-1,1,flip,2,6,172.123,Oracle,1.21131,friction_mild
-oracle,-1,1,flip,2,7,138.907,Oracle,0.977555,friction_mild
-oracle,-1,1,flip,2,8,129.979,Oracle,0.91472,friction_mild
-oracle,-1,1,flip,2,9,130.289,Oracle,0.9169,friction_mild
-oracle,-1,1,run,0,0,155.827,Oracle,1.09658,friction_mild
-oracle,-1,1,run,0,1,129.945,Oracle,0.914447,friction_mild
-oracle,-1,1,run,0,2,129.744,Oracle,0.913038,friction_mild
-oracle,-1,1,run,0,3,151.755,Oracle,1.06793,friction_mild
-oracle,-1,1,run,0,4,152.438,Oracle,1.07273,friction_mild
-oracle,-1,1,run,0,5,147.069,Oracle,1.03495,friction_mild
-oracle,-1,1,run,0,6,120.593,Oracle,0.84864,friction_mild
-oracle,-1,1,run,0,7,144.622,Oracle,1.01773,friction_mild
-oracle,-1,1,run,0,8,148.968,Oracle,1.04832,friction_mild
-oracle,-1,1,run,0,9,140.058,Oracle,0.985615,friction_mild
-oracle,-1,1,run,1,0,190.245,Oracle,1.0478,friction_mild
-oracle,-1,1,run,1,1,180.339,Oracle,0.993242,friction_mild
-oracle,-1,1,run,1,2,187.493,Oracle,1.03264,friction_mild
-oracle,-1,1,run,1,3,188.394,Oracle,1.03761,friction_mild
-oracle,-1,1,run,1,4,184.653,Oracle,1.017,friction_mild
-oracle,-1,1,run,1,5,182.391,Oracle,1.00454,friction_mild
-oracle,-1,1,run,1,6,169.932,Oracle,0.935923,friction_mild
-oracle,-1,1,run,1,7,182.507,Oracle,1.00519,friction_mild
-oracle,-1,1,run,1,8,184.056,Oracle,1.01371,friction_mild
-oracle,-1,1,run,1,9,165.652,Oracle,0.912349,friction_mild
-oracle,-1,1,run,2,0,125.495,Oracle,1.00441,friction_mild
-oracle,-1,1,run,2,1,117.995,Oracle,0.944382,friction_mild
-oracle,-1,1,run,2,2,126.724,Oracle,1.01425,friction_mild
-oracle,-1,1,run,2,3,135.303,Oracle,1.0829,friction_mild
-oracle,-1,1,run,2,4,113.214,Oracle,0.90612,friction_mild
-oracle,-1,1,run,2,5,140.388,Oracle,1.1236,friction_mild
-oracle,-1,1,run,2,6,122.793,Oracle,0.982786,friction_mild
-oracle,-1,1,run,2,7,121.537,Oracle,0.972733,friction_mild
-oracle,-1,1,run,2,8,123.071,Oracle,0.985008,friction_mild
-oracle,-1,1,run,2,9,122.921,Oracle,0.983811,friction_mild
-oracle,-1,1,stand,0,0,489.059,Oracle,0.959197,friction_mild
-oracle,-1,1,stand,0,1,513.448,Oracle,1.00703,friction_mild
-oracle,-1,1,stand,0,2,518.438,Oracle,1.01682,friction_mild
-oracle,-1,1,stand,0,3,528.975,Oracle,1.03749,friction_mild
-oracle,-1,1,stand,0,4,511.591,Oracle,1.00339,friction_mild
-oracle,-1,1,stand,0,5,558.321,Oracle,1.09504,friction_mild
-oracle,-1,1,stand,0,6,504.047,Oracle,0.988593,friction_mild
-oracle,-1,1,stand,0,7,505.595,Oracle,0.99163,friction_mild
-oracle,-1,1,stand,0,8,467.447,Oracle,0.91681,friction_mild
-oracle,-1,1,stand,0,9,501.706,Oracle,0.984002,friction_mild
-oracle,-1,1,stand,1,0,679.417,Oracle,0.975583,friction_mild
-oracle,-1,1,stand,1,1,720.246,Oracle,1.03421,friction_mild
-oracle,-1,1,stand,1,2,704.903,Oracle,1.01218,friction_mild
-oracle,-1,1,stand,1,3,687.632,Oracle,0.987379,friction_mild
-oracle,-1,1,stand,1,4,690.72,Oracle,0.991813,friction_mild
-oracle,-1,1,stand,1,5,691.834,Oracle,0.993413,friction_mild
-oracle,-1,1,stand,1,6,705.896,Oracle,1.0136,friction_mild
-oracle,-1,1,stand,1,7,666.976,Oracle,0.957719,friction_mild
-oracle,-1,1,stand,1,8,699.414,Oracle,1.0043,friction_mild
-oracle,-1,1,stand,1,9,717.177,Oracle,1.0298,friction_mild
-oracle,-1,1,stand,2,0,197.115,Oracle,0.814857,friction_mild
-oracle,-1,1,stand,2,1,278.392,Oracle,1.15085,friction_mild
-oracle,-1,1,stand,2,2,232.456,Oracle,0.960953,friction_mild
-oracle,-1,1,stand,2,3,363.509,Oracle,1.50272,friction_mild
-oracle,-1,1,stand,2,4,259.082,Oracle,1.07102,friction_mild
-oracle,-1,1,stand,2,5,239.839,Oracle,0.991474,friction_mild
-oracle,-1,1,stand,2,6,184.685,Oracle,0.763473,friction_mild
-oracle,-1,1,stand,2,7,204.006,Oracle,0.843344,friction_mild
-oracle,-1,1,stand,2,8,194.743,Oracle,0.805054,friction_mild
-oracle,-1,1,stand,2,9,265.185,Oracle,1.09625,friction_mild
-oracle,-1,1,walk,0,0,582.81,Oracle,1.02487,friction_mild
-oracle,-1,1,walk,0,1,591.724,Oracle,1.04054,friction_mild
-oracle,-1,1,walk,0,2,529.287,Oracle,0.930747,friction_mild
-oracle,-1,1,walk,0,3,572.614,Oracle,1.00694,friction_mild
-oracle,-1,1,walk,0,4,576.836,Oracle,1.01436,friction_mild
-oracle,-1,1,walk,0,5,556.553,Oracle,0.978693,friction_mild
-oracle,-1,1,walk,0,6,528.61,Oracle,0.929557,friction_mild
-oracle,-1,1,walk,0,7,586.638,Oracle,1.0316,friction_mild
-oracle,-1,1,walk,0,8,592.691,Oracle,1.04224,friction_mild
-oracle,-1,1,walk,0,9,568.927,Oracle,1.00045,friction_mild
-oracle,-1,1,walk,1,0,547.826,Oracle,1.07146,friction_mild
-oracle,-1,1,walk,1,1,509.435,Oracle,0.996373,friction_mild
-oracle,-1,1,walk,1,2,491.751,Oracle,0.961786,friction_mild
-oracle,-1,1,walk,1,3,513.385,Oracle,1.0041,friction_mild
-oracle,-1,1,walk,1,4,522.39,Oracle,1.02171,friction_mild
-oracle,-1,1,walk,1,5,471.848,Oracle,0.922859,friction_mild
-oracle,-1,1,walk,1,6,516.756,Oracle,1.01069,friction_mild
-oracle,-1,1,walk,1,7,526.772,Oracle,1.03028,friction_mild
-oracle,-1,1,walk,1,8,465.306,Oracle,0.910063,friction_mild
-oracle,-1,1,walk,1,9,547.427,Oracle,1.07068,friction_mild
-oracle,-1,1,walk,2,0,399.877,Oracle,1.05319,friction_mild
-oracle,-1,1,walk,2,1,402.203,Oracle,1.05931,friction_mild
-oracle,-1,1,walk,2,2,386.371,Oracle,1.01762,friction_mild
-oracle,-1,1,walk,2,3,384.837,Oracle,1.01357,friction_mild
-oracle,-1,1,walk,2,4,340.18,Oracle,0.89596,friction_mild
-oracle,-1,1,walk,2,5,387.586,Oracle,1.02082,friction_mild
-oracle,-1,1,walk,2,6,340.17,Oracle,0.895933,friction_mild
-oracle,-1,1,walk,2,7,386.079,Oracle,1.01685,friction_mild
-oracle,-1,1,walk,2,8,380.635,Oracle,1.00251,friction_mild
-oracle,-1,1,walk,2,9,388.888,Oracle,1.02425,friction_mild
+oracle,-1,1,flip,0,0,239.363,FB (offline z),1.07675,friction_mild
+oracle,-1,1,flip,0,1,227.716,FB (offline z),1.02436,friction_mild
+oracle,-1,1,flip,0,2,226.132,FB (offline z),1.01723,friction_mild
+oracle,-1,1,flip,0,3,233.185,FB (offline z),1.04896,friction_mild
+oracle,-1,1,flip,0,4,209.441,FB (offline z),0.94215,friction_mild
+oracle,-1,1,flip,0,5,243.044,FB (offline z),1.09331,friction_mild
+oracle,-1,1,flip,0,6,246.743,FB (offline z),1.10995,friction_mild
+oracle,-1,1,flip,0,7,186.545,FB (offline z),0.839155,friction_mild
+oracle,-1,1,flip,0,8,208.22,FB (offline z),0.936659,friction_mild
+oracle,-1,1,flip,0,9,202.619,FB (offline z),0.911465,friction_mild
+oracle,-1,1,flip,1,0,281.715,FB (offline z),0.957681,friction_mild
+oracle,-1,1,flip,1,1,298.377,FB (offline z),1.01432,friction_mild
+oracle,-1,1,flip,1,2,316.867,FB (offline z),1.07718,friction_mild
+oracle,-1,1,flip,1,3,304.558,FB (offline z),1.03533,friction_mild
+oracle,-1,1,flip,1,4,283.565,FB (offline z),0.963968,friction_mild
+oracle,-1,1,flip,1,5,271.689,FB (offline z),0.923598,friction_mild
+oracle,-1,1,flip,1,6,291.564,FB (offline z),0.991162,friction_mild
+oracle,-1,1,flip,1,7,299.182,FB (offline z),1.01706,friction_mild
+oracle,-1,1,flip,1,8,283.984,FB (offline z),0.965395,friction_mild
+oracle,-1,1,flip,1,9,310.138,FB (offline z),1.0543,friction_mild
+oracle,-1,1,flip,2,0,166.471,FB (offline z),1.17153,friction_mild
+oracle,-1,1,flip,2,1,131.19,FB (offline z),0.923242,friction_mild
+oracle,-1,1,flip,2,2,119.784,FB (offline z),0.842973,friction_mild
+oracle,-1,1,flip,2,3,159.267,FB (offline z),1.12084,friction_mild
+oracle,-1,1,flip,2,4,127.441,FB (offline z),0.896863,friction_mild
+oracle,-1,1,flip,2,5,145.516,FB (offline z),1.02407,friction_mild
+oracle,-1,1,flip,2,6,172.123,FB (offline z),1.21131,friction_mild
+oracle,-1,1,flip,2,7,138.907,FB (offline z),0.977555,friction_mild
+oracle,-1,1,flip,2,8,129.979,FB (offline z),0.91472,friction_mild
+oracle,-1,1,flip,2,9,130.289,FB (offline z),0.9169,friction_mild
+oracle,-1,1,run,0,0,155.827,FB (offline z),1.09658,friction_mild
+oracle,-1,1,run,0,1,129.945,FB (offline z),0.914447,friction_mild
+oracle,-1,1,run,0,2,129.744,FB (offline z),0.913038,friction_mild
+oracle,-1,1,run,0,3,151.755,FB (offline z),1.06793,friction_mild
+oracle,-1,1,run,0,4,152.438,FB (offline z),1.07273,friction_mild
+oracle,-1,1,run,0,5,147.069,FB (offline z),1.03495,friction_mild
+oracle,-1,1,run,0,6,120.593,FB (offline z),0.84864,friction_mild
+oracle,-1,1,run,0,7,144.622,FB (offline z),1.01773,friction_mild
+oracle,-1,1,run,0,8,148.968,FB (offline z),1.04832,friction_mild
+oracle,-1,1,run,0,9,140.058,FB (offline z),0.985615,friction_mild
+oracle,-1,1,run,1,0,190.245,FB (offline z),1.0478,friction_mild
+oracle,-1,1,run,1,1,180.339,FB (offline z),0.993242,friction_mild
+oracle,-1,1,run,1,2,187.493,FB (offline z),1.03264,friction_mild
+oracle,-1,1,run,1,3,188.394,FB (offline z),1.03761,friction_mild
+oracle,-1,1,run,1,4,184.653,FB (offline z),1.017,friction_mild
+oracle,-1,1,run,1,5,182.391,FB (offline z),1.00454,friction_mild
+oracle,-1,1,run,1,6,169.932,FB (offline z),0.935923,friction_mild
+oracle,-1,1,run,1,7,182.507,FB (offline z),1.00519,friction_mild
+oracle,-1,1,run,1,8,184.056,FB (offline z),1.01371,friction_mild
+oracle,-1,1,run,1,9,165.652,FB (offline z),0.912349,friction_mild
+oracle,-1,1,run,2,0,125.495,FB (offline z),1.00441,friction_mild
+oracle,-1,1,run,2,1,117.995,FB (offline z),0.944382,friction_mild
+oracle,-1,1,run,2,2,126.724,FB (offline z),1.01425,friction_mild
+oracle,-1,1,run,2,3,135.303,FB (offline z),1.0829,friction_mild
+oracle,-1,1,run,2,4,113.214,FB (offline z),0.90612,friction_mild
+oracle,-1,1,run,2,5,140.388,FB (offline z),1.1236,friction_mild
+oracle,-1,1,run,2,6,122.793,FB (offline z),0.982786,friction_mild
+oracle,-1,1,run,2,7,121.537,FB (offline z),0.972733,friction_mild
+oracle,-1,1,run,2,8,123.071,FB (offline z),0.985008,friction_mild
+oracle,-1,1,run,2,9,122.921,FB (offline z),0.983811,friction_mild
+oracle,-1,1,stand,0,0,489.059,FB (offline z),0.959197,friction_mild
+oracle,-1,1,stand,0,1,513.448,FB (offline z),1.00703,friction_mild
+oracle,-1,1,stand,0,2,518.438,FB (offline z),1.01682,friction_mild
+oracle,-1,1,stand,0,3,528.975,FB (offline z),1.03749,friction_mild
+oracle,-1,1,stand,0,4,511.591,FB (offline z),1.00339,friction_mild
+oracle,-1,1,stand,0,5,558.321,FB (offline z),1.09504,friction_mild
+oracle,-1,1,stand,0,6,504.047,FB (offline z),0.988593,friction_mild
+oracle,-1,1,stand,0,7,505.595,FB (offline z),0.99163,friction_mild
+oracle,-1,1,stand,0,8,467.447,FB (offline z),0.91681,friction_mild
+oracle,-1,1,stand,0,9,501.706,FB (offline z),0.984002,friction_mild
+oracle,-1,1,stand,1,0,679.417,FB (offline z),0.975583,friction_mild
+oracle,-1,1,stand,1,1,720.246,FB (offline z),1.03421,friction_mild
+oracle,-1,1,stand,1,2,704.903,FB (offline z),1.01218,friction_mild
+oracle,-1,1,stand,1,3,687.632,FB (offline z),0.987379,friction_mild
+oracle,-1,1,stand,1,4,690.72,FB (offline z),0.991813,friction_mild
+oracle,-1,1,stand,1,5,691.834,FB (offline z),0.993413,friction_mild
+oracle,-1,1,stand,1,6,705.896,FB (offline z),1.0136,friction_mild
+oracle,-1,1,stand,1,7,666.976,FB (offline z),0.957719,friction_mild
+oracle,-1,1,stand,1,8,699.414,FB (offline z),1.0043,friction_mild
+oracle,-1,1,stand,1,9,717.177,FB (offline z),1.0298,friction_mild
+oracle,-1,1,stand,2,0,197.115,FB (offline z),0.814857,friction_mild
+oracle,-1,1,stand,2,1,278.392,FB (offline z),1.15085,friction_mild
+oracle,-1,1,stand,2,2,232.456,FB (offline z),0.960953,friction_mild
+oracle,-1,1,stand,2,3,363.509,FB (offline z),1.50272,friction_mild
+oracle,-1,1,stand,2,4,259.082,FB (offline z),1.07102,friction_mild
+oracle,-1,1,stand,2,5,239.839,FB (offline z),0.991474,friction_mild
+oracle,-1,1,stand,2,6,184.685,FB (offline z),0.763473,friction_mild
+oracle,-1,1,stand,2,7,204.006,FB (offline z),0.843344,friction_mild
+oracle,-1,1,stand,2,8,194.743,FB (offline z),0.805054,friction_mild
+oracle,-1,1,stand,2,9,265.185,FB (offline z),1.09625,friction_mild
+oracle,-1,1,walk,0,0,582.81,FB (offline z),1.02487,friction_mild
+oracle,-1,1,walk,0,1,591.724,FB (offline z),1.04054,friction_mild
+oracle,-1,1,walk,0,2,529.287,FB (offline z),0.930747,friction_mild
+oracle,-1,1,walk,0,3,572.614,FB (offline z),1.00694,friction_mild
+oracle,-1,1,walk,0,4,576.836,FB (offline z),1.01436,friction_mild
+oracle,-1,1,walk,0,5,556.553,FB (offline z),0.978693,friction_mild
+oracle,-1,1,walk,0,6,528.61,FB (offline z),0.929557,friction_mild
+oracle,-1,1,walk,0,7,586.638,FB (offline z),1.0316,friction_mild
+oracle,-1,1,walk,0,8,592.691,FB (offline z),1.04224,friction_mild
+oracle,-1,1,walk,0,9,568.927,FB (offline z),1.00045,friction_mild
+oracle,-1,1,walk,1,0,547.826,FB (offline z),1.07146,friction_mild
+oracle,-1,1,walk,1,1,509.435,FB (offline z),0.996373,friction_mild
+oracle,-1,1,walk,1,2,491.751,FB (offline z),0.961786,friction_mild
+oracle,-1,1,walk,1,3,513.385,FB (offline z),1.0041,friction_mild
+oracle,-1,1,walk,1,4,522.39,FB (offline z),1.02171,friction_mild
+oracle,-1,1,walk,1,5,471.848,FB (offline z),0.922859,friction_mild
+oracle,-1,1,walk,1,6,516.756,FB (offline z),1.01069,friction_mild
+oracle,-1,1,walk,1,7,526.772,FB (offline z),1.03028,friction_mild
+oracle,-1,1,walk,1,8,465.306,FB (offline z),0.910063,friction_mild
+oracle,-1,1,walk,1,9,547.427,FB (offline z),1.07068,friction_mild
+oracle,-1,1,walk,2,0,399.877,FB (offline z),1.05319,friction_mild
+oracle,-1,1,walk,2,1,402.203,FB (offline z),1.05931,friction_mild
+oracle,-1,1,walk,2,2,386.371,FB (offline z),1.01762,friction_mild
+oracle,-1,1,walk,2,3,384.837,FB (offline z),1.01357,friction_mild
+oracle,-1,1,walk,2,4,340.18,FB (offline z),0.89596,friction_mild
+oracle,-1,1,walk,2,5,387.586,FB (offline z),1.02082,friction_mild
+oracle,-1,1,walk,2,6,340.17,FB (offline z),0.895933,friction_mild
+oracle,-1,1,walk,2,7,386.079,FB (offline z),1.01685,friction_mild
+oracle,-1,1,walk,2,8,380.635,FB (offline z),1.00251,friction_mild
+oracle,-1,1,walk,2,9,388.888,FB (offline z),1.02425,friction_mild
 random,-1,1,flip,0,0,84.2806,Random,0.379129,friction_mild
 random,-1,1,flip,0,1,79.1108,Random,0.355873,friction_mild
 random,-1,1,flip,0,2,86.0312,Random,0.387004,friction_mild
@@ -1919,126 +1919,126 @@ ucb,0.001,1,walk,2,6,420.97,OpTI-BFM,1.10874,friction_mild
 ucb,0.001,1,walk,2,7,465.586,OpTI-BFM,1.22625,friction_mild
 ucb,0.001,1,walk,2,8,460.192,OpTI-BFM,1.21204,friction_mild
 ucb,0.001,1,walk,2,9,412.007,OpTI-BFM,1.08513,friction_mild
-oracle,-1,1,flip,0,0,213.553,Oracle,0.990721,friction_strong
-oracle,-1,1,flip,0,1,163.525,Oracle,0.75863,friction_strong
-oracle,-1,1,flip,0,2,250.136,Oracle,1.16044,friction_strong
-oracle,-1,1,flip,0,3,272.49,Oracle,1.26414,friction_strong
-oracle,-1,1,flip,0,4,239.521,Oracle,1.11119,friction_strong
-oracle,-1,1,flip,0,5,210.556,Oracle,0.976814,friction_strong
-oracle,-1,1,flip,0,6,164.294,Oracle,0.762197,friction_strong
-oracle,-1,1,flip,0,7,256.606,Oracle,1.19045,friction_strong
-oracle,-1,1,flip,0,8,172.538,Oracle,0.800441,friction_strong
-oracle,-1,1,flip,0,9,212.315,Oracle,0.984977,friction_strong
-oracle,-1,1,flip,1,0,296.372,Oracle,1.07904,friction_strong
-oracle,-1,1,flip,1,1,276.198,Oracle,1.00559,friction_strong
-oracle,-1,1,flip,1,2,305.445,Oracle,1.11207,friction_strong
-oracle,-1,1,flip,1,3,286.356,Oracle,1.04257,friction_strong
-oracle,-1,1,flip,1,4,267.242,Oracle,0.97298,friction_strong
-oracle,-1,1,flip,1,5,272.353,Oracle,0.991586,friction_strong
-oracle,-1,1,flip,1,6,274.143,Oracle,0.998103,friction_strong
-oracle,-1,1,flip,1,7,272.596,Oracle,0.992472,friction_strong
-oracle,-1,1,flip,1,8,244.739,Oracle,0.89105,friction_strong
-oracle,-1,1,flip,1,9,251.193,Oracle,0.914547,friction_strong
-oracle,-1,1,flip,2,0,72.2126,Oracle,0.558368,friction_strong
-oracle,-1,1,flip,2,1,117.822,Oracle,0.911029,friction_strong
-oracle,-1,1,flip,2,2,118.376,Oracle,0.915318,friction_strong
-oracle,-1,1,flip,2,3,166.55,Oracle,1.28781,friction_strong
-oracle,-1,1,flip,2,4,107.249,Oracle,0.829282,friction_strong
-oracle,-1,1,flip,2,5,128.102,Oracle,0.990521,friction_strong
-oracle,-1,1,flip,2,6,156.494,Oracle,1.21005,friction_strong
-oracle,-1,1,flip,2,7,139.892,Oracle,1.08168,friction_strong
-oracle,-1,1,flip,2,8,153.007,Oracle,1.18309,friction_strong
-oracle,-1,1,flip,2,9,133.576,Oracle,1.03284,friction_strong
-oracle,-1,1,run,0,0,117.14,Oracle,1.02354,friction_strong
-oracle,-1,1,run,0,1,106.175,Oracle,0.927736,friction_strong
-oracle,-1,1,run,0,2,114.912,Oracle,1.00407,friction_strong
-oracle,-1,1,run,0,3,113.01,Oracle,0.987454,friction_strong
-oracle,-1,1,run,0,4,128.162,Oracle,1.11985,friction_strong
-oracle,-1,1,run,0,5,112.619,Oracle,0.984037,friction_strong
-oracle,-1,1,run,0,6,93.1213,Oracle,0.813673,friction_strong
-oracle,-1,1,run,0,7,122.198,Oracle,1.06774,friction_strong
-oracle,-1,1,run,0,8,123.493,Oracle,1.07905,friction_strong
-oracle,-1,1,run,0,9,113.626,Oracle,0.992836,friction_strong
-oracle,-1,1,run,1,0,106.652,Oracle,1.03253,friction_strong
-oracle,-1,1,run,1,1,88.9718,Oracle,0.861364,friction_strong
-oracle,-1,1,run,1,2,106.998,Oracle,1.03589,friction_strong
-oracle,-1,1,run,1,3,118.079,Oracle,1.14316,friction_strong
-oracle,-1,1,run,1,4,110.635,Oracle,1.0711,friction_strong
-oracle,-1,1,run,1,5,116.69,Oracle,1.12971,friction_strong
-oracle,-1,1,run,1,6,105.313,Oracle,1.01956,friction_strong
-oracle,-1,1,run,1,7,95.8483,Oracle,0.927937,friction_strong
-oracle,-1,1,run,1,8,95.9208,Oracle,0.92864,friction_strong
-oracle,-1,1,run,1,9,87.8098,Oracle,0.850115,friction_strong
-oracle,-1,1,run,2,0,99.1188,Oracle,1.04067,friction_strong
-oracle,-1,1,run,2,1,93.4416,Oracle,0.981061,friction_strong
-oracle,-1,1,run,2,2,90.2792,Oracle,0.947858,friction_strong
-oracle,-1,1,run,2,3,104.449,Oracle,1.09663,friction_strong
-oracle,-1,1,run,2,4,94.1534,Oracle,0.988534,friction_strong
-oracle,-1,1,run,2,5,104.054,Oracle,1.09248,friction_strong
-oracle,-1,1,run,2,6,97.8981,Oracle,1.02785,friction_strong
-oracle,-1,1,run,2,7,99.0986,Oracle,1.04045,friction_strong
-oracle,-1,1,run,2,8,89.9989,Oracle,0.944915,friction_strong
-oracle,-1,1,run,2,9,79.9638,Oracle,0.839554,friction_strong
-oracle,-1,1,stand,0,0,478.37,Oracle,0.94047,friction_strong
-oracle,-1,1,stand,0,1,484.219,Oracle,0.951969,friction_strong
-oracle,-1,1,stand,0,2,506.31,Oracle,0.995401,friction_strong
-oracle,-1,1,stand,0,3,528.623,Oracle,1.03927,friction_strong
-oracle,-1,1,stand,0,4,485.927,Oracle,0.955328,friction_strong
-oracle,-1,1,stand,0,5,531.457,Oracle,1.04484,friction_strong
-oracle,-1,1,stand,0,6,575.917,Oracle,1.13225,friction_strong
-oracle,-1,1,stand,0,7,477.966,Oracle,0.939676,friction_strong
-oracle,-1,1,stand,0,8,514.661,Oracle,1.01182,friction_strong
-oracle,-1,1,stand,0,9,503.048,Oracle,0.988986,friction_strong
-oracle,-1,1,stand,1,0,694.12,Oracle,1.06818,friction_strong
-oracle,-1,1,stand,1,1,646.044,Oracle,0.994195,friction_strong
-oracle,-1,1,stand,1,2,620.574,Oracle,0.954999,friction_strong
-oracle,-1,1,stand,1,3,615.277,Oracle,0.946848,friction_strong
-oracle,-1,1,stand,1,4,671.17,Oracle,1.03286,friction_strong
-oracle,-1,1,stand,1,5,640.844,Oracle,0.986193,friction_strong
-oracle,-1,1,stand,1,6,665.615,Oracle,1.02431,friction_strong
-oracle,-1,1,stand,1,7,661.436,Oracle,1.01788,friction_strong
-oracle,-1,1,stand,1,8,649.392,Oracle,0.999348,friction_strong
-oracle,-1,1,stand,1,9,633.688,Oracle,0.97518,friction_strong
-oracle,-1,1,stand,2,0,286.655,Oracle,1.06811,friction_strong
-oracle,-1,1,stand,2,1,218.987,Oracle,0.815969,friction_strong
-oracle,-1,1,stand,2,2,318.716,Oracle,1.18757,friction_strong
-oracle,-1,1,stand,2,3,282.61,Oracle,1.05304,friction_strong
-oracle,-1,1,stand,2,4,300.515,Oracle,1.11975,friction_strong
-oracle,-1,1,stand,2,5,229.373,Oracle,0.854668,friction_strong
-oracle,-1,1,stand,2,6,268.446,Oracle,1.00026,friction_strong
-oracle,-1,1,stand,2,7,315.409,Oracle,1.17525,friction_strong
-oracle,-1,1,stand,2,8,223.126,Oracle,0.831393,friction_strong
-oracle,-1,1,stand,2,9,239.927,Oracle,0.893995,friction_strong
-oracle,-1,1,walk,0,0,427.89,Oracle,0.980774,friction_strong
-oracle,-1,1,walk,0,1,427.796,Oracle,0.980558,friction_strong
-oracle,-1,1,walk,0,2,399.815,Oracle,0.916423,friction_strong
-oracle,-1,1,walk,0,3,456.031,Oracle,1.04528,friction_strong
-oracle,-1,1,walk,0,4,424.262,Oracle,0.972457,friction_strong
-oracle,-1,1,walk,0,5,474.837,Oracle,1.08838,friction_strong
-oracle,-1,1,walk,0,6,449.014,Oracle,1.02919,friction_strong
-oracle,-1,1,walk,0,7,441.642,Oracle,1.0123,friction_strong
-oracle,-1,1,walk,0,8,480.565,Oracle,1.10151,friction_strong
-oracle,-1,1,walk,0,9,380.927,Oracle,0.873129,friction_strong
-oracle,-1,1,walk,1,0,363.055,Oracle,1.01676,friction_strong
-oracle,-1,1,walk,1,1,393.67,Oracle,1.1025,friction_strong
-oracle,-1,1,walk,1,2,338.752,Oracle,0.948697,friction_strong
-oracle,-1,1,walk,1,3,407.065,Oracle,1.14001,friction_strong
-oracle,-1,1,walk,1,4,316.599,Oracle,0.886656,friction_strong
-oracle,-1,1,walk,1,5,366.964,Oracle,1.02771,friction_strong
-oracle,-1,1,walk,1,6,369.492,Oracle,1.03479,friction_strong
-oracle,-1,1,walk,1,7,329.152,Oracle,0.921812,friction_strong
-oracle,-1,1,walk,1,8,335.043,Oracle,0.938309,friction_strong
-oracle,-1,1,walk,1,9,350.916,Oracle,0.982762,friction_strong
-oracle,-1,1,walk,2,0,326.087,Oracle,1.08291,friction_strong
-oracle,-1,1,walk,2,1,317.994,Oracle,1.05603,friction_strong
-oracle,-1,1,walk,2,2,275.751,Oracle,0.915743,friction_strong
-oracle,-1,1,walk,2,3,322.596,Oracle,1.07131,friction_strong
-oracle,-1,1,walk,2,4,241.919,Oracle,0.803391,friction_strong
-oracle,-1,1,walk,2,5,322.369,Oracle,1.07056,friction_strong
-oracle,-1,1,walk,2,6,281.326,Oracle,0.934259,friction_strong
-oracle,-1,1,walk,2,7,260.599,Oracle,0.865425,friction_strong
-oracle,-1,1,walk,2,8,326.015,Oracle,1.08267,friction_strong
-oracle,-1,1,walk,2,9,336.566,Oracle,1.11771,friction_strong
+oracle,-1,1,flip,0,0,213.553,FB (offline z),0.990721,friction_strong
+oracle,-1,1,flip,0,1,163.525,FB (offline z),0.75863,friction_strong
+oracle,-1,1,flip,0,2,250.136,FB (offline z),1.16044,friction_strong
+oracle,-1,1,flip,0,3,272.49,FB (offline z),1.26414,friction_strong
+oracle,-1,1,flip,0,4,239.521,FB (offline z),1.11119,friction_strong
+oracle,-1,1,flip,0,5,210.556,FB (offline z),0.976814,friction_strong
+oracle,-1,1,flip,0,6,164.294,FB (offline z),0.762197,friction_strong
+oracle,-1,1,flip,0,7,256.606,FB (offline z),1.19045,friction_strong
+oracle,-1,1,flip,0,8,172.538,FB (offline z),0.800441,friction_strong
+oracle,-1,1,flip,0,9,212.315,FB (offline z),0.984977,friction_strong
+oracle,-1,1,flip,1,0,296.372,FB (offline z),1.07904,friction_strong
+oracle,-1,1,flip,1,1,276.198,FB (offline z),1.00559,friction_strong
+oracle,-1,1,flip,1,2,305.445,FB (offline z),1.11207,friction_strong
+oracle,-1,1,flip,1,3,286.356,FB (offline z),1.04257,friction_strong
+oracle,-1,1,flip,1,4,267.242,FB (offline z),0.97298,friction_strong
+oracle,-1,1,flip,1,5,272.353,FB (offline z),0.991586,friction_strong
+oracle,-1,1,flip,1,6,274.143,FB (offline z),0.998103,friction_strong
+oracle,-1,1,flip,1,7,272.596,FB (offline z),0.992472,friction_strong
+oracle,-1,1,flip,1,8,244.739,FB (offline z),0.89105,friction_strong
+oracle,-1,1,flip,1,9,251.193,FB (offline z),0.914547,friction_strong
+oracle,-1,1,flip,2,0,72.2126,FB (offline z),0.558368,friction_strong
+oracle,-1,1,flip,2,1,117.822,FB (offline z),0.911029,friction_strong
+oracle,-1,1,flip,2,2,118.376,FB (offline z),0.915318,friction_strong
+oracle,-1,1,flip,2,3,166.55,FB (offline z),1.28781,friction_strong
+oracle,-1,1,flip,2,4,107.249,FB (offline z),0.829282,friction_strong
+oracle,-1,1,flip,2,5,128.102,FB (offline z),0.990521,friction_strong
+oracle,-1,1,flip,2,6,156.494,FB (offline z),1.21005,friction_strong
+oracle,-1,1,flip,2,7,139.892,FB (offline z),1.08168,friction_strong
+oracle,-1,1,flip,2,8,153.007,FB (offline z),1.18309,friction_strong
+oracle,-1,1,flip,2,9,133.576,FB (offline z),1.03284,friction_strong
+oracle,-1,1,run,0,0,117.14,FB (offline z),1.02354,friction_strong
+oracle,-1,1,run,0,1,106.175,FB (offline z),0.927736,friction_strong
+oracle,-1,1,run,0,2,114.912,FB (offline z),1.00407,friction_strong
+oracle,-1,1,run,0,3,113.01,FB (offline z),0.987454,friction_strong
+oracle,-1,1,run,0,4,128.162,FB (offline z),1.11985,friction_strong
+oracle,-1,1,run,0,5,112.619,FB (offline z),0.984037,friction_strong
+oracle,-1,1,run,0,6,93.1213,FB (offline z),0.813673,friction_strong
+oracle,-1,1,run,0,7,122.198,FB (offline z),1.06774,friction_strong
+oracle,-1,1,run,0,8,123.493,FB (offline z),1.07905,friction_strong
+oracle,-1,1,run,0,9,113.626,FB (offline z),0.992836,friction_strong
+oracle,-1,1,run,1,0,106.652,FB (offline z),1.03253,friction_strong
+oracle,-1,1,run,1,1,88.9718,FB (offline z),0.861364,friction_strong
+oracle,-1,1,run,1,2,106.998,FB (offline z),1.03589,friction_strong
+oracle,-1,1,run,1,3,118.079,FB (offline z),1.14316,friction_strong
+oracle,-1,1,run,1,4,110.635,FB (offline z),1.0711,friction_strong
+oracle,-1,1,run,1,5,116.69,FB (offline z),1.12971,friction_strong
+oracle,-1,1,run,1,6,105.313,FB (offline z),1.01956,friction_strong
+oracle,-1,1,run,1,7,95.8483,FB (offline z),0.927937,friction_strong
+oracle,-1,1,run,1,8,95.9208,FB (offline z),0.92864,friction_strong
+oracle,-1,1,run,1,9,87.8098,FB (offline z),0.850115,friction_strong
+oracle,-1,1,run,2,0,99.1188,FB (offline z),1.04067,friction_strong
+oracle,-1,1,run,2,1,93.4416,FB (offline z),0.981061,friction_strong
+oracle,-1,1,run,2,2,90.2792,FB (offline z),0.947858,friction_strong
+oracle,-1,1,run,2,3,104.449,FB (offline z),1.09663,friction_strong
+oracle,-1,1,run,2,4,94.1534,FB (offline z),0.988534,friction_strong
+oracle,-1,1,run,2,5,104.054,FB (offline z),1.09248,friction_strong
+oracle,-1,1,run,2,6,97.8981,FB (offline z),1.02785,friction_strong
+oracle,-1,1,run,2,7,99.0986,FB (offline z),1.04045,friction_strong
+oracle,-1,1,run,2,8,89.9989,FB (offline z),0.944915,friction_strong
+oracle,-1,1,run,2,9,79.9638,FB (offline z),0.839554,friction_strong
+oracle,-1,1,stand,0,0,478.37,FB (offline z),0.94047,friction_strong
+oracle,-1,1,stand,0,1,484.219,FB (offline z),0.951969,friction_strong
+oracle,-1,1,stand,0,2,506.31,FB (offline z),0.995401,friction_strong
+oracle,-1,1,stand,0,3,528.623,FB (offline z),1.03927,friction_strong
+oracle,-1,1,stand,0,4,485.927,FB (offline z),0.955328,friction_strong
+oracle,-1,1,stand,0,5,531.457,FB (offline z),1.04484,friction_strong
+oracle,-1,1,stand,0,6,575.917,FB (offline z),1.13225,friction_strong
+oracle,-1,1,stand,0,7,477.966,FB (offline z),0.939676,friction_strong
+oracle,-1,1,stand,0,8,514.661,FB (offline z),1.01182,friction_strong
+oracle,-1,1,stand,0,9,503.048,FB (offline z),0.988986,friction_strong
+oracle,-1,1,stand,1,0,694.12,FB (offline z),1.06818,friction_strong
+oracle,-1,1,stand,1,1,646.044,FB (offline z),0.994195,friction_strong
+oracle,-1,1,stand,1,2,620.574,FB (offline z),0.954999,friction_strong
+oracle,-1,1,stand,1,3,615.277,FB (offline z),0.946848,friction_strong
+oracle,-1,1,stand,1,4,671.17,FB (offline z),1.03286,friction_strong
+oracle,-1,1,stand,1,5,640.844,FB (offline z),0.986193,friction_strong
+oracle,-1,1,stand,1,6,665.615,FB (offline z),1.02431,friction_strong
+oracle,-1,1,stand,1,7,661.436,FB (offline z),1.01788,friction_strong
+oracle,-1,1,stand,1,8,649.392,FB (offline z),0.999348,friction_strong
+oracle,-1,1,stand,1,9,633.688,FB (offline z),0.97518,friction_strong
+oracle,-1,1,stand,2,0,286.655,FB (offline z),1.06811,friction_strong
+oracle,-1,1,stand,2,1,218.987,FB (offline z),0.815969,friction_strong
+oracle,-1,1,stand,2,2,318.716,FB (offline z),1.18757,friction_strong
+oracle,-1,1,stand,2,3,282.61,FB (offline z),1.05304,friction_strong
+oracle,-1,1,stand,2,4,300.515,FB (offline z),1.11975,friction_strong
+oracle,-1,1,stand,2,5,229.373,FB (offline z),0.854668,friction_strong
+oracle,-1,1,stand,2,6,268.446,FB (offline z),1.00026,friction_strong
+oracle,-1,1,stand,2,7,315.409,FB (offline z),1.17525,friction_strong
+oracle,-1,1,stand,2,8,223.126,FB (offline z),0.831393,friction_strong
+oracle,-1,1,stand,2,9,239.927,FB (offline z),0.893995,friction_strong
+oracle,-1,1,walk,0,0,427.89,FB (offline z),0.980774,friction_strong
+oracle,-1,1,walk,0,1,427.796,FB (offline z),0.980558,friction_strong
+oracle,-1,1,walk,0,2,399.815,FB (offline z),0.916423,friction_strong
+oracle,-1,1,walk,0,3,456.031,FB (offline z),1.04528,friction_strong
+oracle,-1,1,walk,0,4,424.262,FB (offline z),0.972457,friction_strong
+oracle,-1,1,walk,0,5,474.837,FB (offline z),1.08838,friction_strong
+oracle,-1,1,walk,0,6,449.014,FB (offline z),1.02919,friction_strong
+oracle,-1,1,walk,0,7,441.642,FB (offline z),1.0123,friction_strong
+oracle,-1,1,walk,0,8,480.565,FB (offline z),1.10151,friction_strong
+oracle,-1,1,walk,0,9,380.927,FB (offline z),0.873129,friction_strong
+oracle,-1,1,walk,1,0,363.055,FB (offline z),1.01676,friction_strong
+oracle,-1,1,walk,1,1,393.67,FB (offline z),1.1025,friction_strong
+oracle,-1,1,walk,1,2,338.752,FB (offline z),0.948697,friction_strong
+oracle,-1,1,walk,1,3,407.065,FB (offline z),1.14001,friction_strong
+oracle,-1,1,walk,1,4,316.599,FB (offline z),0.886656,friction_strong
+oracle,-1,1,walk,1,5,366.964,FB (offline z),1.02771,friction_strong
+oracle,-1,1,walk,1,6,369.492,FB (offline z),1.03479,friction_strong
+oracle,-1,1,walk,1,7,329.152,FB (offline z),0.921812,friction_strong
+oracle,-1,1,walk,1,8,335.043,FB (offline z),0.938309,friction_strong
+oracle,-1,1,walk,1,9,350.916,FB (offline z),0.982762,friction_strong
+oracle,-1,1,walk,2,0,326.087,FB (offline z),1.08291,friction_strong
+oracle,-1,1,walk,2,1,317.994,FB (offline z),1.05603,friction_strong
+oracle,-1,1,walk,2,2,275.751,FB (offline z),0.915743,friction_strong
+oracle,-1,1,walk,2,3,322.596,FB (offline z),1.07131,friction_strong
+oracle,-1,1,walk,2,4,241.919,FB (offline z),0.803391,friction_strong
+oracle,-1,1,walk,2,5,322.369,FB (offline z),1.07056,friction_strong
+oracle,-1,1,walk,2,6,281.326,FB (offline z),0.934259,friction_strong
+oracle,-1,1,walk,2,7,260.599,FB (offline z),0.865425,friction_strong
+oracle,-1,1,walk,2,8,326.015,FB (offline z),1.08267,friction_strong
+oracle,-1,1,walk,2,9,336.566,FB (offline z),1.11771,friction_strong
 random,-1,1,flip,0,0,95.1037,Random,0.441207,friction_strong
 random,-1,1,flip,0,1,86.3437,Random,0.400567,friction_strong
 random,-1,1,flip,0,2,87.4359,Random,0.405634,friction_strong

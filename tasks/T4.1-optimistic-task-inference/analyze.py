@@ -6,7 +6,7 @@
     data/inputs/fixed_z/    zero_shot_rl.eval.fixed_z_returns
 
 File names end in _s<seed>, the T04 FB seed. A run's score in an episode is its return; per
-seed, scores are averaged over the 10 runs. Relative performance divides by the Oracle return
+seed, scores are averaged over the 10 runs. Relative performance divides by the FB (offline z) return
 of the same seed and task (mean over all its episodes and runs, in the same environment).
 Across seeds, per-task scores are means and all-task scores the IQM of the four task means
 (analysis.table6_aggregate.aggregate); figures show the mean over tasks of the relative
@@ -32,8 +32,8 @@ from analysis.table6_aggregate import TASKS, aggregate  # noqa: E402
 ROOT = Path(__file__).parent
 INPUTS, DATA, FIGURES = ROOT / "data" / "inputs", ROOT / "data", ROOT / "figures"
 SHIFTS = ["baseline", "friction_mild", "friction_strong", "actuator_mild", "actuator_strong"]
-NAMES = {"oracle": "Oracle", "random": "Random", "ucb": "OpTI-BFM", "ts": "OpTI-BFM-TS"}
-COLORS = {"Oracle": "k", "Random": "tab:gray", "OpTI-BFM": "tab:blue", "OpTI-BFM-TS": "tab:orange",
+NAMES = {"oracle": "FB (offline z)", "random": "Random", "ucb": "OpTI-BFM", "ts": "OpTI-BFM-TS"}
+COLORS = {"FB (offline z)": "k", "Random": "tab:gray", "OpTI-BFM": "tab:blue", "OpTI-BFM-TS": "tab:orange",
           "OpTI-BFM-EP": "tab:blue", "OpTI-BFM-TS-EP": "tab:orange", "RND": "tab:green"}
 
 
@@ -58,7 +58,7 @@ def per_seed(runs):
 
 
 def oracle_reference(scores):
-    """(task, seed) -> mean Oracle return over episodes."""
+    """(task, seed) -> mean FB (offline z) return over episodes."""
     return scores[scores["method"] == "oracle"].groupby(["task", "seed"])["return"].mean()
 
 
@@ -103,7 +103,7 @@ def curve(ax, scores, names, title):
         ax.plot(x, g.mean(axis=1), color=COLORS[name], label=name,
                 linestyle="--" if name.endswith("-EP") else "-")
         ax.fill_between(x, g.min(axis=1), g.max(axis=1), color=COLORS[name], alpha=0.2)
-    ax.axhline(1.0, color="k", linewidth=1, label="Oracle")
+    ax.axhline(1.0, color="k", linewidth=1, label="FB (offline z)")
     ax.set_title(title)
     ax.set_xlabel("episode")
     ax.set_ylabel("relative performance")
@@ -140,7 +140,7 @@ def main_experiment():
 
     fig, axes = plt.subplots(1, 4, figsize=(16, 3.5))
     for ax, task in zip(axes, TASKS):
-        for name in ["Oracle"] + names:
+        for name in ["FB (offline z)"] + names:
             g = main[(main["name"] == name) & (main["task"] == task)]
             g = g.groupby(["seed", "episode"])["return"].mean().unstack("seed")
             ax.plot(g.index + 1, g.mean(axis=1), color=COLORS[name], label=name)
@@ -193,7 +193,7 @@ def data_efficiency():
         g = g.groupby(["seed", "n"])["relative"].mean().unstack("seed")
         ax.plot(g.index, g.mean(axis=1), marker="o", color=COLORS[source], label=source)
         ax.fill_between(g.index, g.min(axis=1), g.max(axis=1), color=COLORS[source], alpha=0.2)
-    ax.axhline(1.0, color="k", linewidth=1, label="Oracle")
+    ax.axhline(1.0, color="k", linewidth=1, label="FB (offline z)")
     ax.set_xscale("log")
     ax.set_xlabel("transitions n")
     ax.set_ylabel("relative performance")
@@ -214,7 +214,7 @@ def dynamics(main):
         scores = relative(scores, oracle_reference(scores))
         frames.append(scores.assign(shift=shift, name=scores.apply(label, axis=1)))
     scores = pd.concat(frames, ignore_index=True)
-    scores = scores[scores["name"].isin(["Oracle", "Random", "OpTI-BFM", "OpTI-BFM-TS"])]
+    scores = scores[scores["name"].isin(["FB (offline z)", "Random", "OpTI-BFM", "OpTI-BFM-TS"])]
     scores.to_csv(DATA / "dynamics.csv", index=False, float_format="%.6g")
 
     print("\nShifted dynamics: all-task IQM of the return in episodes 1 and 10, and mean of"
@@ -225,7 +225,7 @@ def dynamics(main):
         iqm = all_task_iqm(s)
         late = all_task_iqm(s[s["episode"] >= 5].groupby(
             ["name", "task", "seed"])["return"].mean().reset_index().assign(episode=0))
-        for name in ["Oracle", "Random", "OpTI-BFM", "OpTI-BFM-TS"]:
+        for name in ["FB (offline z)", "Random", "OpTI-BFM", "OpTI-BFM-TS"]:
             rows.append({"shift": shift, "name": name, "episode_1": iqm[(name, 0)],
                          "episode_10": iqm[(name, 9)], "episodes_6_10": late[(name, 0)]})
     table = pd.DataFrame(rows)

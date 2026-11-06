@@ -12,7 +12,7 @@ Models"（arXiv 2510.20264）。結果見 [REPORT.md](REPORT.md)，本文件說�
 | 路徑 | 內容 |
 |---|---|
 | `zero_shot_rl/online/belief.py` | 帶 $\lambda$ 正則化的最小平方法，也就是 Bayesian linear regression 的後驗 $\mathcal{N}(\hat z, V^{-1})$，一次處理 n 個 run |
-| `zero_shot_rl/online/selectors.py` | Oracle、Random、UCB（OpTI-BFM）、TS（OpTI-BFM-TS）四種選 $w$ 的規則 |
+| `zero_shot_rl/online/selectors.py` | FB（離線 z）、Random、UCB（OpTI-BFM）、TS（OpTI-BFM-TS）四種選 $w$ 的規則 |
 | `zero_shot_rl/online/fb.py` | 把 FB checkpoint 轉成論文的 $\phi$、$\psi$ 與 policy |
 | `zero_shot_rl/eval/online_inference.py` | 連續多個 episode 的線上推論；也存下前 n 筆 transition 的最小平方 $z$ |
 | `zero_shot_rl/eval/fixed_z_returns.py` | data efficiency：評估由前 n 筆 transition 推出的固定 $z$ |
@@ -34,7 +34,7 @@ $\pi$ 為 deterministic 的 actor mean。$F$ 的兩個 head 都保留，UCB 取�
 
 1. 選 $w$。UCB 從半徑 $2\beta$ 的信賴橢球 $\lVert w - \hat z\rVert_V \le 2\beta$ 均勻抽 128 個候選，
    取 $\min_{\text{head}} \psi(s,w)^\top \hat z + \beta \lVert \psi(s,w) \rVert_{V^{-1}}$ 最大者（論文 eq. 11、12 與註 6）。
-   TS 從 $\mathcal N(\hat z, V^{-1})$ 抽一個。Random 在球面上均勻抽。Oracle 固定為離線推論的 $z_r$。
+   TS 從 $\mathcal N(\hat z, V^{-1})$ 抽一個。Random 在球面上均勻抽。FB（離線 z） 固定為離線推論的 $z_r$。
 2. 執行動作，得到下一個狀態 $s'$ 和 reward $r$，再用 $(\phi(s'), r)$ 更新 $V$ 與 $\hat z$。
 
 UCB 用 $\lambda = 1$、$\sigma = 1$。TS 用先驗 $\mathcal N(0, I)$，觀測除以 $\sigma$。
@@ -45,7 +45,7 @@ UCB 用 $\lambda = 1$、$\sigma = 1$。TS 用先驗 $\mathcal N(0, I)$，觀測�
 - 取樣。作者的 `BLR.transform` 用 $R^{-\top}\xi$（$V = R^\top R$），它的共變異數是 $(RR^\top)^{-1}$ 而不是 $V^{-1}$。
   本實作照論文用 $L^{-\top}\xi$（$V = LL^\top$），共變異數為 $V^{-1}$。
   這會影響 TS 的樣本與 UCB 的候選點，但不影響 UCB 的評分。
-- Oracle 的 $z_r$ 沿用本 repo 的離線推論（`zero_shot_rl.latent.task_z`）：
+- FB（離線 z）的 $z_r$ 沿用本 repo 的離線推論（`zero_shot_rl.latent.task_z`）：
   從同一個 100k 子樣本抽 10k 筆有 reward 的 transition，$z_r \propto \mathbb E[B(s) r(s)]$。
   論文則用 50k 筆、對 $\phi$ 做最小平方。兩者在資料分佈與訓練分佈相同時方向一致。
 - -EP 變體在新 episode 的 reset 狀態選 $w$。作者程式是在上一個 episode 的最後一個狀態選。
@@ -60,7 +60,7 @@ UCB 用 $\lambda = 1$、$\sigma = 1$。TS 用先驗 $\mathcal N(0, I)$，觀測�
   取 10 個 episode 累積 return（四個 task、三個 seed 平均）最高者：$\beta = 0.001$，$\sigma = 0.1$。
   -EP、dynamics 與 data efficiency 都用這兩個值。
 - dynamics shift 沿用 T3.2 的四個設定（`tasks/T3.2-ood-robustness/configs/`）：
-  friction 0.1、0.02，actuator gear 76%、62%。reward 函數不變，Oracle 的 $z_r$ 仍從原始資料推出。
+  friction 0.1、0.02，actuator gear 76%、62%。reward 函數不變，FB（離線 z）的 $z_r$ 仍從原始資料推出。
 - data efficiency：n ∈ {100, 200, 500, 1000, 2000, 5000, 10000}。
   每個來源、每個 run 各推一個 $z$（eq. 4，無正則化），各跑 2 個 episode，每個 n 共 20 個 episode。
   RND 每次抽 10 條 episode，取前 n 筆，reward 由 next state 的 physics 計算。
@@ -74,10 +74,10 @@ UCB 用 $\lambda = 1$、$\sigma = 1$。TS 用先驗 $\mathcal N(0, I)$，觀測�
 
 ```bash
 T=tasks/T4.1-optimistic-task-inference
-lab sweep $T/configs/main.yaml          # Oracle、Random 與 beta / sigma grid
+lab sweep $T/configs/main.yaml          # FB（離線 z）、Random 與 beta / sigma grid
 lab sweep $T/configs/episodic_ts.yaml   # OpTI-BFM-TS-EP
 lab sweep $T/configs/episodic_ucb.yaml  # OpTI-BFM-EP
-lab sweep $T/configs/dynamics_ts.yaml   # 四種 shift 下的 Oracle、Random、OpTI-BFM-TS
+lab sweep $T/configs/dynamics_ts.yaml   # 四種 shift 下的 FB（離線 z）、Random、OpTI-BFM-TS
 lab sweep $T/configs/dynamics_ucb.yaml  # 四種 shift 下的 OpTI-BFM
 lab sweep $T/configs/fixed_z.yaml       # data efficiency，需要已提交的 data/inputs/main/*_z/
 ```

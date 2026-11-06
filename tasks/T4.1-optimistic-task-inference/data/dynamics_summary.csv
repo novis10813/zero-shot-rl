@@ -1,21 +1,21 @@
 shift,name,episode_1,episode_10,episodes_6_10
-baseline,Oracle,408.649,381.831,400.769
+baseline,FB (offline z),408.649,381.831,400.769
 baseline,Random,90.7433,91.853,91.334
 baseline,OpTI-BFM,209.398,407.143,433.523
 baseline,OpTI-BFM-TS,320.205,439.288,433.18
-friction_mild,Oracle,342.19,354.519,345.58
+friction_mild,FB (offline z),342.19,354.519,345.58
 friction_mild,Random,83.1778,76.4966,78.6166
 friction_mild,OpTI-BFM,141.574,390.338,372.886
 friction_mild,OpTI-BFM-TS,238.648,407.193,434.068
-friction_strong,Oracle,283.195,277.582,284.928
+friction_strong,FB (offline z),283.195,277.582,284.928
 friction_strong,Random,75.4997,75.2674,77.1379
 friction_strong,OpTI-BFM,138.351,331.241,329.238
 friction_strong,OpTI-BFM-TS,194.763,334.771,347.319
-actuator_mild,Oracle,322.33,315.381,322.652
+actuator_mild,FB (offline z),322.33,315.381,322.652
 actuator_mild,Random,64.4765,60.4366,60.5995
 actuator_mild,OpTI-BFM,140.086,336.479,334.141
 actuator_mild,OpTI-BFM-TS,198.818,314.545,347.723
-actuator_strong,Oracle,266.332,248.053,255.653
+actuator_strong,FB (offline z),266.332,248.053,255.653
 actuator_strong,Random,43.7563,43.5926,43.9638
 actuator_strong,OpTI-BFM,95.5918,215.614,224.733
 actuator_strong,OpTI-BFM-TS,93.1186,247.072,236.388

@@ -1,124 +1,124 @@
 method,param,period,task,seed,episode,return,name,relative
-oracle,-1,1,flip,0,0,257.245,Oracle,0.882823
-oracle,-1,1,flip,0,1,307.042,Oracle,1.05372
-oracle,-1,1,flip,0,2,320.951,Oracle,1.10145
-oracle,-1,1,flip,0,3,284.619,Oracle,0.976766
-oracle,-1,1,flip,0,4,301.142,Oracle,1.03347
-oracle,-1,1,flip,0,5,298.32,Oracle,1.02379
-oracle,-1,1,flip,0,6,272.974,Oracle,0.936802
-oracle,-1,1,flip,0,7,300.419,Oracle,1.03099
-oracle,-1,1,flip,0,8,311.924,Oracle,1.07047
-oracle,-1,1,flip,0,9,259.253,Oracle,0.889714
-oracle,-1,1,flip,1,0,292.861,Oracle,0.981067
-oracle,-1,1,flip,1,1,306.534,Oracle,1.02687
-oracle,-1,1,flip,1,2,322.726,Oracle,1.08111
-oracle,-1,1,flip,1,3,301.166,Oracle,1.00889
-oracle,-1,1,flip,1,4,291.233,Oracle,0.975613
-oracle,-1,1,flip,1,5,290.822,Oracle,0.974238
-oracle,-1,1,flip,1,6,293.221,Oracle,0.982273
-oracle,-1,1,flip,1,7,303.245,Oracle,1.01586
-oracle,-1,1,flip,1,8,277.16,Oracle,0.928472
-oracle,-1,1,flip,1,9,306.156,Oracle,1.02561
-oracle,-1,1,flip,2,0,212.542,Oracle,1.16714
-oracle,-1,1,flip,2,1,169.181,Oracle,0.929028
-oracle,-1,1,flip,2,2,257.755,Oracle,1.41542
-oracle,-1,1,flip,2,3,172.016,Oracle,0.944596
-oracle,-1,1,flip,2,4,162.535,Oracle,0.892531
-oracle,-1,1,flip,2,5,125.578,Oracle,0.68959
-oracle,-1,1,flip,2,6,164.554,Oracle,0.90362
-oracle,-1,1,flip,2,7,213.746,Oracle,1.17375
-oracle,-1,1,flip,2,8,223.089,Oracle,1.22505
-oracle,-1,1,flip,2,9,120.058,Oracle,0.659278
-oracle,-1,1,run,0,0,187.59,Oracle,1.05687
-oracle,-1,1,run,0,1,154.395,Oracle,0.86985
-oracle,-1,1,run,0,2,188.005,Oracle,1.05921
-oracle,-1,1,run,0,3,177.21,Oracle,0.998386
-oracle,-1,1,run,0,4,188.154,Oracle,1.06005
-oracle,-1,1,run,0,5,174.394,Oracle,0.982525
-oracle,-1,1,run,0,6,165.027,Oracle,0.92975
-oracle,-1,1,run,0,7,181.284,Oracle,1.02134
-oracle,-1,1,run,0,8,174.007,Oracle,0.980345
-oracle,-1,1,run,0,9,184.894,Oracle,1.04168
-oracle,-1,1,run,1,0,250.775,Oracle,1.06555
-oracle,-1,1,run,1,1,210.017,Oracle,0.892373
-oracle,-1,1,run,1,2,238.838,Oracle,1.01484
-oracle,-1,1,run,1,3,238.724,Oracle,1.01435
-oracle,-1,1,run,1,4,237.819,Oracle,1.01051
-oracle,-1,1,run,1,5,237.053,Oracle,1.00725
-oracle,-1,1,run,1,6,244.139,Oracle,1.03736
-oracle,-1,1,run,1,7,241.535,Oracle,1.02629
-oracle,-1,1,run,1,8,234.307,Oracle,0.995582
-oracle,-1,1,run,1,9,220.26,Oracle,0.935896
-oracle,-1,1,run,2,0,202.922,Oracle,1.02299
-oracle,-1,1,run,2,1,210.478,Oracle,1.06108
-oracle,-1,1,run,2,2,203.466,Oracle,1.02573
-oracle,-1,1,run,2,3,206.661,Oracle,1.04184
-oracle,-1,1,run,2,4,198.842,Oracle,1.00242
-oracle,-1,1,run,2,5,172.636,Oracle,0.870305
-oracle,-1,1,run,2,6,180.993,Oracle,0.912437
-oracle,-1,1,run,2,7,199.04,Oracle,1.00342
-oracle,-1,1,run,2,8,207.129,Oracle,1.0442
-oracle,-1,1,run,2,9,201.454,Oracle,1.01559
-oracle,-1,1,stand,0,0,606.173,Oracle,0.981964
-oracle,-1,1,stand,0,1,626.998,Oracle,1.0157
-oracle,-1,1,stand,0,2,642.062,Oracle,1.0401
-oracle,-1,1,stand,0,3,644.835,Oracle,1.0446
-oracle,-1,1,stand,0,4,583.438,Oracle,0.945135
-oracle,-1,1,stand,0,5,653.994,Oracle,1.05943
-oracle,-1,1,stand,0,6,554.185,Oracle,0.897747
-oracle,-1,1,stand,0,7,633.326,Oracle,1.02595
-oracle,-1,1,stand,0,8,585.182,Oracle,0.947961
-oracle,-1,1,stand,0,9,642.87,Oracle,1.04141
-oracle,-1,1,stand,1,0,626.077,Oracle,0.875403
-oracle,-1,1,stand,1,1,763.387,Oracle,1.06739
-oracle,-1,1,stand,1,2,745.455,Oracle,1.04232
-oracle,-1,1,stand,1,3,713.91,Oracle,0.998214
-oracle,-1,1,stand,1,4,709.635,Oracle,0.992237
-oracle,-1,1,stand,1,5,731.303,Oracle,1.02253
-oracle,-1,1,stand,1,6,727.064,Oracle,1.01661
-oracle,-1,1,stand,1,7,702.513,Oracle,0.982278
-oracle,-1,1,stand,1,8,718.169,Oracle,1.00417
-oracle,-1,1,stand,1,9,714.359,Oracle,0.998842
-oracle,-1,1,stand,2,0,482.228,Oracle,0.928463
-oracle,-1,1,stand,2,1,573.302,Oracle,1.10381
-oracle,-1,1,stand,2,2,396.18,Oracle,0.762789
-oracle,-1,1,stand,2,3,482.897,Oracle,0.929751
-oracle,-1,1,stand,2,4,497.811,Oracle,0.958466
-oracle,-1,1,stand,2,5,527.317,Oracle,1.01527
-oracle,-1,1,stand,2,6,535.94,Oracle,1.03188
-oracle,-1,1,stand,2,7,620.909,Oracle,1.19547
-oracle,-1,1,stand,2,8,493.496,Oracle,0.950157
-oracle,-1,1,stand,2,9,583.754,Oracle,1.12394
-oracle,-1,1,walk,0,0,574.18,Oracle,1.00281
-oracle,-1,1,walk,0,1,489.052,Oracle,0.854134
-oracle,-1,1,walk,0,2,581.381,Oracle,1.01539
-oracle,-1,1,walk,0,3,584.982,Oracle,1.02168
-oracle,-1,1,walk,0,4,590.588,Oracle,1.03147
-oracle,-1,1,walk,0,5,560.15,Oracle,0.978308
-oracle,-1,1,walk,0,6,575.233,Oracle,1.00465
-oracle,-1,1,walk,0,7,618.044,Oracle,1.07942
-oracle,-1,1,walk,0,8,542.474,Oracle,0.947437
-oracle,-1,1,walk,0,9,609.619,Oracle,1.06471
-oracle,-1,1,walk,1,0,603.841,Oracle,1.06272
-oracle,-1,1,walk,1,1,518.318,Oracle,0.912209
-oracle,-1,1,walk,1,2,580.583,Oracle,1.02179
-oracle,-1,1,walk,1,3,575.2,Oracle,1.01232
-oracle,-1,1,walk,1,4,579.508,Oracle,1.0199
-oracle,-1,1,walk,1,5,588.158,Oracle,1.03512
-oracle,-1,1,walk,1,6,573.014,Oracle,1.00847
-oracle,-1,1,walk,1,7,602.029,Oracle,1.05953
-oracle,-1,1,walk,1,8,571.551,Oracle,1.00589
-oracle,-1,1,walk,1,9,489.815,Oracle,0.862045
-oracle,-1,1,walk,2,0,511.226,Oracle,1.01309
-oracle,-1,1,walk,2,1,517.921,Oracle,1.02636
-oracle,-1,1,walk,2,2,500.975,Oracle,0.992781
-oracle,-1,1,walk,2,3,484.484,Oracle,0.960101
-oracle,-1,1,walk,2,4,499.124,Oracle,0.989112
-oracle,-1,1,walk,2,5,531.047,Oracle,1.05237
-oracle,-1,1,walk,2,6,484.896,Oracle,0.960917
-oracle,-1,1,walk,2,7,522.912,Oracle,1.03625
-oracle,-1,1,walk,2,8,487.509,Oracle,0.966095
-oracle,-1,1,walk,2,9,506.086,Oracle,1.00291
+oracle,-1,1,flip,0,0,257.245,FB (offline z),0.882823
+oracle,-1,1,flip,0,1,307.042,FB (offline z),1.05372
+oracle,-1,1,flip,0,2,320.951,FB (offline z),1.10145
+oracle,-1,1,flip,0,3,284.619,FB (offline z),0.976766
+oracle,-1,1,flip,0,4,301.142,FB (offline z),1.03347
+oracle,-1,1,flip,0,5,298.32,FB (offline z),1.02379
+oracle,-1,1,flip,0,6,272.974,FB (offline z),0.936802
+oracle,-1,1,flip,0,7,300.419,FB (offline z),1.03099
+oracle,-1,1,flip,0,8,311.924,FB (offline z),1.07047
+oracle,-1,1,flip,0,9,259.253,FB (offline z),0.889714
+oracle,-1,1,flip,1,0,292.861,FB (offline z),0.981067
+oracle,-1,1,flip,1,1,306.534,FB (offline z),1.02687
+oracle,-1,1,flip,1,2,322.726,FB (offline z),1.08111
+oracle,-1,1,flip,1,3,301.166,FB (offline z),1.00889
+oracle,-1,1,flip,1,4,291.233,FB (offline z),0.975613
+oracle,-1,1,flip,1,5,290.822,FB (offline z),0.974238
+oracle,-1,1,flip,1,6,293.221,FB (offline z),0.982273
+oracle,-1,1,flip,1,7,303.245,FB (offline z),1.01586
+oracle,-1,1,flip,1,8,277.16,FB (offline z),0.928472
+oracle,-1,1,flip,1,9,306.156,FB (offline z),1.02561
+oracle,-1,1,flip,2,0,212.542,FB (offline z),1.16714
+oracle,-1,1,flip,2,1,169.181,FB (offline z),0.929028
+oracle,-1,1,flip,2,2,257.755,FB (offline z),1.41542
+oracle,-1,1,flip,2,3,172.016,FB (offline z),0.944596
+oracle,-1,1,flip,2,4,162.535,FB (offline z),0.892531
+oracle,-1,1,flip,2,5,125.578,FB (offline z),0.68959
+oracle,-1,1,flip,2,6,164.554,FB (offline z),0.90362
+oracle,-1,1,flip,2,7,213.746,FB (offline z),1.17375
+oracle,-1,1,flip,2,8,223.089,FB (offline z),1.22505
+oracle,-1,1,flip,2,9,120.058,FB (offline z),0.659278
+oracle,-1,1,run,0,0,187.59,FB (offline z),1.05687
+oracle,-1,1,run,0,1,154.395,FB (offline z),0.86985
+oracle,-1,1,run,0,2,188.005,FB (offline z),1.05921
+oracle,-1,1,run,0,3,177.21,FB (offline z),0.998386
+oracle,-1,1,run,0,4,188.154,FB (offline z),1.06005
+oracle,-1,1,run,0,5,174.394,FB (offline z),0.982525
+oracle,-1,1,run,0,6,165.027,FB (offline z),0.92975
+oracle,-1,1,run,0,7,181.284,FB (offline z),1.02134
+oracle,-1,1,run,0,8,174.007,FB (offline z),0.980345
+oracle,-1,1,run,0,9,184.894,FB (offline z),1.04168
+oracle,-1,1,run,1,0,250.775,FB (offline z),1.06555
+oracle,-1,1,run,1,1,210.017,FB (offline z),0.892373
+oracle,-1,1,run,1,2,238.838,FB (offline z),1.01484
+oracle,-1,1,run,1,3,238.724,FB (offline z),1.01435
+oracle,-1,1,run,1,4,237.819,FB (offline z),1.01051
+oracle,-1,1,run,1,5,237.053,FB (offline z),1.00725
+oracle,-1,1,run,1,6,244.139,FB (offline z),1.03736
+oracle,-1,1,run,1,7,241.535,FB (offline z),1.02629
+oracle,-1,1,run,1,8,234.307,FB (offline z),0.995582
+oracle,-1,1,run,1,9,220.26,FB (offline z),0.935896
+oracle,-1,1,run,2,0,202.922,FB (offline z),1.02299
+oracle,-1,1,run,2,1,210.478,FB (offline z),1.06108
+oracle,-1,1,run,2,2,203.466,FB (offline z),1.02573
+oracle,-1,1,run,2,3,206.661,FB (offline z),1.04184
+oracle,-1,1,run,2,4,198.842,FB (offline z),1.00242
+oracle,-1,1,run,2,5,172.636,FB (offline z),0.870305
+oracle,-1,1,run,2,6,180.993,FB (offline z),0.912437
+oracle,-1,1,run,2,7,199.04,FB (offline z),1.00342
+oracle,-1,1,run,2,8,207.129,FB (offline z),1.0442
+oracle,-1,1,run,2,9,201.454,FB (offline z),1.01559
+oracle,-1,1,stand,0,0,606.173,FB (offline z),0.981964
+oracle,-1,1,stand,0,1,626.998,FB (offline z),1.0157
+oracle,-1,1,stand,0,2,642.062,FB (offline z),1.0401
+oracle,-1,1,stand,0,3,644.835,FB (offline z),1.0446
+oracle,-1,1,stand,0,4,583.438,FB (offline z),0.945135
+oracle,-1,1,stand,0,5,653.994,FB (offline z),1.05943
+oracle,-1,1,stand,0,6,554.185,FB (offline z),0.897747
+oracle,-1,1,stand,0,7,633.326,FB (offline z),1.02595
+oracle,-1,1,stand,0,8,585.182,FB (offline z),0.947961
+oracle,-1,1,stand,0,9,642.87,FB (offline z),1.04141
+oracle,-1,1,stand,1,0,626.077,FB (offline z),0.875403
+oracle,-1,1,stand,1,1,763.387,FB (offline z),1.06739
+oracle,-1,1,stand,1,2,745.455,FB (offline z),1.04232
+oracle,-1,1,stand,1,3,713.91,FB (offline z),0.998214
+oracle,-1,1,stand,1,4,709.635,FB (offline z),0.992237
+oracle,-1,1,stand,1,5,731.303,FB (offline z),1.02253
+oracle,-1,1,stand,1,6,727.064,FB (offline z),1.01661
+oracle,-1,1,stand,1,7,702.513,FB (offline z),0.982278
+oracle,-1,1,stand,1,8,718.169,FB (offline z),1.00417
+oracle,-1,1,stand,1,9,714.359,FB (offline z),0.998842
+oracle,-1,1,stand,2,0,482.228,FB (offline z),0.928463
+oracle,-1,1,stand,2,1,573.302,FB (offline z),1.10381
+oracle,-1,1,stand,2,2,396.18,FB (offline z),0.762789
+oracle,-1,1,stand,2,3,482.897,FB (offline z),0.929751
+oracle,-1,1,stand,2,4,497.811,FB (offline z),0.958466
+oracle,-1,1,stand,2,5,527.317,FB (offline z),1.01527
+oracle,-1,1,stand,2,6,535.94,FB (offline z),1.03188
+oracle,-1,1,stand,2,7,620.909,FB (offline z),1.19547
+oracle,-1,1,stand,2,8,493.496,FB (offline z),0.950157
+oracle,-1,1,stand,2,9,583.754,FB (offline z),1.12394
+oracle,-1,1,walk,0,0,574.18,FB (offline z),1.00281
+oracle,-1,1,walk,0,1,489.052,FB (offline z),0.854134
+oracle,-1,1,walk,0,2,581.381,FB (offline z),1.01539
+oracle,-1,1,walk,0,3,584.982,FB (offline z),1.02168
+oracle,-1,1,walk,0,4,590.588,FB (offline z),1.03147
+oracle,-1,1,walk,0,5,560.15,FB (offline z),0.978308
+oracle,-1,1,walk,0,6,575.233,FB (offline z),1.00465
+oracle,-1,1,walk,0,7,618.044,FB (offline z),1.07942
+oracle,-1,1,walk,0,8,542.474,FB (offline z),0.947437
+oracle,-1,1,walk,0,9,609.619,FB (offline z),1.06471
+oracle,-1,1,walk,1,0,603.841,FB (offline z),1.06272
+oracle,-1,1,walk,1,1,518.318,FB (offline z),0.912209
+oracle,-1,1,walk,1,2,580.583,FB (offline z),1.02179
+oracle,-1,1,walk,1,3,575.2,FB (offline z),1.01232
+oracle,-1,1,walk,1,4,579.508,FB (offline z),1.0199
+oracle,-1,1,walk,1,5,588.158,FB (offline z),1.03512
+oracle,-1,1,walk,1,6,573.014,FB (offline z),1.00847
+oracle,-1,1,walk,1,7,602.029,FB (offline z),1.05953
+oracle,-1,1,walk,1,8,571.551,FB (offline z),1.00589
+oracle,-1,1,walk,1,9,489.815,FB (offline z),0.862045
+oracle,-1,1,walk,2,0,511.226,FB (offline z),1.01309
+oracle,-1,1,walk,2,1,517.921,FB (offline z),1.02636
+oracle,-1,1,walk,2,2,500.975,FB (offline z),0.992781
+oracle,-1,1,walk,2,3,484.484,FB (offline z),0.960101
+oracle,-1,1,walk,2,4,499.124,FB (offline z),0.989112
+oracle,-1,1,walk,2,5,531.047,FB (offline z),1.05237
+oracle,-1,1,walk,2,6,484.896,FB (offline z),0.960917
+oracle,-1,1,walk,2,7,522.912,FB (offline z),1.03625
+oracle,-1,1,walk,2,8,487.509,FB (offline z),0.966095
+oracle,-1,1,walk,2,9,506.086,FB (offline z),1.00291
 random,-1,1,flip,0,0,75.3833,Random,0.258704
 random,-1,1,flip,0,1,81.4098,Random,0.279385
 random,-1,1,flip,0,2,85.3699,Random,0.292976
