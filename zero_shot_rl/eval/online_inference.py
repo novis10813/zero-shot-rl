@@ -9,7 +9,7 @@ carries over between episodes of a run and starts from the prior at the start of
 
 --methods lists rules as METHOD[:PARAM][@PERIOD] (zero_shot_rl.online.selectors):
 
-    oracle      z_r of offline task inference (zero_shot_rl.latent.task_z), fixed
+    fb          z_r of offline task inference (zero_shot_rl.latent.task_z), fixed
     random      w uniform on the sphere
     ucb:BETA    OpTI-BFM
     ts:SIGMA    OpTI-BFM-TS
@@ -39,7 +39,7 @@ Logging does not change the run. zero_shot_rl.eval.latent_ranking uses the belie
 Usage (repo root):
     PYTHONPATH=. MUJOCO_GL=egl uv run python -m zero_shot_rl.eval.online_inference \
         --checkpoint <fb.pt> --dataset_path <dataset.npz> \
-        --methods oracle random ucb:0.1 ts:0.01 ucb:0.1@1000 --out runs.csv --z_dir z/
+        --methods fb random ucb:0.1 ts:0.01 ucb:0.1@1000 --out runs.csv --z_dir z/
 
 --dynamics <yaml> runs the episodes in a shifted environment (zero_shot_rl.env.dynamics);
 z_r still comes from the dataset.
@@ -59,7 +59,7 @@ from zero_shot_rl.env.dynamics import load_dynamics
 from zero_shot_rl.env.walker import STEPS, make_env
 from zero_shot_rl.latent import task_z
 from zero_shot_rl.online.fb import FBModel
-from zero_shot_rl.online.selectors import TS, UCB, Oracle, Random
+from zero_shot_rl.online.selectors import TS, UCB, OfflineZ, Random
 from zero_shot_rl.provenance import no_clobber
 
 FIELDS = ["method", "param", "period", "task", "trial", "episode", "return", "cos"]
@@ -71,7 +71,7 @@ def parse_rule(text):
     """'ucb:0.1@1000' -> ('ucb', 0.1, 1000)."""
     rule, _, period = text.partition("@")
     method, _, param = rule.partition(":")
-    if method not in ("oracle", "random", "ucb", "ts"):
+    if method not in ("fb", "random", "ucb", "ts"):
         raise ValueError(f"unknown method in {text!r}")
     if (method in ("ucb", "ts")) != bool(param):
         raise ValueError(f"{text!r}: ucb and ts take a parameter, the others none")
@@ -81,8 +81,8 @@ def parse_rule(text):
 def make_selector(args, rule, model, w_r, generator, device):
     method, param, _ = rule
     n = args.trials
-    if method == "oracle":
-        return Oracle(n, w_r)
+    if method == "fb":
+        return OfflineZ(n, w_r)
     if method == "random":
         return Random(n, model.d, generator)
     if method == "ucb":
@@ -164,7 +164,7 @@ def main():
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--dataset_path", type=str, required=True)
     parser.add_argument("--methods", nargs="+", required=True,
-                        help="rules METHOD[:PARAM][@PERIOD], e.g. oracle ucb:0.1 ts:0.01@1000")
+                        help="rules METHOD[:PARAM][@PERIOD], e.g. fb ucb:0.1 ts:0.01@1000")
     parser.add_argument("--lam", type=float, default=1.0)
     parser.add_argument("--candidates", type=int, default=128)
     parser.add_argument("--tasks", nargs="+", default=task_z.TASKS)

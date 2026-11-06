@@ -94,8 +94,8 @@ class TestRules(unittest.TestCase):
     def test_parse(self):
         self.assertEqual(parse_rule("ucb:0.1@1000"), ("ucb", 0.1, 1000))
         self.assertEqual(parse_rule("ts:0.01"), ("ts", 0.01, 1))
-        method, param, period = parse_rule("oracle")
-        self.assertEqual((method, period), ("oracle", 1))
+        method, param, period = parse_rule("fb")
+        self.assertEqual((method, period), ("fb", 1))
         for bad in ("ucb", "random:1", "lola:1"):
             with self.assertRaises(ValueError):
                 parse_rule(bad)

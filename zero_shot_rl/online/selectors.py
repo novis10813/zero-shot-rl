@@ -4,7 +4,7 @@ Rupf et al. (arXiv 2510.20264), section 4 and 5. Each rule returns w [n, d]; the
 at the latent sqrt(d) w / |w| (zero_shot_rl.online.fb). The caller asks for a new w when the
 rule's period starts and passes every transition to `observe`.
 
-    Oracle   fixed w of offline task inference
+    OfflineZ fixed w of offline task inference (standard FB)
     Random   w uniform on the sphere at every choice
     UCB      OpTI-BFM, eq. 11-12: among `candidates` uniform draws from the ellipsoid of
              radius 2 beta around the mean (footnote 6), the w that maximises
@@ -19,7 +19,7 @@ import torch
 from zero_shot_rl.online.belief import Belief
 
 
-class Oracle:
+class OfflineZ:
     def __init__(self, n, w):
         self.w = torch.as_tensor(w).double().expand(n, -1)
 

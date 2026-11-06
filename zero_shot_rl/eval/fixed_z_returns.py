@@ -9,7 +9,7 @@ first n transitions a source collected, evaluated as a fixed latent. Sources:
                     checkpoint was pre-trained on), each draw the first n transitions of
                     ceil(max n / 1000) random episodes, labelled with the task reward of the
                     next state; n are the snapshots of the first --z file
-    oracle          z_r of offline task inference (zero_shot_rl.latent.task_z), always added
+    fb              z_r of offline task inference (zero_shot_rl.latent.task_z), always added
 
 Every task vector of run i plays --episodes_per_z deterministic 1000-step episodes from env
 seeds i * episodes_per_z + e, so each n and source sees the same initial states; z_r plays
@@ -114,7 +114,7 @@ def main():
             agent.infer_z(observations_z.to(device), rewards_z[task].to(device)),
             dtype=torch.float64,
         )
-        jobs = [("oracle", i, np.nan, z_r) for i in range(args.trials)]
+        jobs = [("fb", i, np.nan, z_r) for i in range(args.trials)]
         for label, by_task in vectors.items():
             jobs += [(label, i, int(n), torch.as_tensor(by_task[task][i, j]))
                      for i in range(args.trials) for j, n in enumerate(snapshots)]
@@ -131,8 +131,8 @@ def main():
             for e in range(k):
                 rows.append({"source": label, "task": task, "trial": i, "n": n,
                              "env_seed": i * k + e, "return": returns[j * k + e]})
-        oracle = np.mean([r["return"] for r in rows if r["task"] == task and r["source"] == "oracle"])
-        print(f"{task}: oracle {oracle:.1f} over {args.trials * k} episodes", flush=True)
+        fb = np.mean([r["return"] for r in rows if r["task"] == task and r["source"] == "fb"])
+        print(f"{task}: fb {fb:.1f} over {args.trials * k} episodes", flush=True)
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)

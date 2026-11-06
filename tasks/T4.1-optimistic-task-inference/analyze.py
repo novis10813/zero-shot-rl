@@ -32,7 +32,7 @@ from analysis.table6_aggregate import TASKS, aggregate  # noqa: E402
 ROOT = Path(__file__).parent
 INPUTS, DATA, FIGURES = ROOT / "data" / "inputs", ROOT / "data", ROOT / "figures"
 SHIFTS = ["baseline", "friction_mild", "friction_strong", "actuator_mild", "actuator_strong"]
-NAMES = {"oracle": "FB (offline z)", "random": "Random", "ucb": "OpTI-BFM", "ts": "OpTI-BFM-TS"}
+NAMES = {"fb": "FB (offline z)", "random": "Random", "ucb": "OpTI-BFM", "ts": "OpTI-BFM-TS"}
 COLORS = {"FB (offline z)": "k", "Random": "tab:gray", "OpTI-BFM": "tab:blue", "OpTI-BFM-TS": "tab:orange",
           "OpTI-BFM-EP": "tab:blue", "OpTI-BFM-TS-EP": "tab:orange", "RND": "tab:green"}
 
@@ -42,7 +42,9 @@ def load(pattern):
     for path in sorted(INPUTS.glob(pattern)):
         seed = int(re.search(r"_s(\d+)\.csv$", path.name).group(1))
         frames.append(pd.read_csv(path).assign(seed=seed, file=path.stem))
-    return pd.concat(frames, ignore_index=True)
+    # the runs stored before the rule was renamed call the offline-z baseline "oracle"
+    return pd.concat(frames, ignore_index=True).replace({"method": {"oracle": "fb"},
+                                                          "source": {"oracle": "fb"}})
 
 
 def label(row):
@@ -57,9 +59,9 @@ def per_seed(runs):
             .mean().reset_index())
 
 
-def oracle_reference(scores):
+def fb_reference(scores):
     """(task, seed) -> mean FB (offline z) return over episodes."""
-    return scores[scores["method"] == "oracle"].groupby(["task", "seed"])["return"].mean()
+    return scores[scores["method"] == "fb"].groupby(["task", "seed"])["return"].mean()
 
 
 def relative(scores, reference):
@@ -111,7 +113,7 @@ def curve(ax, scores, names, title):
 
 def main_experiment():
     scores = per_seed(load("main/*.csv"))
-    reference = oracle_reference(scores)
+    reference = fb_reference(scores)
     table, chosen = select(scores)
     table.to_csv(DATA / "hyperparameters.csv", index=False, float_format="%.6g")
     print("Cumulative return over 10 episodes (mean over tasks and seeds)")
@@ -179,10 +181,10 @@ def data_efficiency():
     if not path.exists():
         return
     runs = load("fixed_z/*.csv")
-    oracle = runs[runs["source"] == "oracle"].groupby(["task", "seed"])["return"].mean()
-    scores = (runs[runs["source"] != "oracle"]
+    reference = runs[runs["source"] == "fb"].groupby(["task", "seed"])["return"].mean()
+    scores = (runs[runs["source"] != "fb"]
               .groupby(["source", "n", "task", "seed"])["return"].mean().reset_index())
-    ref = oracle.reindex(pd.MultiIndex.from_frame(scores[["task", "seed"]])).to_numpy()
+    ref = reference.reindex(pd.MultiIndex.from_frame(scores[["task", "seed"]])).to_numpy()
     scores = scores.assign(relative=scores["return"].to_numpy() / ref)
     scores.to_csv(DATA / "data_efficiency.csv", index=False, float_format="%.6g")
     print("\nRelative performance of the least-squares z from the first n transitions"
@@ -211,7 +213,7 @@ def dynamics(main):
     frames = [main.assign(shift="baseline")]
     for shift, group in runs.groupby("shift"):
         scores = per_seed(group)
-        scores = relative(scores, oracle_reference(scores))
+        scores = relative(scores, fb_reference(scores))
         frames.append(scores.assign(shift=shift, name=scores.apply(label, axis=1)))
     scores = pd.concat(frames, ignore_index=True)
     scores = scores[scores["name"].isin(["FB (offline z)", "Random", "OpTI-BFM", "OpTI-BFM-TS"])]
@@ -248,7 +250,7 @@ def dynamics(main):
             g = scores[(scores["shift"] == shift) & (scores["name"] == name)]
             curve_ = g.groupby("episode")["relative"].mean()
             reached = int((curve_ >= 0.9).idxmax()) + 1 if (curve_ >= 0.9).any() else None
-            inference.append({"shift": shift, "name": name, "first_episode_at_0.9_oracle": reached})
+            inference.append({"shift": shift, "name": name, "first_episode_at_0.9_fb": reached})
     cos = pd.concat([load("main/*.csv").assign(shift="baseline"),
                      load("dynamics/*.csv").assign(shift=lambda x: x["file"].str.split(".").str[0])])
     cos = cos[((cos["method"] == "ucb") & (cos["param"] == 0.001))

@@ -7,6 +7,6 @@ command: tasks/T4.1-optimistic-task-inference/run_online.sh {seed} {job}
 grid:
   seed: [0, 1, 2]
   job:
-    - "base --methods oracle random"
+    - "base --methods fb random"
     - "ucb --methods ucb:1 ucb:0.1 ucb:0.001"
     - "ts --methods ts:0.1 ts:0.01 ts:0.001 ts:0.0001"

@@ -53,6 +53,8 @@ UCB 用 $\lambda = 1$、$\sigma = 1$。TS 用先驗 $\mathcal N(0, I)$，觀測�
 
 ## 設定
 
+- 以離線推論的 $z_r$ 執行 FB 的規則在程式中叫 `fb`（`--methods fb`）。已存的 `data/inputs/` 與 `exp/T4.1-*` tag 對應的 job 是用舊名 `oracle` 跑的，`analyze.py` 讀取時把它視為 `fb`。
+
 - 每個 task 10 個 run，每個 run 連續 10 個 1000 步的 episode（-EP 為 50 個）。
 - run i 用以 i 為 seed 的環境，每個 episode 前 reset，因此不同方法在 run i 的初始狀態相同。
 - belief 在同一個 run 的 episode 之間保留，換 task 時重設。
@@ -97,7 +99,7 @@ lab sweep $T/configs/fixed_z.yaml       # data efficiency，需要已提交的 d
 PYTHONPATH=. MUJOCO_GL=egl uv run python -m zero_shot_rl.eval.online_inference \
   --checkpoint artifacts/T04-mcfb-pessimism/zsrl-32/800000.pt \
   --dataset_path datasets/walker/rnd/dataset.npz \
-  --methods oracle ucb:0.001 ts:0.1 --out out/runs.csv --z_dir out/z
+  --methods fb ucb:0.001 ts:0.1 --out out/runs.csv --z_dir out/z
 ```
 
 表格與圖：
