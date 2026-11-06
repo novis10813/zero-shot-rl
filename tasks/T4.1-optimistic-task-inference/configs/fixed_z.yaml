@@ -1,0 +1,7 @@
+# Data efficiency (paper section 5.2): returns of the least-squares z from the first n
+# transitions of each source, 20 episodes per source, n and task.
+on: idlab
+vram: 4G
+command: tasks/T4.1-optimistic-task-inference/run_fixed_z.sh {seed}
+grid:
+  seed: [0, 1, 2]

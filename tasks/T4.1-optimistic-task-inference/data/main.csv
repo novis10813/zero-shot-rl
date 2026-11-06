@@ -1,0 +1,481 @@
+method,param,period,task,seed,episode,return,name,relative
+fb,-1,1,flip,0,0,257.245,FB (offline z),0.882823
+fb,-1,1,flip,0,1,307.042,FB (offline z),1.05372
+fb,-1,1,flip,0,2,320.951,FB (offline z),1.10145
+fb,-1,1,flip,0,3,284.619,FB (offline z),0.976766
+fb,-1,1,flip,0,4,301.142,FB (offline z),1.03347
+fb,-1,1,flip,0,5,298.32,FB (offline z),1.02379
+fb,-1,1,flip,0,6,272.974,FB (offline z),0.936802
+fb,-1,1,flip,0,7,300.419,FB (offline z),1.03099
+fb,-1,1,flip,0,8,311.924,FB (offline z),1.07047
+fb,-1,1,flip,0,9,259.253,FB (offline z),0.889714
+fb,-1,1,flip,1,0,292.861,FB (offline z),0.981067
+fb,-1,1,flip,1,1,306.534,FB (offline z),1.02687
+fb,-1,1,flip,1,2,322.726,FB (offline z),1.08111
+fb,-1,1,flip,1,3,301.166,FB (offline z),1.00889
+fb,-1,1,flip,1,4,291.233,FB (offline z),0.975613
+fb,-1,1,flip,1,5,290.822,FB (offline z),0.974238
+fb,-1,1,flip,1,6,293.221,FB (offline z),0.982273
+fb,-1,1,flip,1,7,303.245,FB (offline z),1.01586
+fb,-1,1,flip,1,8,277.16,FB (offline z),0.928472
+fb,-1,1,flip,1,9,306.156,FB (offline z),1.02561
+fb,-1,1,flip,2,0,212.542,FB (offline z),1.16714
+fb,-1,1,flip,2,1,169.181,FB (offline z),0.929028
+fb,-1,1,flip,2,2,257.755,FB (offline z),1.41542
+fb,-1,1,flip,2,3,172.016,FB (offline z),0.944596
+fb,-1,1,flip,2,4,162.535,FB (offline z),0.892531
+fb,-1,1,flip,2,5,125.578,FB (offline z),0.68959
+fb,-1,1,flip,2,6,164.554,FB (offline z),0.90362
+fb,-1,1,flip,2,7,213.746,FB (offline z),1.17375
+fb,-1,1,flip,2,8,223.089,FB (offline z),1.22505
+fb,-1,1,flip,2,9,120.058,FB (offline z),0.659278
+fb,-1,1,run,0,0,187.59,FB (offline z),1.05687
+fb,-1,1,run,0,1,154.395,FB (offline z),0.86985
+fb,-1,1,run,0,2,188.005,FB (offline z),1.05921
+fb,-1,1,run,0,3,177.21,FB (offline z),0.998386
+fb,-1,1,run,0,4,188.154,FB (offline z),1.06005
+fb,-1,1,run,0,5,174.394,FB (offline z),0.982525
+fb,-1,1,run,0,6,165.027,FB (offline z),0.92975
+fb,-1,1,run,0,7,181.284,FB (offline z),1.02134
+fb,-1,1,run,0,8,174.007,FB (offline z),0.980345
+fb,-1,1,run,0,9,184.894,FB (offline z),1.04168
+fb,-1,1,run,1,0,250.775,FB (offline z),1.06555
+fb,-1,1,run,1,1,210.017,FB (offline z),0.892373
+fb,-1,1,run,1,2,238.838,FB (offline z),1.01484
+fb,-1,1,run,1,3,238.724,FB (offline z),1.01435
+fb,-1,1,run,1,4,237.819,FB (offline z),1.01051
+fb,-1,1,run,1,5,237.053,FB (offline z),1.00725
+fb,-1,1,run,1,6,244.139,FB (offline z),1.03736
+fb,-1,1,run,1,7,241.535,FB (offline z),1.02629
+fb,-1,1,run,1,8,234.307,FB (offline z),0.995582
+fb,-1,1,run,1,9,220.26,FB (offline z),0.935896
+fb,-1,1,run,2,0,202.922,FB (offline z),1.02299
+fb,-1,1,run,2,1,210.478,FB (offline z),1.06108
+fb,-1,1,run,2,2,203.466,FB (offline z),1.02573
+fb,-1,1,run,2,3,206.661,FB (offline z),1.04184
+fb,-1,1,run,2,4,198.842,FB (offline z),1.00242
+fb,-1,1,run,2,5,172.636,FB (offline z),0.870305
+fb,-1,1,run,2,6,180.993,FB (offline z),0.912437
+fb,-1,1,run,2,7,199.04,FB (offline z),1.00342
+fb,-1,1,run,2,8,207.129,FB (offline z),1.0442
+fb,-1,1,run,2,9,201.454,FB (offline z),1.01559
+fb,-1,1,stand,0,0,606.173,FB (offline z),0.981964
+fb,-1,1,stand,0,1,626.998,FB (offline z),1.0157
+fb,-1,1,stand,0,2,642.062,FB (offline z),1.0401
+fb,-1,1,stand,0,3,644.835,FB (offline z),1.0446
+fb,-1,1,stand,0,4,583.438,FB (offline z),0.945135
+fb,-1,1,stand,0,5,653.994,FB (offline z),1.05943
+fb,-1,1,stand,0,6,554.185,FB (offline z),0.897747
+fb,-1,1,stand,0,7,633.326,FB (offline z),1.02595
+fb,-1,1,stand,0,8,585.182,FB (offline z),0.947961
+fb,-1,1,stand,0,9,642.87,FB (offline z),1.04141
+fb,-1,1,stand,1,0,626.077,FB (offline z),0.875403
+fb,-1,1,stand,1,1,763.387,FB (offline z),1.06739
+fb,-1,1,stand,1,2,745.455,FB (offline z),1.04232
+fb,-1,1,stand,1,3,713.91,FB (offline z),0.998214
+fb,-1,1,stand,1,4,709.635,FB (offline z),0.992237
+fb,-1,1,stand,1,5,731.303,FB (offline z),1.02253
+fb,-1,1,stand,1,6,727.064,FB (offline z),1.01661
+fb,-1,1,stand,1,7,702.513,FB (offline z),0.982278
+fb,-1,1,stand,1,8,718.169,FB (offline z),1.00417
+fb,-1,1,stand,1,9,714.359,FB (offline z),0.998842
+fb,-1,1,stand,2,0,482.228,FB (offline z),0.928463
+fb,-1,1,stand,2,1,573.302,FB (offline z),1.10381
+fb,-1,1,stand,2,2,396.18,FB (offline z),0.762789
+fb,-1,1,stand,2,3,482.897,FB (offline z),0.929751
+fb,-1,1,stand,2,4,497.811,FB (offline z),0.958466
+fb,-1,1,stand,2,5,527.317,FB (offline z),1.01527
+fb,-1,1,stand,2,6,535.94,FB (offline z),1.03188
+fb,-1,1,stand,2,7,620.909,FB (offline z),1.19547
+fb,-1,1,stand,2,8,493.496,FB (offline z),0.950157
+fb,-1,1,stand,2,9,583.754,FB (offline z),1.12394
+fb,-1,1,walk,0,0,574.18,FB (offline z),1.00281
+fb,-1,1,walk,0,1,489.052,FB (offline z),0.854134
+fb,-1,1,walk,0,2,581.381,FB (offline z),1.01539
+fb,-1,1,walk,0,3,584.982,FB (offline z),1.02168
+fb,-1,1,walk,0,4,590.588,FB (offline z),1.03147
+fb,-1,1,walk,0,5,560.15,FB (offline z),0.978308
+fb,-1,1,walk,0,6,575.233,FB (offline z),1.00465
+fb,-1,1,walk,0,7,618.044,FB (offline z),1.07942
+fb,-1,1,walk,0,8,542.474,FB (offline z),0.947437
+fb,-1,1,walk,0,9,609.619,FB (offline z),1.06471
+fb,-1,1,walk,1,0,603.841,FB (offline z),1.06272
+fb,-1,1,walk,1,1,518.318,FB (offline z),0.912209
+fb,-1,1,walk,1,2,580.583,FB (offline z),1.02179
+fb,-1,1,walk,1,3,575.2,FB (offline z),1.01232
+fb,-1,1,walk,1,4,579.508,FB (offline z),1.0199
+fb,-1,1,walk,1,5,588.158,FB (offline z),1.03512
+fb,-1,1,walk,1,6,573.014,FB (offline z),1.00847
+fb,-1,1,walk,1,7,602.029,FB (offline z),1.05953
+fb,-1,1,walk,1,8,571.551,FB (offline z),1.00589
+fb,-1,1,walk,1,9,489.815,FB (offline z),0.862045
+fb,-1,1,walk,2,0,511.226,FB (offline z),1.01309
+fb,-1,1,walk,2,1,517.921,FB (offline z),1.02636
+fb,-1,1,walk,2,2,500.975,FB (offline z),0.992781
+fb,-1,1,walk,2,3,484.484,FB (offline z),0.960101
+fb,-1,1,walk,2,4,499.124,FB (offline z),0.989112
+fb,-1,1,walk,2,5,531.047,FB (offline z),1.05237
+fb,-1,1,walk,2,6,484.896,FB (offline z),0.960917
+fb,-1,1,walk,2,7,522.912,FB (offline z),1.03625
+fb,-1,1,walk,2,8,487.509,FB (offline z),0.966095
+fb,-1,1,walk,2,9,506.086,FB (offline z),1.00291
+random,-1,1,flip,0,0,75.3833,Random,0.258704
+random,-1,1,flip,0,1,81.4098,Random,0.279385
+random,-1,1,flip,0,2,85.3699,Random,0.292976
+random,-1,1,flip,0,3,82.7957,Random,0.284142
+random,-1,1,flip,0,4,85.5185,Random,0.293486
+random,-1,1,flip,0,5,80.9099,Random,0.27767
+random,-1,1,flip,0,6,86.9059,Random,0.298247
+random,-1,1,flip,0,7,81.4789,Random,0.279622
+random,-1,1,flip,0,8,77.2745,Random,0.265194
+random,-1,1,flip,0,9,82.4399,Random,0.282921
+random,-1,1,flip,1,0,102.017,Random,0.341751
+random,-1,1,flip,1,1,103.238,Random,0.345841
+random,-1,1,flip,1,2,103.799,Random,0.347722
+random,-1,1,flip,1,3,97.2883,Random,0.32591
+random,-1,1,flip,1,4,109.948,Random,0.368321
+random,-1,1,flip,1,5,109.365,Random,0.366367
+random,-1,1,flip,1,6,109.399,Random,0.36648
+random,-1,1,flip,1,7,108.7,Random,0.364141
+random,-1,1,flip,1,8,109.973,Random,0.368404
+random,-1,1,flip,1,9,112.09,Random,0.375496
+random,-1,1,flip,2,0,89.9154,Random,0.493755
+random,-1,1,flip,2,1,89.6859,Random,0.492494
+random,-1,1,flip,2,2,91.4977,Random,0.502443
+random,-1,1,flip,2,3,92.7547,Random,0.509346
+random,-1,1,flip,2,4,90.8334,Random,0.498796
+random,-1,1,flip,2,5,84.9243,Random,0.466347
+random,-1,1,flip,2,6,94.8461,Random,0.52083
+random,-1,1,flip,2,7,89.6001,Random,0.492023
+random,-1,1,flip,2,8,95.1001,Random,0.522225
+random,-1,1,flip,2,9,99.3785,Random,0.545719
+random,-1,1,run,0,0,34.0531,Random,0.191853
+random,-1,1,run,0,1,43.1935,Random,0.243349
+random,-1,1,run,0,2,36.9717,Random,0.208296
+random,-1,1,run,0,3,42.2607,Random,0.238094
+random,-1,1,run,0,4,34.5628,Random,0.194725
+random,-1,1,run,0,5,37.738,Random,0.212613
+random,-1,1,run,0,6,32.4134,Random,0.182615
+random,-1,1,run,0,7,34.6732,Random,0.195347
+random,-1,1,run,0,8,41.1421,Random,0.231792
+random,-1,1,run,0,9,38.5035,Random,0.216926
+random,-1,1,run,1,0,44.3919,Random,0.188623
+random,-1,1,run,1,1,43.8706,Random,0.186408
+random,-1,1,run,1,2,50.9851,Random,0.216638
+random,-1,1,run,1,3,45.414,Random,0.192966
+random,-1,1,run,1,4,46.7785,Random,0.198764
+random,-1,1,run,1,5,53.6751,Random,0.228068
+random,-1,1,run,1,6,50.6218,Random,0.215095
+random,-1,1,run,1,7,48.0466,Random,0.204152
+random,-1,1,run,1,8,48.6636,Random,0.206774
+random,-1,1,run,1,9,48.1901,Random,0.204762
+random,-1,1,run,2,0,41.1086,Random,0.20724
+random,-1,1,run,2,1,40.8902,Random,0.206139
+random,-1,1,run,2,2,43.6195,Random,0.219898
+random,-1,1,run,2,3,38.9867,Random,0.196543
+random,-1,1,run,2,4,37.0817,Random,0.18694
+random,-1,1,run,2,5,41.0596,Random,0.206993
+random,-1,1,run,2,6,43.3651,Random,0.218616
+random,-1,1,run,2,7,42.231,Random,0.212898
+random,-1,1,run,2,8,41.8459,Random,0.210957
+random,-1,1,run,2,9,41.4917,Random,0.209171
+random,-1,1,stand,0,0,188.791,Random,0.305831
+random,-1,1,stand,0,1,173.1,Random,0.280412
+random,-1,1,stand,0,2,177.736,Random,0.287923
+random,-1,1,stand,0,3,174.088,Random,0.282013
+random,-1,1,stand,0,4,191.407,Random,0.310068
+random,-1,1,stand,0,5,195.347,Random,0.316451
+random,-1,1,stand,0,6,183.546,Random,0.297335
+random,-1,1,stand,0,7,189.561,Random,0.307078
+random,-1,1,stand,0,8,176.737,Random,0.286303
+random,-1,1,stand,0,9,174.671,Random,0.282956
+random,-1,1,stand,1,0,223.182,Random,0.312062
+random,-1,1,stand,1,1,210.304,Random,0.294054
+random,-1,1,stand,1,2,235.299,Random,0.329003
+random,-1,1,stand,1,3,231.526,Random,0.323728
+random,-1,1,stand,1,4,199.843,Random,0.279428
+random,-1,1,stand,1,5,225.733,Random,0.315629
+random,-1,1,stand,1,6,222.685,Random,0.311367
+random,-1,1,stand,1,7,215.582,Random,0.301434
+random,-1,1,stand,1,8,222.191,Random,0.310676
+random,-1,1,stand,1,9,227.627,Random,0.318277
+random,-1,1,stand,2,0,204.981,Random,0.394662
+random,-1,1,stand,2,1,200.706,Random,0.38643
+random,-1,1,stand,2,2,195.964,Random,0.3773
+random,-1,1,stand,2,3,197.313,Random,0.379899
+random,-1,1,stand,2,4,209.689,Random,0.403728
+random,-1,1,stand,2,5,195.498,Random,0.376403
+random,-1,1,stand,2,6,213.69,Random,0.411429
+random,-1,1,stand,2,7,199.424,Random,0.383963
+random,-1,1,stand,2,8,206.859,Random,0.398278
+random,-1,1,stand,2,9,202.142,Random,0.389197
+random,-1,1,walk,0,0,80.5392,Random,0.140663
+random,-1,1,walk,0,1,78.2661,Random,0.136693
+random,-1,1,walk,0,2,75.3806,Random,0.131653
+random,-1,1,walk,0,3,88.171,Random,0.153992
+random,-1,1,walk,0,4,76.8325,Random,0.134189
+random,-1,1,walk,0,5,67.2354,Random,0.117427
+random,-1,1,walk,0,6,87.2155,Random,0.152323
+random,-1,1,walk,0,7,68.3876,Random,0.11944
+random,-1,1,walk,0,8,72.6346,Random,0.126857
+random,-1,1,walk,0,9,64.6796,Random,0.112964
+random,-1,1,walk,1,0,99.1514,Random,0.1745
+random,-1,1,walk,1,1,105.541,Random,0.185746
+random,-1,1,walk,1,2,114.945,Random,0.202296
+random,-1,1,walk,1,3,112.06,Random,0.197219
+random,-1,1,walk,1,4,105.794,Random,0.186191
+random,-1,1,walk,1,5,97.3252,Random,0.171286
+random,-1,1,walk,1,6,106.076,Random,0.186688
+random,-1,1,walk,1,7,100.276,Random,0.176479
+random,-1,1,walk,1,8,92.7365,Random,0.163211
+random,-1,1,walk,1,9,105.733,Random,0.186084
+random,-1,1,walk,2,0,97.4539,Random,0.193124
+random,-1,1,walk,2,1,104.273,Random,0.206637
+random,-1,1,walk,2,2,97.8332,Random,0.193876
+random,-1,1,walk,2,3,83.3408,Random,0.165156
+random,-1,1,walk,2,4,101.809,Random,0.201754
+random,-1,1,walk,2,5,93.8093,Random,0.185902
+random,-1,1,walk,2,6,81.7781,Random,0.162059
+random,-1,1,walk,2,7,93.1953,Random,0.184685
+random,-1,1,walk,2,8,99.7544,Random,0.197683
+random,-1,1,walk,2,9,86.7961,Random,0.172004
+ts,0.1,1,flip,0,0,229.078,OpTI-BFM-TS,0.786158
+ts,0.1,1,flip,0,1,299.413,OpTI-BFM-TS,1.02754
+ts,0.1,1,flip,0,2,316.834,OpTI-BFM-TS,1.08732
+ts,0.1,1,flip,0,3,325.444,OpTI-BFM-TS,1.11687
+ts,0.1,1,flip,0,4,339.205,OpTI-BFM-TS,1.1641
+ts,0.1,1,flip,0,5,322.888,OpTI-BFM-TS,1.1081
+ts,0.1,1,flip,0,6,303.549,OpTI-BFM-TS,1.04173
+ts,0.1,1,flip,0,7,304.551,OpTI-BFM-TS,1.04517
+ts,0.1,1,flip,0,8,366.372,OpTI-BFM-TS,1.25733
+ts,0.1,1,flip,0,9,328.231,OpTI-BFM-TS,1.12643
+ts,0.1,1,flip,1,0,250.813,OpTI-BFM-TS,0.84021
+ts,0.1,1,flip,1,1,271.764,OpTI-BFM-TS,0.910395
+ts,0.1,1,flip,1,2,262.84,OpTI-BFM-TS,0.8805
+ts,0.1,1,flip,1,3,284.26,OpTI-BFM-TS,0.952256
+ts,0.1,1,flip,1,4,293.28,OpTI-BFM-TS,0.982471
+ts,0.1,1,flip,1,5,306.707,OpTI-BFM-TS,1.02745
+ts,0.1,1,flip,1,6,289.627,OpTI-BFM-TS,0.970235
+ts,0.1,1,flip,1,7,285.802,OpTI-BFM-TS,0.957422
+ts,0.1,1,flip,1,8,267.999,OpTI-BFM-TS,0.897781
+ts,0.1,1,flip,1,9,331.227,OpTI-BFM-TS,1.10959
+ts,0.1,1,flip,2,0,189.166,OpTI-BFM-TS,1.03877
+ts,0.1,1,flip,2,1,192.529,OpTI-BFM-TS,1.05724
+ts,0.1,1,flip,2,2,248.396,OpTI-BFM-TS,1.36402
+ts,0.1,1,flip,2,3,312.278,OpTI-BFM-TS,1.71482
+ts,0.1,1,flip,2,4,263.256,OpTI-BFM-TS,1.44563
+ts,0.1,1,flip,2,5,207.146,OpTI-BFM-TS,1.1375
+ts,0.1,1,flip,2,6,332.019,OpTI-BFM-TS,1.82322
+ts,0.1,1,flip,2,7,323.24,OpTI-BFM-TS,1.77501
+ts,0.1,1,flip,2,8,347.293,OpTI-BFM-TS,1.9071
+ts,0.1,1,flip,2,9,280.697,OpTI-BFM-TS,1.5414
+ts,0.1,1,run,0,0,115.286,OpTI-BFM-TS,0.649514
+ts,0.1,1,run,0,1,194.402,OpTI-BFM-TS,1.09525
+ts,0.1,1,run,0,2,204.046,OpTI-BFM-TS,1.14958
+ts,0.1,1,run,0,3,213.696,OpTI-BFM-TS,1.20395
+ts,0.1,1,run,0,4,204.141,OpTI-BFM-TS,1.15011
+ts,0.1,1,run,0,5,221.852,OpTI-BFM-TS,1.2499
+ts,0.1,1,run,0,6,209.939,OpTI-BFM-TS,1.18278
+ts,0.1,1,run,0,7,207.119,OpTI-BFM-TS,1.16689
+ts,0.1,1,run,0,8,205.144,OpTI-BFM-TS,1.15577
+ts,0.1,1,run,0,9,222.815,OpTI-BFM-TS,1.25533
+ts,0.1,1,run,1,0,99.3038,OpTI-BFM-TS,0.421947
+ts,0.1,1,run,1,1,140.565,OpTI-BFM-TS,0.597269
+ts,0.1,1,run,1,2,148.613,OpTI-BFM-TS,0.631464
+ts,0.1,1,run,1,3,143.634,OpTI-BFM-TS,0.610307
+ts,0.1,1,run,1,4,136.34,OpTI-BFM-TS,0.579313
+ts,0.1,1,run,1,5,143.604,OpTI-BFM-TS,0.610182
+ts,0.1,1,run,1,6,162.25,OpTI-BFM-TS,0.689409
+ts,0.1,1,run,1,7,130.694,OpTI-BFM-TS,0.555327
+ts,0.1,1,run,1,8,136.944,OpTI-BFM-TS,0.581882
+ts,0.1,1,run,1,9,153.887,OpTI-BFM-TS,0.653873
+ts,0.1,1,run,2,0,111.522,OpTI-BFM-TS,0.562212
+ts,0.1,1,run,2,1,231.555,OpTI-BFM-TS,1.16733
+ts,0.1,1,run,2,2,249.442,OpTI-BFM-TS,1.25751
+ts,0.1,1,run,2,3,240.516,OpTI-BFM-TS,1.21251
+ts,0.1,1,run,2,4,234.044,OpTI-BFM-TS,1.17988
+ts,0.1,1,run,2,5,237.219,OpTI-BFM-TS,1.19589
+ts,0.1,1,run,2,6,239.082,OpTI-BFM-TS,1.20528
+ts,0.1,1,run,2,7,237.553,OpTI-BFM-TS,1.19757
+ts,0.1,1,run,2,8,255.679,OpTI-BFM-TS,1.28895
+ts,0.1,1,run,2,9,248.377,OpTI-BFM-TS,1.25214
+ts,0.1,1,stand,0,0,483.245,OpTI-BFM-TS,0.782829
+ts,0.1,1,stand,0,1,635.663,OpTI-BFM-TS,1.02974
+ts,0.1,1,stand,0,2,664.762,OpTI-BFM-TS,1.07688
+ts,0.1,1,stand,0,3,675.647,OpTI-BFM-TS,1.09451
+ts,0.1,1,stand,0,4,676.487,OpTI-BFM-TS,1.09587
+ts,0.1,1,stand,0,5,706.725,OpTI-BFM-TS,1.14485
+ts,0.1,1,stand,0,6,671.028,OpTI-BFM-TS,1.08703
+ts,0.1,1,stand,0,7,714.292,OpTI-BFM-TS,1.15711
+ts,0.1,1,stand,0,8,625.041,OpTI-BFM-TS,1.01253
+ts,0.1,1,stand,0,9,730.436,OpTI-BFM-TS,1.18326
+ts,0.1,1,stand,1,0,601.101,OpTI-BFM-TS,0.840481
+ts,0.1,1,stand,1,1,644.06,OpTI-BFM-TS,0.900548
+ts,0.1,1,stand,1,2,667.246,OpTI-BFM-TS,0.932968
+ts,0.1,1,stand,1,3,679.841,OpTI-BFM-TS,0.950578
+ts,0.1,1,stand,1,4,663.171,OpTI-BFM-TS,0.927269
+ts,0.1,1,stand,1,5,723.68,OpTI-BFM-TS,1.01187
+ts,0.1,1,stand,1,6,640.504,OpTI-BFM-TS,0.895575
+ts,0.1,1,stand,1,7,711.593,OpTI-BFM-TS,0.994974
+ts,0.1,1,stand,1,8,708.376,OpTI-BFM-TS,0.990476
+ts,0.1,1,stand,1,9,740.459,OpTI-BFM-TS,1.03534
+ts,0.1,1,stand,2,0,459.248,OpTI-BFM-TS,0.884218
+ts,0.1,1,stand,2,1,445.351,OpTI-BFM-TS,0.85746
+ts,0.1,1,stand,2,2,544.097,OpTI-BFM-TS,1.04758
+ts,0.1,1,stand,2,3,568.983,OpTI-BFM-TS,1.0955
+ts,0.1,1,stand,2,4,594.241,OpTI-BFM-TS,1.14413
+ts,0.1,1,stand,2,5,585.752,OpTI-BFM-TS,1.12778
+ts,0.1,1,stand,2,6,645.977,OpTI-BFM-TS,1.24374
+ts,0.1,1,stand,2,7,623.659,OpTI-BFM-TS,1.20077
+ts,0.1,1,stand,2,8,584.868,OpTI-BFM-TS,1.12608
+ts,0.1,1,stand,2,9,488.889,OpTI-BFM-TS,0.941287
+ts,0.1,1,walk,0,0,388.543,OpTI-BFM-TS,0.678594
+ts,0.1,1,walk,0,1,566.04,OpTI-BFM-TS,0.988595
+ts,0.1,1,walk,0,2,569.569,OpTI-BFM-TS,0.994757
+ts,0.1,1,walk,0,3,569.625,OpTI-BFM-TS,0.994857
+ts,0.1,1,walk,0,4,585.261,OpTI-BFM-TS,1.02216
+ts,0.1,1,walk,0,5,573.915,OpTI-BFM-TS,1.00235
+ts,0.1,1,walk,0,6,554.491,OpTI-BFM-TS,0.968424
+ts,0.1,1,walk,0,7,573.714,OpTI-BFM-TS,1.002
+ts,0.1,1,walk,0,8,559.86,OpTI-BFM-TS,0.977802
+ts,0.1,1,walk,0,9,532.371,OpTI-BFM-TS,0.929792
+ts,0.1,1,walk,1,0,436.009,OpTI-BFM-TS,0.767349
+ts,0.1,1,walk,1,1,644.299,OpTI-BFM-TS,1.13393
+ts,0.1,1,walk,1,2,656.212,OpTI-BFM-TS,1.15489
+ts,0.1,1,walk,1,3,657.331,OpTI-BFM-TS,1.15686
+ts,0.1,1,walk,1,4,626.213,OpTI-BFM-TS,1.1021
+ts,0.1,1,walk,1,5,632.826,OpTI-BFM-TS,1.11374
+ts,0.1,1,walk,1,6,652.676,OpTI-BFM-TS,1.14867
+ts,0.1,1,walk,1,7,650.093,OpTI-BFM-TS,1.14412
+ts,0.1,1,walk,1,8,667.404,OpTI-BFM-TS,1.17459
+ts,0.1,1,walk,1,9,639.36,OpTI-BFM-TS,1.12523
+ts,0.1,1,walk,2,0,427.619,OpTI-BFM-TS,0.847411
+ts,0.1,1,walk,2,1,515.54,OpTI-BFM-TS,1.02164
+ts,0.1,1,walk,2,2,470.925,OpTI-BFM-TS,0.933231
+ts,0.1,1,walk,2,3,495.486,OpTI-BFM-TS,0.981903
+ts,0.1,1,walk,2,4,504.9,OpTI-BFM-TS,1.00056
+ts,0.1,1,walk,2,5,398,OpTI-BFM-TS,0.788716
+ts,0.1,1,walk,2,6,457.153,OpTI-BFM-TS,0.905938
+ts,0.1,1,walk,2,7,518.741,OpTI-BFM-TS,1.02799
+ts,0.1,1,walk,2,8,463.615,OpTI-BFM-TS,0.918744
+ts,0.1,1,walk,2,9,523.844,OpTI-BFM-TS,1.0381
+ucb,0.001,1,flip,0,0,127.464,OpTI-BFM,0.437435
+ucb,0.001,1,flip,0,1,199.909,OpTI-BFM,0.686056
+ucb,0.001,1,flip,0,2,289.135,OpTI-BFM,0.992264
+ucb,0.001,1,flip,0,3,296.598,OpTI-BFM,1.01788
+ucb,0.001,1,flip,0,4,313.694,OpTI-BFM,1.07655
+ucb,0.001,1,flip,0,5,324.217,OpTI-BFM,1.11266
+ucb,0.001,1,flip,0,6,332.057,OpTI-BFM,1.13957
+ucb,0.001,1,flip,0,7,346.41,OpTI-BFM,1.18882
+ucb,0.001,1,flip,0,8,379.531,OpTI-BFM,1.30249
+ucb,0.001,1,flip,0,9,333.924,OpTI-BFM,1.14598
+ucb,0.001,1,flip,1,0,110.462,OpTI-BFM,0.370042
+ucb,0.001,1,flip,1,1,127.909,OpTI-BFM,0.428487
+ucb,0.001,1,flip,1,2,209.456,OpTI-BFM,0.701665
+ucb,0.001,1,flip,1,3,216.13,OpTI-BFM,0.724024
+ucb,0.001,1,flip,1,4,259.544,OpTI-BFM,0.86946
+ucb,0.001,1,flip,1,5,256.592,OpTI-BFM,0.859571
+ucb,0.001,1,flip,1,6,290.495,OpTI-BFM,0.973141
+ucb,0.001,1,flip,1,7,303.646,OpTI-BFM,1.0172
+ucb,0.001,1,flip,1,8,275.447,OpTI-BFM,0.922734
+ucb,0.001,1,flip,1,9,268.337,OpTI-BFM,0.898913
+ucb,0.001,1,flip,2,0,148.423,OpTI-BFM,0.815037
+ucb,0.001,1,flip,2,1,196.803,OpTI-BFM,1.08071
+ucb,0.001,1,flip,2,2,246.845,OpTI-BFM,1.3555
+ucb,0.001,1,flip,2,3,289.921,OpTI-BFM,1.59205
+ucb,0.001,1,flip,2,4,285.303,OpTI-BFM,1.56669
+ucb,0.001,1,flip,2,5,287.962,OpTI-BFM,1.58129
+ucb,0.001,1,flip,2,6,312.475,OpTI-BFM,1.7159
+ucb,0.001,1,flip,2,7,355.747,OpTI-BFM,1.95352
+ucb,0.001,1,flip,2,8,344.407,OpTI-BFM,1.89125
+ucb,0.001,1,flip,2,9,342.137,OpTI-BFM,1.87878
+ucb,0.001,1,run,0,0,100.059,OpTI-BFM,0.563726
+ucb,0.001,1,run,0,1,138.506,OpTI-BFM,0.780333
+ucb,0.001,1,run,0,2,168.662,OpTI-BFM,0.950229
+ucb,0.001,1,run,0,3,193.979,OpTI-BFM,1.09286
+ucb,0.001,1,run,0,4,196.576,OpTI-BFM,1.10749
+ucb,0.001,1,run,0,5,189.091,OpTI-BFM,1.06532
+ucb,0.001,1,run,0,6,179.747,OpTI-BFM,1.01268
+ucb,0.001,1,run,0,7,195.517,OpTI-BFM,1.10153
+ucb,0.001,1,run,0,8,209.703,OpTI-BFM,1.18145
+ucb,0.001,1,run,0,9,204.441,OpTI-BFM,1.15181
+ucb,0.001,1,run,1,0,120.142,OpTI-BFM,0.51049
+ucb,0.001,1,run,1,1,138.055,OpTI-BFM,0.586601
+ucb,0.001,1,run,1,2,142.724,OpTI-BFM,0.60644
+ucb,0.001,1,run,1,3,141.313,OpTI-BFM,0.600446
+ucb,0.001,1,run,1,4,147.518,OpTI-BFM,0.626812
+ucb,0.001,1,run,1,5,125.997,OpTI-BFM,0.535368
+ucb,0.001,1,run,1,6,123.45,OpTI-BFM,0.524544
+ucb,0.001,1,run,1,7,132.538,OpTI-BFM,0.563161
+ucb,0.001,1,run,1,8,128.452,OpTI-BFM,0.5458
+ucb,0.001,1,run,1,9,141.913,OpTI-BFM,0.602993
+ucb,0.001,1,run,2,0,87.2023,OpTI-BFM,0.439611
+ucb,0.001,1,run,2,1,144.872,OpTI-BFM,0.730343
+ucb,0.001,1,run,2,2,183.479,OpTI-BFM,0.924969
+ucb,0.001,1,run,2,3,208.446,OpTI-BFM,1.05083
+ucb,0.001,1,run,2,4,225.814,OpTI-BFM,1.13839
+ucb,0.001,1,run,2,5,238.435,OpTI-BFM,1.20202
+ucb,0.001,1,run,2,6,245.503,OpTI-BFM,1.23765
+ucb,0.001,1,run,2,7,259.841,OpTI-BFM,1.30993
+ucb,0.001,1,run,2,8,239.315,OpTI-BFM,1.20646
+ucb,0.001,1,run,2,9,224.113,OpTI-BFM,1.12982
+ucb,0.001,1,stand,0,0,434.733,OpTI-BFM,0.704242
+ucb,0.001,1,stand,0,1,453.781,OpTI-BFM,0.735098
+ucb,0.001,1,stand,0,2,654.083,OpTI-BFM,1.05958
+ucb,0.001,1,stand,0,3,809.273,OpTI-BFM,1.31098
+ucb,0.001,1,stand,0,4,660.053,OpTI-BFM,1.06925
+ucb,0.001,1,stand,0,5,708.428,OpTI-BFM,1.14761
+ucb,0.001,1,stand,0,6,797.788,OpTI-BFM,1.29237
+ucb,0.001,1,stand,0,7,713.477,OpTI-BFM,1.15579
+ucb,0.001,1,stand,0,8,756.715,OpTI-BFM,1.22583
+ucb,0.001,1,stand,0,9,732.418,OpTI-BFM,1.18647
+ucb,0.001,1,stand,1,0,505.154,OpTI-BFM,0.706324
+ucb,0.001,1,stand,1,1,656.923,OpTI-BFM,0.918533
+ucb,0.001,1,stand,1,2,643.481,OpTI-BFM,0.899739
+ucb,0.001,1,stand,1,3,742.142,OpTI-BFM,1.03769
+ucb,0.001,1,stand,1,4,717.79,OpTI-BFM,1.00364
+ucb,0.001,1,stand,1,5,680.419,OpTI-BFM,0.951386
+ucb,0.001,1,stand,1,6,623.993,OpTI-BFM,0.87249
+ucb,0.001,1,stand,1,7,708.125,OpTI-BFM,0.990126
+ucb,0.001,1,stand,1,8,717.523,OpTI-BFM,1.00327
+ucb,0.001,1,stand,1,9,612.913,OpTI-BFM,0.856997
+ucb,0.001,1,stand,2,0,353.53,OpTI-BFM,0.680672
+ucb,0.001,1,stand,2,1,343.82,OpTI-BFM,0.661977
+ucb,0.001,1,stand,2,2,448.275,OpTI-BFM,0.863091
+ucb,0.001,1,stand,2,3,525.763,OpTI-BFM,1.01228
+ucb,0.001,1,stand,2,4,462.997,OpTI-BFM,0.891436
+ucb,0.001,1,stand,2,5,505.236,OpTI-BFM,0.972761
+ucb,0.001,1,stand,2,6,574.338,OpTI-BFM,1.10581
+ucb,0.001,1,stand,2,7,566.246,OpTI-BFM,1.09023
+ucb,0.001,1,stand,2,8,608.007,OpTI-BFM,1.17063
+ucb,0.001,1,stand,2,9,494.93,OpTI-BFM,0.952918
+ucb,0.001,1,walk,0,0,199.523,OpTI-BFM,0.348469
+ucb,0.001,1,walk,0,1,395.329,OpTI-BFM,0.690447
+ucb,0.001,1,walk,0,2,515.802,OpTI-BFM,0.900853
+ucb,0.001,1,walk,0,3,497.943,OpTI-BFM,0.869663
+ucb,0.001,1,walk,0,4,562.862,OpTI-BFM,0.983045
+ucb,0.001,1,walk,0,5,494.644,OpTI-BFM,0.863901
+ucb,0.001,1,walk,0,6,534.6,OpTI-BFM,0.933685
+ucb,0.001,1,walk,0,7,593.246,OpTI-BFM,1.03611
+ucb,0.001,1,walk,0,8,560.901,OpTI-BFM,0.97962
+ucb,0.001,1,walk,0,9,417.965,OpTI-BFM,0.729981
+ucb,0.001,1,walk,1,0,272.785,OpTI-BFM,0.480085
+ucb,0.001,1,walk,1,1,537.16,OpTI-BFM,0.945369
+ucb,0.001,1,walk,1,2,608.744,OpTI-BFM,1.07135
+ucb,0.001,1,walk,1,3,644.133,OpTI-BFM,1.13363
+ucb,0.001,1,walk,1,4,592.563,OpTI-BFM,1.04287
+ucb,0.001,1,walk,1,5,661.152,OpTI-BFM,1.16359
+ucb,0.001,1,walk,1,6,667.215,OpTI-BFM,1.17426
+ucb,0.001,1,walk,1,7,676.976,OpTI-BFM,1.19144
+ucb,0.001,1,walk,1,8,662.553,OpTI-BFM,1.16605
+ucb,0.001,1,walk,1,9,659.082,OpTI-BFM,1.15994
+ucb,0.001,1,walk,2,0,397.73,OpTI-BFM,0.788181
+ucb,0.001,1,walk,2,1,479.196,OpTI-BFM,0.949622
+ucb,0.001,1,walk,2,2,444.535,OpTI-BFM,0.880934
+ucb,0.001,1,walk,2,3,433.106,OpTI-BFM,0.858285
+ucb,0.001,1,walk,2,4,448.717,OpTI-BFM,0.889221
+ucb,0.001,1,walk,2,5,412.86,OpTI-BFM,0.818163
+ucb,0.001,1,walk,2,6,465.693,OpTI-BFM,0.922863
+ucb,0.001,1,walk,2,7,510.964,OpTI-BFM,1.01258
+ucb,0.001,1,walk,2,8,513.047,OpTI-BFM,1.0167
+ucb,0.001,1,walk,2,9,421.414,OpTI-BFM,0.835116

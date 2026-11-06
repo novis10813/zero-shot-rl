@@ -1,0 +1,41 @@
+window,shift,name,stand,walk,run,flip,mean
+episode 1,actuator_mild,FB (offline z),464.504,448.89,150.834,195.77,315
+episode 1,actuator_mild,OpTI-BFM,314.071,203.659,65.8116,76.5131,165.013
+episode 1,actuator_mild,OpTI-BFM-TS,343.859,255.21,49.3547,142.426,197.713
+episode 1,actuator_mild,Random,147.606,60.2986,29.1574,68.6543,76.429
+episode 1,actuator_strong,FB (offline z),384.086,365.358,115.729,167.306,258.12
+episode 1,actuator_strong,OpTI-BFM,248.268,127.804,56.2756,63.3798,123.932
+episode 1,actuator_strong,OpTI-BFM-TS,193.544,103.744,25.914,82.4928,101.424
+episode 1,actuator_strong,Random,118.398,38.8252,22.8086,48.6874,57.1797
+episode 1,baseline,FB (offline z),571.493,563.082,213.762,254.216,400.638
+episode 1,baseline,OpTI-BFM,431.139,290.013,102.468,128.783,238.101
+episode 1,baseline,OpTI-BFM-TS,514.532,417.39,108.704,223.019,315.911
+episode 1,baseline,Random,205.652,92.3815,39.8512,89.1052,106.747
+episode 1,friction_mild,FB (offline z),455.197,510.171,157.189,229.183,337.935
+episode 1,friction_mild,OpTI-BFM,337.722,141.625,66.0634,141.523,171.733
+episode 1,friction_mild,OpTI-BFM-TS,427.662,254.483,79.1698,222.813,246.032
+episode 1,friction_mild,Random,209.044,64.9265,38.3877,101.429,103.447
+episode 1,friction_strong,FB (offline z),486.381,372.344,107.637,194.046,290.102
+episode 1,friction_strong,OpTI-BFM,359.855,94.8265,59.5325,181.876,174.023
+episode 1,friction_strong,OpTI-BFM-TS,417.341,175.555,57.6455,213.97,216.128
+episode 1,friction_strong,Random,208.243,49.7818,36.5803,101.218,98.9556
+episodes 6-10,actuator_mild,FB (offline z),467.303,439.818,153.806,205.487,316.603
+episodes 6-10,actuator_mild,OpTI-BFM,459.922,457.338,135.278,210.943,315.87
+episodes 6-10,actuator_mild,OpTI-BFM-TS,492.682,466.657,134.696,228.789,330.706
+episodes 6-10,actuator_mild,Random,153.586,55.8441,29.653,65.3548,76.1095
+episodes 6-10,actuator_strong,FB (offline z),372.431,342.453,111.876,168.853,248.903
+episodes 6-10,actuator_strong,OpTI-BFM,382.221,309.929,93.599,139.536,231.321
+episodes 6-10,actuator_strong,OpTI-BFM-TS,388.023,333.727,85.9804,139.049,236.695
+episodes 6-10,actuator_strong,Random,121.171,40.4783,22.4583,47.4492,57.8892
+episodes 6-10,baseline,FB (offline z),628.292,550.836,201.21,250.701,407.76
+episodes 6-10,baseline,OpTI-BFM,653.37,550.154,189.204,316.892,427.405
+episodes 6-10,baseline,OpTI-BFM-TS,660.085,559.871,200.811,306.49,431.814
+episodes 6-10,baseline,Random,203.42,87.8422,42.9107,94.8257,107.25
+episodes 6-10,friction_mild,FB (offline z),473.791,482.992,147.771,217.37,330.481
+episodes 6-10,friction_mild,OpTI-BFM,476.567,546.423,167.766,269.206,364.99
+episodes 6-10,friction_mild,OpTI-BFM-TS,550.084,535.776,164.042,332.361,395.566
+episodes 6-10,friction_mild,Random,202.597,62.6031,38.0275,94.63,99.4643
+episodes 6-10,friction_strong,FB (offline z),475.354,367.028,102.51,202.827,286.93
+episodes 6-10,friction_strong,OpTI-BFM,488.522,328.984,125.716,329.493,318.179
+episodes 6-10,friction_strong,OpTI-BFM-TS,517.253,357.668,135.599,336.97,336.872
+episodes 6-10,friction_strong,Random,206.645,55.6151,37.8406,98.6606,99.6903

@@ -1,0 +1,12 @@
+# OpTI-BFM (beta chosen on the stock Walker) in the four shifted Walkers of T3.2.
+# Each job value is "<shift>.<part> <online_inference args>".
+on: idlab
+vram: 4G
+command: tasks/T4.1-optimistic-task-inference/run_online.sh {seed} {job}
+grid:
+  seed: [0, 1, 2]
+  job:
+    - "friction_mild.ucb --methods ucb:0.001 --snapshots --dynamics tasks/T3.2-ood-robustness/configs/friction_mild.yaml"
+    - "friction_strong.ucb --methods ucb:0.001 --snapshots --dynamics tasks/T3.2-ood-robustness/configs/friction_strong.yaml"
+    - "actuator_mild.ucb --methods ucb:0.001 --snapshots --dynamics tasks/T3.2-ood-robustness/configs/actuator_mild.yaml"
+    - "actuator_strong.ucb --methods ucb:0.001 --snapshots --dynamics tasks/T3.2-ood-robustness/configs/actuator_strong.yaml"

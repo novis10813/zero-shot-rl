@@ -1,0 +1,9 @@
+# Predicted against actual return of 32 fixed candidate latents per task and run, in the stock
+# Walker and the four shifted Walkers of T3.2 (zero_shot_rl.eval.latent_ranking). Needs the
+# beliefs of configs/predictions.yaml under data/inputs/predictions/.
+on: idlab
+vram: 4G
+command: tasks/T4.1-optimistic-task-inference/run_ranking.sh {seed} {shift}
+grid:
+  seed: [0, 1, 2]
+  shift: [baseline, friction_mild, friction_strong, actuator_mild, actuator_strong]

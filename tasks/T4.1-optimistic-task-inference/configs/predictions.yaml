@@ -1,0 +1,20 @@
+# OpTI-BFM (beta 0.001) and OpTI-BFM-TS (sigma 0.1) with the belief and the predicted return of
+# every episode logged (zero_shot_rl.eval.online_inference --predictions_dir), in the stock Walker
+# and the four shifted Walkers of T3.2. Same rules and run seeds as the main and dynamics runs.
+# Each job value is "<shift>.<method> <online_inference args>".
+on: idlab
+vram: 4G
+command: tasks/T4.1-optimistic-task-inference/run_online.sh {seed} {job}
+grid:
+  seed: [0, 1, 2]
+  job:
+    - "baseline.ucb --methods ucb:0.001 --snapshots"
+    - "baseline.ts --methods ts:0.1 --snapshots"
+    - "friction_mild.ucb --methods ucb:0.001 --snapshots --dynamics tasks/T3.2-ood-robustness/configs/friction_mild.yaml"
+    - "friction_mild.ts --methods ts:0.1 --snapshots --dynamics tasks/T3.2-ood-robustness/configs/friction_mild.yaml"
+    - "friction_strong.ucb --methods ucb:0.001 --snapshots --dynamics tasks/T3.2-ood-robustness/configs/friction_strong.yaml"
+    - "friction_strong.ts --methods ts:0.1 --snapshots --dynamics tasks/T3.2-ood-robustness/configs/friction_strong.yaml"
+    - "actuator_mild.ucb --methods ucb:0.001 --snapshots --dynamics tasks/T3.2-ood-robustness/configs/actuator_mild.yaml"
+    - "actuator_mild.ts --methods ts:0.1 --snapshots --dynamics tasks/T3.2-ood-robustness/configs/actuator_mild.yaml"
+    - "actuator_strong.ucb --methods ucb:0.001 --snapshots --dynamics tasks/T3.2-ood-robustness/configs/actuator_strong.yaml"
+    - "actuator_strong.ts --methods ts:0.1 --snapshots --dynamics tasks/T3.2-ood-robustness/configs/actuator_strong.yaml"

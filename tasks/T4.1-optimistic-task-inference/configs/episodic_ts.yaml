@@ -1,0 +1,8 @@
+# OpTI-BFM-TS-EP (paper section 5.3): w drawn once per episode, 50 episodes per run.
+on: idlab
+vram: 4G
+command: tasks/T4.1-optimistic-task-inference/run_online.sh {seed} {job}
+grid:
+  seed: [0, 1, 2]
+  job:
+    - "ep_ts --methods ts:0.1@1000 --episodes 50 --snapshots"
