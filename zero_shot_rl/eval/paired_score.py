@@ -2,10 +2,10 @@
 
 For every `next_<name>` array of the --paired NPZ (the replayed dynamics and the stock
 rollout) it computes D_t of (s_t, a_t, s') under the stored z_r of --task, with the detector
-of zero_shot_rl.latent.shift_detector. All arrays of the input are copied, and for each
-`next_<name>` the output adds
+of zero_shot_rl.latent.shift_detector. For each `next_<name>` the output has
 
     D_<name>     [episodes, steps]
+    gap_<name>   [episodes, steps]  |s'_name - s'_rollout|_2
     mean_<name>  [z_dim]          mean of r = e - mu_0 over all samples
     cov_<name>   [z_dim, z_dim]   covariance of r over all samples
 
@@ -39,6 +39,7 @@ def score_all(agent, detector, paired, z, device):
                             s2[i:i + BATCH].to(device), z.expand(len(s[i:i + BATCH]), -1)).cpu()
              for i in range(0, len(s), BATCH)]
         name = key[len("next_"):]
+        out["gap_" + name] = np.linalg.norm(paired[key] - paired["next_rollout"], axis=-1)
         out["D_" + name] = torch.cat(d).numpy().reshape(shape)
         r = torch.cat([detector.centered(agent, s[i:i + BATCH].to(device), a[i:i + BATCH].to(device),
                                          s2[i:i + BATCH].to(device), z.expand(len(s[i:i + BATCH]), -1)).cpu()
@@ -70,7 +71,7 @@ def main():
     scores = score_all(agent, detector, paired, z, device)
     for name, d in scores.items():
         print(f"{name:24s} D mean {d.mean():8.2f}  median {np.median(d):8.2f}")
-    np.savez(args.out, **paired, **scores)
+    np.savez(args.out, episode=paired["episode"], **scores)
 
 
 if __name__ == "__main__":

@@ -45,9 +45,8 @@ def rows():
                 raise ValueError("replayed baseline does not reproduce the rollout")
             for c in CONFIGS:
                 d = data[f"D_{c}"].ravel()
-                gap = np.linalg.norm(data[f"next_{c}"] - data["next_rollout"], axis=-1)
                 out.append({
-                    "detector": detector, "seed": seed, "config": c, "state_gap": np.median(gap),
+                    "detector": detector, "seed": seed, "config": c, "state_gap": np.median(data[f"gap_{c}"]),
                     "D_stock": base.mean(), "D_config": d.mean(), "diff_mean": (d - base).mean(),
                     "frac_pos": ((d > base) + 0.5 * (d == base)).mean(), "auroc": auroc(base, d),
                 })
