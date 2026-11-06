@@ -109,6 +109,11 @@ class ShiftDetector(torch.nn.Module):
         return ((r.double() @ self.precision_chol.double()) ** 2).sum(-1)
 
     @torch.no_grad()
+    def centered(self, agent, s, a, s_next, z):
+        """r = e - mu_0 of transitions (s, a, s') under latent z."""
+        return residual(agent, s, a, s_next, z) - self.mu(s, a, z)
+
+    @torch.no_grad()
     def score(self, agent, s, a, s_next, z):
         """D of transitions (s, a, s') under latent z; tensors with the batch on axis 0."""
         return self.distance(s, a, z, residual(agent, s, a, s_next, z))

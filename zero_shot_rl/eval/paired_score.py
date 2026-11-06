@@ -3,7 +3,11 @@
 For every `next_<name>` array of the --paired NPZ (the replayed dynamics and the stock
 rollout) it computes D_t of (s_t, a_t, s') under the stored z_r of --task, with the detector
 of zero_shot_rl.latent.shift_detector. All arrays of the input are copied, and for each
-`next_<name>` the output adds `D_<name>` of shape [episodes, steps].
+`next_<name>` the output adds
+
+    D_<name>     [episodes, steps]
+    mean_<name>  [z_dim]          mean of r = e - mu_0 over all samples
+    cov_<name>   [z_dim, z_dim]   covariance of r over all samples
 
 Usage (repo root):
     PYTHONPATH=. uv run python -m zero_shot_rl.eval.paired_score \
@@ -34,7 +38,12 @@ def score_all(agent, detector, paired, z, device):
         d = [detector.score(agent, s[i:i + BATCH].to(device), a[i:i + BATCH].to(device),
                             s2[i:i + BATCH].to(device), z.expand(len(s[i:i + BATCH]), -1)).cpu()
              for i in range(0, len(s), BATCH)]
-        out["D_" + key[len("next_"):]] = torch.cat(d).numpy().reshape(shape)
+        name = key[len("next_"):]
+        out["D_" + name] = torch.cat(d).numpy().reshape(shape)
+        r = torch.cat([detector.centered(agent, s[i:i + BATCH].to(device), a[i:i + BATCH].to(device),
+                                         s2[i:i + BATCH].to(device), z.expand(len(s[i:i + BATCH]), -1)).cpu()
+                       for i in range(0, len(s), BATCH)]).double().numpy()
+        out["mean_" + name], out["cov_" + name] = r.mean(0), np.cov(r.T)
     return out
 
 
