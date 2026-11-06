@@ -26,6 +26,9 @@ transitions:
         --checkpoint <fb.pt> --dataset_path <dir>/walker/rnd/dataset.npz \
         --zs <zs.npz> --out <detector.pt>
 
+--rollouts <paired.npz> fits on stock-environment rollout transitions instead (a second NPZ of
+zero_shot_rl.eval.paired_step, from episodes other than the evaluated ones).
+
 Score transitions of a rollout with load_detector(path).score(agent, s, a, s_next, z).
 """
 
@@ -175,9 +178,12 @@ def centered(detector, draw, idx, n_batches, batch=10_000):
 def main():
     parser = ArgumentParser()
     parser.add_argument("--checkpoint", type=str, required=True)
-    parser.add_argument("--dataset_path", type=str, required=True)
+    parser.add_argument("--dataset_path", type=str, default=None)
     parser.add_argument("--out", type=str, required=True)
     parser.add_argument("--zs", type=str, default=None, help="latents NPZ of zero_shot_rl.latent.infer")
+    parser.add_argument("--rollouts", type=str, default=None,
+                        help="fit on the stock-environment transitions of a zero_shot_rl.eval.paired_step NPZ "
+                             "(observations, actions, next_rollout) instead of the dataset")
     parser.add_argument("--tasks", nargs="*", default=["walk"], help="tasks whose z_r joins the z draws")
     parser.add_argument("--task_fraction", type=float, default=0.2)
     parser.add_argument("--transitions", type=int, default=100000)
@@ -195,11 +201,18 @@ def main():
     torch.manual_seed(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     agent = load_agent(Path(args.checkpoint), device).eval()
-    buffer = OfflineReplayBuffer(
-        reward_constructor=None, dataset_path=Path(args.dataset_path), discount=DISCOUNT,
-        device=torch.device("cpu"), task="walk", relabel=False, transitions=args.transitions,
-    )
-    storage = buffer.storage
+    if args.rollouts:
+        paired = np.load(args.rollouts)
+        def flat(k):
+            return torch.as_tensor(paired[k]).reshape(-1, paired[k].shape[-1])
+
+        storage = {"observations": flat("observations"), "actions": flat("actions"),
+                   "next_observations": flat("next_rollout")}
+    else:
+        storage = OfflineReplayBuffer(
+            reward_constructor=None, dataset_path=Path(args.dataset_path), discount=DISCOUNT,
+            device=torch.device("cpu"), task="walk", relabel=False, transitions=args.transitions,
+        ).storage
     n = len(storage["observations"])
     perm = torch.as_tensor(np.random.default_rng(args.seed).permutation(n))
     splits = {"train": perm[: int(0.8 * n)], "cov": perm[int(0.8 * n): int(0.9 * n)], "val": perm[int(0.9 * n):]}
