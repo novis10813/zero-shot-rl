@@ -25,6 +25,17 @@ the least-squares task vector of eq. 4 from the first n transitions of every run
 of --snapshots, as an array [trials, len(snapshots), d]
 (zero_shot_rl.eval.fixed_z_returns evaluates them).
 
+--predictions_dir gets one <rule>.npz per rule (UCB and TS) with, per task <t>,
+
+    <t>_belief  belief mean at the end of every episode [trials, episodes, d]
+    <t>_pred    psi(s_t, w_t)^T mean, from the belief before the step's update, for the
+                heads of F mean and min, at the steps of PREDICTION_STEPS
+                [trials, episodes, len(PREDICTION_STEPS), 2]
+    <t>_actual  the return that prediction estimates, sum_i gamma^i r_{t+i} to the end of
+                the episode [trials, episodes, len(PREDICTION_STEPS)]
+
+Logging does not change the run. zero_shot_rl.eval.latent_ranking uses the belief means.
+
 Usage (repo root):
     PYTHONPATH=. MUJOCO_GL=egl uv run python -m zero_shot_rl.eval.online_inference \
         --checkpoint <fb.pt> --dataset_path <dataset.npz> \
@@ -53,6 +64,7 @@ from zero_shot_rl.provenance import no_clobber
 
 FIELDS = ["method", "param", "period", "task", "trial", "episode", "return", "cos"]
 SNAPSHOTS = [100, 200, 500, 1000, 2000, 5000, 10000]
+PREDICTION_STEPS = list(range(0, 500, 50))  # leaves 500 steps, gamma^500 < 1e-4
 
 
 def parse_rule(text):
@@ -80,7 +92,8 @@ def make_selector(args, rule, model, w_r, generator, device):
 
 
 def run_task(args, rule, model, task, task_index, w_r, reward_fn, device):
-    """Returns the CSV rows and the snapshot task vectors [trials, len(snapshots), d]."""
+    """Returns the CSV rows, the snapshot task vectors [trials, len(snapshots), d] and the
+    arrays of --predictions_dir."""
     n = args.trials
     generator = torch.Generator().manual_seed(task_index)
     method, param, period = rule
@@ -91,19 +104,31 @@ def run_task(args, rule, model, task, task_index, w_r, reward_fn, device):
     phis = torch.zeros(n, horizon, model.d, dtype=torch.float64)
     rewards = torch.zeros(n, horizon, dtype=torch.float64)
     z_n = np.zeros((n, len(snapshots), model.d))
+    log = args.predictions_dir and hasattr(selector, "belief")
+    predictions = {"belief": np.zeros((n, args.episodes, model.d)),
+                   "pred": np.zeros((n, args.episodes, len(PREDICTION_STEPS), 2)),
+                   "actual": np.zeros((n, args.episodes, len(PREDICTION_STEPS)))}
+    discounts = args.discount ** np.arange(STEPS)
     rows, step = [], 0
     for episode in range(args.episodes):
         obs = np.stack([env.reset().observation["observations"] for env in envs])
         returns = np.zeros(n)
+        episode_rewards = np.zeros((n, STEPS))
         for t in range(STEPS):
             s = torch.as_tensor(obs, dtype=torch.float32, device=device)
             if t % period == 0:
                 w = selector.choose(s).to(device)
+            if log and t in PREDICTION_STEPS:
+                sf = model.psi(s, w[:, None, :]).double()[:, 0]  # [n, heads, d]
+                value = (sf * selector.belief.mean[:, None, :]).sum(-1).cpu().numpy()
+                predictions["pred"][:, episode, PREDICTION_STEPS.index(t)] = np.stack(
+                    [value.mean(1), value.min(1)], axis=1)
             a = model.policy(s, w).cpu().numpy()
             r = np.zeros(n)
             for i, env in enumerate(envs):
                 obs[i] = env.step(a[i]).observation["observations"]
                 r[i] = reward_fn(env.physics)
+            episode_rewards[:, t] = r
             phi = model.phi(torch.as_tensor(obs, dtype=torch.float32, device=device))
             selector.observe(phi, torch.as_tensor(r, device=device))
             returns += r
@@ -114,6 +139,11 @@ def run_task(args, rule, model, task, task_index, w_r, reward_fn, device):
                 if step == size:
                     z_n[:, k] = [model.lstsq(phis[i, :size], rewards[i, :size]).numpy()
                                  for i in range(n)]
+        if log:
+            for k, t in enumerate(PREDICTION_STEPS):
+                predictions["actual"][:, episode, k] = (
+                    episode_rewards[:, t:] * discounts[: STEPS - t]).sum(1)
+            predictions["belief"][:, episode] = selector.belief.mean.cpu().numpy()
         if hasattr(selector, "belief"):
             mean = selector.belief.mean.cpu()
             cos = torch.nn.functional.cosine_similarity(mean, w_r.double().expand_as(mean), dim=1)
@@ -126,7 +156,7 @@ def run_task(args, rule, model, task, task_index, w_r, reward_fn, device):
               f"mean return {returns.mean():.1f}", flush=True)
     for env in envs:
         env.close()
-    return rows, z_n, snapshots
+    return rows, z_n, snapshots, predictions
 
 
 def main():
@@ -148,6 +178,8 @@ def main():
     parser.add_argument("--z_inference_steps", type=int, default=10000)
     parser.add_argument("--out", type=str, required=True)
     parser.add_argument("--z_dir", type=str, default=None)
+    parser.add_argument("--predictions_dir", type=str, default=None)
+    parser.add_argument("--discount", type=float, default=0.98)
     args = parser.parse_args()
     rules = {text: parse_rule(text) for text in args.methods}
     args.dynamics = load_dynamics(args.dynamics) if args.dynamics else None
@@ -171,14 +203,15 @@ def main():
         agent.infer_z(observations_z.to(device), rewards_z[task].to(device)),
         dtype=torch.float64,
     ) for task in args.tasks}
-    rows, z_out = [], {text: {} for text in rules}
+    rows, z_out, prediction_out = [], {text: {} for text in rules}, {text: {} for text in rules}
     for text, rule in rules.items():
         for task_index, task in enumerate(args.tasks):
             start = time.time()
-            task_rows, z_n, snapshots = run_task(args, rule, model, task, task_index,
-                                                 w_r[task], reward_fns[task], device)
+            task_rows, z_n, snapshots, predictions = run_task(
+                args, rule, model, task, task_index, w_r[task], reward_fns[task], device)
             rows += task_rows
             z_out[text][task] = z_n
+            prediction_out[text].update({f"{task}_{k}": v for k, v in predictions.items()})
             print(f"{text} {task}: {time.time() - start:.0f} s", flush=True)
 
     out = Path(args.out)
@@ -195,6 +228,13 @@ def main():
         for text, by_task in z_out.items():
             with no_clobber(z_dir / f"{text}.npz") as path:
                 np.savez(path, snapshots=np.array(snapshots), **by_task)
+    if args.predictions_dir:
+        directory = Path(args.predictions_dir)
+        directory.mkdir(parents=True, exist_ok=True)
+        for text, arrays in prediction_out.items():
+            if arrays["%s_belief" % args.tasks[0]].any():
+                with no_clobber(directory / f"{text}.npz") as path:
+                    np.savez(path, steps=np.array(PREDICTION_STEPS), **arrays)
 
 
 if __name__ == "__main__":

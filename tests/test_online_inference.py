@@ -4,6 +4,7 @@ import unittest
 
 import torch
 
+from zero_shot_rl.eval.latent_ranking import candidates
 from zero_shot_rl.eval.online_inference import parse_rule
 from zero_shot_rl.online.belief import Belief
 from zero_shot_rl.online.fb import FBModel
@@ -98,6 +99,22 @@ class TestRules(unittest.TestCase):
         for bad in ("ucb", "random:1", "lola:1"):
             with self.assertRaises(ValueError):
                 parse_rule(bad)
+
+
+class TestCandidates(unittest.TestCase):
+    def test_unit_vectors_at_requested_angles(self):
+        import numpy as np
+
+        rng = np.random.default_rng(0)
+        z_r, w_off = rng.standard_normal(50), rng.standard_normal(50)
+        vectors, angles = candidates(z_r, w_off, np.random.default_rng(1))
+        self.assertEqual(vectors.shape, (32, 50))
+        np.testing.assert_allclose(np.linalg.norm(vectors, axis=1), 1.0)
+        u = z_r / np.linalg.norm(z_r)
+        measured = np.degrees(np.arccos(np.clip(vectors @ u, -1, 1)))
+        np.testing.assert_allclose(measured, angles, atol=1e-6)
+        self.assertEqual(angles[0], 0.0)
+        self.assertEqual(sorted(set(angles[2:26])), [10, 20, 30, 45, 60, 90])
 
 
 if __name__ == "__main__":
