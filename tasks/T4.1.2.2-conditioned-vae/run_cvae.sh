@@ -7,6 +7,7 @@
 #   - test pairs: episodes 0-19 in the stock environment replayed one step in the stock and the
 #     eight shifted dynamics -> out/paired_raw_s$SEED.npz
 #   - training rollouts: stock episodes 100-119 -> out/train_rollouts_s$SEED.npz
+# The seeds are collected in parallel, and the models of the values of beta are trained in parallel on one GPU (log: out/cvae_beta$BETA.log).
 # Then one CVAE ensemble on the pooled training rollouts of the three seeds, and the scores of
 # the pooled test pairs (the inputs of the model are standardised with the statistics of the full
 # ExORL dataset) -> out/cvae_beta$BETA.pt, out/cvae_scored_beta$BETA.npz for each beta in BETAS.
@@ -32,21 +33,36 @@ DYN=()
 for c in "${CONFIGS[@]}"; do DYN+=("$CFG/$c.yaml"); done
 for c in "${HIGH[@]}"; do DYN+=("tasks/T4.1.2-dynamic-shift-detection/configs/$c.yaml"); done
 
-for SEED in 0 1 2; do
+# The three seeds, and then the values of beta, run as parallel processes; `wait` on each pid fails the script if one failed.
+wait_all() { for pid in "$@"; do wait "$pid"; done; }
+
+collect() {
+  SEED=$1
   CKPT=$CKPT_DIR/${CKPTS[$SEED]}.pt
   ZS=tasks/T06-latent-switching/data/inputs/zs_cql_sweep_zero-shot-rl-${CQL_SWEEPS[$SEED]}.npz
   [ -f "out/paired_raw_s$SEED.npz" ] || uv run python -m zero_shot_rl.eval.paired_step --checkpoint "$CKPT" --zs "$ZS" \
     --dynamics "${DYN[@]}" --episodes 20 --first_episode 0 --out "out/paired_raw_s$SEED.npz"
   [ -f "out/train_rollouts_s$SEED.npz" ] || uv run python -m zero_shot_rl.eval.paired_step --checkpoint "$CKPT" --zs "$ZS" \
     --dynamics "$CFG/baseline.yaml" --episodes 20 --first_episode 100 --out "out/train_rollouts_s$SEED.npz"
-done
+}
 
-for BETA in $BETAS; do
+train_and_score() {
+  BETA=$1
   uv run python -m zero_shot_rl.latent.cvae_model \
     --rollouts out/train_rollouts_s0.npz out/train_rollouts_s1.npz out/train_rollouts_s2.npz \
     --stats_dataset "$DATASET" --val_episodes 4 --members "$MEMBERS" --latent "$LATENT" --beta "$BETA" \
     --hidden "$HIDDEN" --layers "$LAYERS" --target "$TARGET" --epochs 1000 --seed 0 --out "out/cvae_beta$BETA.pt" \
-    2>&1 | tee "out/cvae_beta$BETA.log"
+    > "out/cvae_beta$BETA.log" 2>&1
   uv run python -m zero_shot_rl.latent.cvae_score --model "out/cvae_beta$BETA.pt" \
-    --paired out/paired_raw_s0.npz out/paired_raw_s1.npz out/paired_raw_s2.npz --out "out/cvae_scored_beta$BETA.npz"
-done
+    --paired out/paired_raw_s0.npz out/paired_raw_s1.npz out/paired_raw_s2.npz --out "out/cvae_scored_beta$BETA.npz" \
+    >> "out/cvae_beta$BETA.log" 2>&1
+}
+
+PIDS=()
+for SEED in 0 1 2; do collect "$SEED" & PIDS+=($!); done
+wait_all "${PIDS[@]}"
+
+PIDS=()
+for BETA in $BETAS; do train_and_score "$BETA" & PIDS+=($!); done
+wait_all "${PIDS[@]}"
+tail -n 4 out/cvae_beta*.log
