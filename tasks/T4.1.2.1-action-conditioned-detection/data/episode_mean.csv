@@ -1,0 +1,10 @@
+config,min,median,max
+stock,3.82844,4.62074,6.43067
+friction_mild,3.91653,4.76121,6.58201
+friction_strong,3.98647,4.85245,6.68297
+actuator_mild,4.82824,5.59704,7.26053
+actuator_strong,6.04916,6.80487,8.46155
+friction_high_mild,3.88287,4.754,6.42411
+friction_high_strong,4.09721,4.94776,6.7708
+actuator_high_mild,5.49357,6.50679,8.57737
+actuator_high_strong,8.32147,9.58322,11.9208
