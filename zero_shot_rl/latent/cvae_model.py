@@ -105,7 +105,7 @@ class CVAEEnsemble(torch.nn.Module):
         """Standardised regression target; the difference s' - s is taken in float64 before the cast."""
         s64, s2_64 = torch.as_tensor(s, dtype=torch.float64), torch.as_tensor(s_next, dtype=torch.float64)
         y = s2_64 if self.target == "next_state" else s2_64 - s64
-        return (y.float() - self.y_mean) / self.y_std
+        return (y.float().to(self.y_mean.device) - self.y_mean) / self.y_std
 
     @torch.no_grad()
     def displacement(self, s, a, s_next):

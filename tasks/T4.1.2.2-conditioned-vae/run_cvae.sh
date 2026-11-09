@@ -10,7 +10,7 @@
 # Then one CVAE ensemble on the pooled training rollouts of the three seeds, and the scores of
 # the pooled test pairs (the inputs of the model are standardised with the statistics of the full
 # ExORL dataset) -> out/cvae_beta$BETA.pt, out/cvae_scored_beta$BETA.npz for each beta in BETAS.
-set -eu
+set -euo pipefail
 
 CKPT_DIR=${CKPT_DIR:?}
 DATASET=${DATASET:?}
