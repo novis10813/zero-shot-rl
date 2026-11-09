@@ -1,7 +1,8 @@
 """Detection of dynamics shifts by the action-conditioned dynamics model.
 
-Reads data/inputs/dynamics_scored.npz of zero_shot_rl.latent.dynamics_score and writes
-data/detect.csv, one row per (score, config), where score is `norm` (|e|_2) or `maha` (D_dyn):
+Reads data/inputs/dynamics_scored_<run>.npz of zero_shot_rl.latent.dynamics_score (run: `delta`,
+the model regressing Delta s, or `next_state`, the one regressing s') and writes
+data/detect_<run>.csv, one row per (score, config), where score is `norm` (|e|_2) or `maha` (D_dyn):
 
     state_gap       median |s'_config - s'_stock|  (L2 over the observation)
     rel_mse         sum of the MSE of the model on the config over the variance of Delta s of
@@ -28,6 +29,7 @@ CONFIGS = [
     "friction_mild", "friction_strong", "actuator_mild", "actuator_strong",
     "friction_high_mild", "friction_high_strong", "actuator_high_mild", "actuator_high_strong",
 ]
+RUNS = ["delta", "next_state"]
 SCORES = ["norm", "maha"]
 PERCENTILES = [95, 99]
 DRAWS = 300
@@ -54,8 +56,8 @@ def best_youden(negative, positive):
     return thr[i], tpr[i], fpr[i]
 
 
-def rows():
-    data = np.load(TASK / "data/inputs/dynamics_scored.npz")
+def rows(run):
+    data = np.load(TASK / f"data/inputs/dynamics_scored_{run}.npz")
     var_delta = data["var_delta"].sum()
     rng = np.random.default_rng(0)
     n_ep = len(data["episode"])
@@ -89,15 +91,16 @@ def render(records):
 
 
 def main():
-    text = render(rows())
-    path = TASK / "data/detect.csv"
-    if "--check" in sys.argv:
-        if path.read_text() != text:
-            sys.exit(f"{path} differs from the regenerated table")
-        print("ok")
-    else:
-        path.write_text(text)
-        print(text)
+    check = "--check" in sys.argv
+    for run in RUNS:
+        text = render(rows(run))
+        path = TASK / f"data/detect_{run}.csv"
+        if check:
+            if path.read_text() != text:
+                sys.exit(f"{path} differs from the regenerated table")
+        else:
+            path.write_text(text)
+    print("ok" if check else "written")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,3 @@
+run,r2,mse_per_element,mse_per_transition,norm_p50,norm_p90,norm_p95,norm_p99,norm_mean,val_norm_median
+delta,0.938508,1.61515,38.7636,3.76251,9.31004,12.1521,19.9658,4.87378,3.49256
+next_state,0.931761,1.79235,43.0164,4.08661,9.92055,12.7323,20.2195,5.21017,3.79188

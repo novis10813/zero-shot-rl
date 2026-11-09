@@ -5,6 +5,8 @@ import unittest
 import numpy as np
 
 from analyze.detect import auroc, best_youden
+from analyze.prediction import r2_dims
+from analyze.windows import window_means
 
 
 class DetectTest(unittest.TestCase):
@@ -28,6 +30,16 @@ class DetectTest(unittest.TestCase):
         # threshold 3 gives TPR 0.75, FPR 0; every other threshold has a smaller difference
         thr, tpr, fpr = best_youden(np.arange(4.0), np.array([1.5, 4.0, 5.0, 6.0]))
         self.assertEqual((thr, tpr, fpr), (3.0, 0.75, 0.0))
+
+
+class AnalysisTest(unittest.TestCase):
+    def test_window_means_drop_the_remainder(self):
+        x = np.arange(14.0).reshape(2, 7)
+        np.testing.assert_allclose(window_means(x, 3), [1.0, 4.0, 8.0, 11.0])
+        np.testing.assert_allclose(window_means(x, 1), x.ravel())
+
+    def test_r2_dims(self):
+        np.testing.assert_allclose(r2_dims(np.array([0.0, 1.0, 2.0]), np.array([1.0, 1.0, 1.0])), [1.0, 0.0, -1.0])
 
 
 if __name__ == "__main__":
