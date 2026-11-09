@@ -24,6 +24,8 @@ from pathlib import Path
 
 import numpy as np
 
+from analysis.detection import auroc, best_youden
+
 TASK = Path(__file__).resolve().parents[1]
 CONFIGS = [
     "friction_mild", "friction_strong", "actuator_mild", "actuator_strong",
@@ -36,24 +38,6 @@ DRAWS = 300
 FIELDS = (["score", "config", "state_gap", "rel_mse", "stock", "config_median", "auroc", "lo", "hi"]
           + [f"{k}_p{p}" for p in PERCENTILES for k in ("thr", "tpr", "fpr")]
           + ["thr_j", "tpr_j", "fpr_j"])
-
-
-def auroc(negative, positive):
-    """P(positive > negative) with ties counted half."""
-    neg = np.sort(negative)
-    below = np.searchsorted(neg, positive, side="left")
-    above = np.searchsorted(neg, positive, side="right")
-    return ((below + above) / 2).mean() / len(neg)
-
-
-def best_youden(negative, positive):
-    """Threshold maximising TPR - FPR of `score > threshold`, with its TPR and FPR."""
-    neg, pos = np.sort(negative), np.sort(positive)
-    thr = np.unique(np.concatenate([neg, pos]))
-    tpr = 1 - np.searchsorted(pos, thr, side="right") / len(pos)
-    fpr = 1 - np.searchsorted(neg, thr, side="right") / len(neg)
-    i = (tpr - fpr).argmax()
-    return thr[i], tpr[i], fpr[i]
 
 
 def rows(run):
