@@ -227,7 +227,7 @@ def main():
     e_val = model.error(torch.as_tensor(val["s"], device=device), torch.as_tensor(val["a"], dtype=torch.float32, device=device),
                         torch.as_tensor(val["s2"], device=device))
     model.set_covariance(e_val.cpu())
-    d_val = model.distance(e_val.cpu())
+    d_val = model.distance(e_val).cpu()
     print(f"validation  |e| median {e_val.norm(dim=1).median():.4f}  D_dyn mean {d_val.mean():.2f} "
           f"(obs_dim {e_val.shape[1]})")
     meta = {
