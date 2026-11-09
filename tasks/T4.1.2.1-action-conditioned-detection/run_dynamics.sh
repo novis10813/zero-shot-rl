@@ -2,7 +2,7 @@
 # Action-conditioned dynamics detection of T4.1.2.1.
 #
 # Usage (repo root):
-#     CKPT_DIR=<dir with zsrl-32.pt zsrl-41.pt zsrl-42.pt> [HIDDEN=64 LAYERS=2] DATASET=<walker/rnd/dataset.npz> bash tasks/T4.1.2.1-action-conditioned-detection/run_dynamics.sh
+#     CKPT_DIR=<dir with zsrl-32.pt zsrl-41.pt zsrl-42.pt> [HIDDEN=512 LAYERS=3 TARGET=delta] DATASET=<walker/rnd/dataset.npz> bash tasks/T4.1.2.1-action-conditioned-detection/run_dynamics.sh
 # Per FB training seed (the three T06 checkpoints, as in T4.1.2):
 #   - test pairs: episodes 0-19 in the stock environment replayed one step in the stock and the
 #     eight shifted dynamics -> out/paired_raw_s$SEED.npz
@@ -14,8 +14,9 @@ set -eu
 
 CKPT_DIR=${CKPT_DIR:?}
 DATASET=${DATASET:?}
-HIDDEN=${HIDDEN:-64}   # width and number of hidden layers of the dynamics model
-LAYERS=${LAYERS:-2}
+HIDDEN=${HIDDEN:-512}   # width and number of hidden layers of the dynamics model
+LAYERS=${LAYERS:-3}
+TARGET=${TARGET:-delta}   # delta or next_state
 CKPTS=(zsrl-32 zsrl-41 zsrl-42)   # tasks/T06-latent-switching/configs/sources.json
 CQL_SWEEPS=(46 47 48)
 CONFIGS=(baseline friction_mild friction_strong actuator_mild actuator_strong)   # tasks/T3.2-ood-robustness/configs
@@ -39,6 +40,6 @@ done
 
 uv run python -m zero_shot_rl.latent.dynamics_model \
   --rollouts out/train_rollouts_s0.npz out/train_rollouts_s1.npz out/train_rollouts_s2.npz \
-  --stats_dataset "$DATASET" --val_episodes 4 --hidden "$HIDDEN" --layers "$LAYERS" --epochs 1000 --seed 0 --out out/dynamics.pt
+  --stats_dataset "$DATASET" --val_episodes 4 --hidden "$HIDDEN" --layers "$LAYERS" --target "$TARGET" --epochs 1000 --seed 0 --out out/dynamics.pt
 uv run python -m zero_shot_rl.latent.dynamics_score --model out/dynamics.pt \
   --paired out/paired_raw_s0.npz out/paired_raw_s1.npz out/paired_raw_s2.npz --out out/dynamics_scored.npz

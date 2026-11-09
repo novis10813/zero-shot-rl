@@ -94,6 +94,29 @@ class DynamicsModelTest(unittest.TestCase):
                                  (model.y_mean, stats[1][0]), (model.y_std, stats[1][1])):
             np.testing.assert_allclose(buffer.numpy(), expected)
 
+    def test_next_state_target_gives_displacement_error(self):
+        torch.manual_seed(0)
+        files = [episodes(20)]
+        masks = split_episodes([20], 4, seed=0)
+        train, val = flatten(files, masks, False), flatten(files, masks, True)
+        model = DynamicsModel(3, 2, hidden=64, layers=2, target="next_state")
+        model, best = fit(model, train, val, args(), torch.device("cpu"))
+        self.assertLess(best, 0.05)
+        s, a, s2 = val["s"], torch.as_tensor(val["a"], dtype=torch.float32), val["s2"]
+        s32 = torch.as_tensor(s, dtype=torch.float32)
+        predicted_next = (model.standardised(s32, a) * model.y_std + model.y_mean).detach()
+        np.testing.assert_allclose(model.error(s, a, s2).numpy(), (s2 - predicted_next.numpy()), atol=1e-4)
+        np.testing.assert_allclose(model(s32, a).detach().numpy(), (predicted_next - s32).numpy(), atol=1e-5)
+        # the next-state statistics are those of s (first obs_dim entries of the input statistics)
+        stats = ((np.arange(5.0), np.arange(1.0, 6.0)), (np.zeros(3), np.ones(3)))
+        fit(model, train, val, args(epochs=1), torch.device("cpu"), stats)
+        np.testing.assert_allclose(model.y_mean.numpy(), np.arange(3.0))
+        np.testing.assert_allclose(model.y_std.numpy(), np.arange(1.0, 4.0))
+
+    def test_unknown_target_is_rejected(self):
+        with self.assertRaises(ValueError):
+            DynamicsModel(3, 2, target="state")
+
     def test_save_load_roundtrip(self):
         torch.manual_seed(0)
         model = DynamicsModel(3, 2, hidden=8, layers=1).eval()

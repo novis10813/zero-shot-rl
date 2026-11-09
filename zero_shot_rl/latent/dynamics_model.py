@@ -8,14 +8,16 @@ It is trained on baseline-environment transitions only: the stock rollouts (epis
 zero_shot_rl.eval.paired_step, `observations`, `actions`, `next_rollout`) of one or several FB
 checkpoints, pooled. Episodes, not transitions, are split into training and validation, because
 neighbouring steps of an episode are almost identical. The validation set stops the training
-(best validation MSE of the standardised Delta s) and gives Sigma_0 = Cov(e) of the baseline.
+(best validation MSE of the standardised target) and gives Sigma_0 = Cov(e) of the baseline.
 A transition is scored by
 
     |e|_2                           the error in the units of the observation
     D_dyn = e^T Sigma_0^{-1} e      the Mahalanobis distance, as in zero_shot_rl.latent.shift_detector
 
 The inputs [s, a] and the target Delta s are standardised with the mean and std of a full ExORL
-dataset (--stats_dataset).
+dataset (--stats_dataset). With --target next_state the network instead regresses s' (loss: MSE
+of the standardised s') and f(s, a) = s' - s is derived from it, so e = s' - s'_predicted and the
+scores are the same quantities as with the default target Delta s.
 The scores of the validation episodes are stored in the model file, from which the threshold of
 a detector is taken (a percentile of the baseline scores).
 
@@ -36,12 +38,24 @@ import torch
 from zero_shot_rl.provenance import sha256
 
 
-class DynamicsModel(torch.nn.Module):
-    """f(s, a) -> Delta s, a ReLU MLP, with the standardisation and Sigma_0 of the baseline stored as buffers."""
+TARGETS = ("delta", "next_state")
 
-    def __init__(self, obs_dim, action_dim, hidden=64, layers=2, eps=1e-6):
+
+class DynamicsModel(torch.nn.Module):
+    """f(s, a) -> Delta s, a ReLU MLP, with the standardisation and Sigma_0 of the baseline stored as buffers.
+
+    target "delta": the network outputs Delta s (standardised). target "next_state": it outputs s'
+    (standardised with the statistics of s) and f(s, a) = s' - s, so that the error, the scores and
+    their thresholds are the same quantities in both.
+    """
+
+    def __init__(self, obs_dim, action_dim, hidden=512, layers=3, eps=1e-6, target="delta"):
         super().__init__()
-        self.config = dict(obs_dim=obs_dim, action_dim=action_dim, hidden=hidden, layers=layers, eps=eps)
+        if target not in TARGETS:
+            raise ValueError(f"target must be one of {TARGETS}")
+        self.config = dict(obs_dim=obs_dim, action_dim=action_dim, hidden=hidden, layers=layers, eps=eps,
+                           target=target)
+        self.target = target
         dims = [obs_dim + action_dim] + [hidden] * layers
         body = []
         for i, o in zip(dims[:-1], dims[1:]):
@@ -55,11 +69,12 @@ class DynamicsModel(torch.nn.Module):
         self.eps = eps
 
     def standardised(self, s, a):
-        """Network output, Delta s in units of its standard deviation."""
+        """Network output in units of the standard deviation of its target (Delta s or s')."""
         return self.net((torch.cat([s, a], -1) - self.x_mean) / self.x_std)
 
     def forward(self, s, a):
-        return self.standardised(s, a) * self.y_std + self.y_mean
+        out = self.standardised(s, a) * self.y_std + self.y_mean
+        return out - s if self.target == "next_state" else out
 
     def set_covariance(self, e):
         """Store the factor of (Cov(e) + eps I)^{-1} for the errors e [N, obs_dim] of baseline transitions."""
@@ -148,22 +163,28 @@ def fit(model, train, val, args, device, stats=None):
     """Train on `train` with early stopping on the validation MSE of the standardised Delta s.
 
     [s, a] and Delta s are standardised with `stats` = ((x_mean, x_std), (y_mean, y_std)) if given,
-    else with the training transitions.
+    else with the training transitions. With the target "next_state" the regression target is s' and
+    it is standardised with the statistics of s (the first obs_dim entries of the [s, a] statistics).
     """
+    nxt = model.target == "next_state"
     s, a = (torch.as_tensor(train[k], dtype=torch.float32, device=device) for k in ("s", "a"))
     delta = torch.as_tensor(train["s2"] - train["s"], dtype=torch.float64).float().to(device)
+    target = torch.as_tensor(train["s2"], dtype=torch.float32, device=device) if nxt else delta
     x = torch.cat([s, a], -1)
     if stats is None:
-        stats = ((x.mean(0), x.std(0)), (delta.mean(0), delta.std(0)))
+        stats = ((x.mean(0), x.std(0)), (target.mean(0), target.std(0)))
+    elif nxt:
+        stats = (stats[0], (stats[0][0][:s.shape[1]], stats[0][1][:s.shape[1]]))
     (x_mean, x_std), (y_mean, y_std) = ((torch.as_tensor(v, dtype=torch.float32) for v in pair) for pair in stats)
     model.x_mean.copy_(x_mean)
     model.x_std.copy_(x_std.clamp_min(1e-6))
     model.y_mean.copy_(y_mean)
     model.y_std.copy_(y_std.clamp_min(1e-6))
-    y = (delta - model.y_mean) / model.y_std
+    y = (target - model.y_mean) / model.y_std
 
     vs, va = (torch.as_tensor(val[k], dtype=torch.float32, device=device) for k in ("s", "a"))
-    vy = (torch.as_tensor(val["s2"] - val["s"], dtype=torch.float64).float().to(device) - model.y_mean) / model.y_std
+    vtarget = val["s2"] if nxt else val["s2"] - val["s"]
+    vy = (torch.as_tensor(vtarget, dtype=torch.float64).float().to(device) - model.y_mean) / model.y_std
 
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     best, best_state, stale = float("inf"), None, 0
@@ -202,8 +223,10 @@ def main():
                         help="ExORL dataset NPZ whose mean and std of [s, a] and of Delta s standardise "
                              "the inputs and the target (default: those of the training transitions)")
     parser.add_argument("--val_episodes", type=int, default=4, help="validation episodes per rollout file")
-    parser.add_argument("--hidden", type=int, default=64)
-    parser.add_argument("--layers", type=int, default=2)
+    parser.add_argument("--target", choices=TARGETS, default="delta",
+                        help="regress Delta s (default) or s' (the loss is then the MSE of the standardised s')")
+    parser.add_argument("--hidden", type=int, default=512)
+    parser.add_argument("--layers", type=int, default=3)
     parser.add_argument("--epochs", type=int, default=300)
     parser.add_argument("--patience", type=int, default=20)
     parser.add_argument("--batch_size", type=int, default=256)
@@ -221,7 +244,8 @@ def main():
     train, val = flatten(files, masks, False), flatten(files, masks, True)
     print(f"train {len(train['s'])} transitions, validation {len(val['s'])}", flush=True)
 
-    model = DynamicsModel(train["s"].shape[1], train["a"].shape[1], args.hidden, args.layers, args.eps).to(device)
+    model = DynamicsModel(train["s"].shape[1], train["a"].shape[1], args.hidden, args.layers, args.eps,
+                          args.target).to(device)
     stats = exorl_statistics(args.stats_dataset) if args.stats_dataset else None
     model, best = fit(model, train, val, args, device, stats)
     e_val = model.error(torch.as_tensor(val["s"], device=device), torch.as_tensor(val["a"], dtype=torch.float32, device=device),
