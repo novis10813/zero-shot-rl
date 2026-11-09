@@ -36,7 +36,3 @@ PYTHONPATH=.:tasks/T4.1.2-dynamic-shift-detection uv run python -m analyze.momen
 ```
 
 加 `--check` 逐 byte 核對既有輸出。REPORT 的表格是這兩個 csv 對 3 個 seed 的平均（`moments_summary.csv` 另有最小與最大值）。
-
-## 第一版實驗（已放棄）
-
-`zero_shot_rl/eval/shift_trace.py`、`run_shift.sh`、`analyze/summary.py` 與 `data/inputs/shift_*.npz`、`data/summary.csv` 是第一版：用 RND 資料擬合 detector，與 baseline 和偏移環境各自的完整 episode 比較。兩邊的 $(s,a)$ 分佈不同，所以比較不成立，結果不用於 REPORT，會在任務結束的清理中刪除。
