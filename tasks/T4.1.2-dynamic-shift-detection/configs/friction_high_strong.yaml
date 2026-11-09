@@ -1,0 +1,3 @@
+# Sliding friction of floor and body geoms raised from 0.7 to 3.0 (4.3x). Not calibrated against return.
+base:
+  geom_friction: {all: 3.0}
