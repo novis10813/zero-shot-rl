@@ -52,9 +52,12 @@ def mlp(in_dim, hidden, layers, out_dim):
 class CVAE(torch.nn.Module):
     """One member: encoder (x, y) -> (mu, log var) of z, decoder (x, z) -> y, on standardised x = [s, a] and y."""
 
-    def __init__(self, obs_dim, action_dim, latent, hidden, layers):
+    def __init__(self, obs_dim, action_dim, latent, hidden, layers, learn_sigma=False):
         super().__init__()
         self.latent = latent
+        self.obs_dim = obs_dim
+        # log of the std of the Gaussian decoder (sigma-VAE); fixed at sigma^2 = 1/2 (the plain squared error) if not learned
+        self.log_sigma = torch.nn.Parameter(torch.zeros(())) if learn_sigma else None
         self.encoder = mlp(obs_dim + action_dim + obs_dim, hidden, layers, 2 * latent)
         self.decoder = mlp(obs_dim + action_dim + latent, hidden, layers, obs_dim)
 
@@ -69,12 +72,15 @@ class CVAE(torch.nn.Module):
         """Mean over the batch of (squared reconstruction error + beta KL), summed over dimensions.
 
         z is sampled from q if `sample`, else it is the mean of q (the quantity scored and used for early stopping).
+        With a learned sigma the reconstruction term is the Gaussian negative log-likelihood
+        |y - dec|^2 / (2 sigma^2) + obs_dim log sigma instead of |y - dec|^2.
         """
         mu, log_var = self.encode(x, y)
         z = mu + (0.5 * log_var).exp() * torch.randn_like(mu) if sample else mu
         rec = ((self.decode(x, z) - y) ** 2).sum(-1)
         kl = -0.5 * (1 + log_var - mu ** 2 - log_var.exp()).sum(-1)
-        return (rec + beta * kl).mean(), rec.mean(), kl.mean()
+        nll = rec if self.log_sigma is None else rec / (2 * (2 * self.log_sigma).exp()) + self.obs_dim * self.log_sigma
+        return (nll + beta * kl).mean(), rec.mean(), kl.mean()
 
 
 class CVAEEnsemble(torch.nn.Module):
@@ -84,15 +90,16 @@ class CVAEEnsemble(torch.nn.Module):
     target "delta": y = Delta s (standardised). The error e = s' - s'_reconstructed is the same quantity in both.
     """
 
-    def __init__(self, obs_dim, action_dim, members=5, latent=8, hidden=512, layers=3, beta=1.0, target="next_state"):
+    def __init__(self, obs_dim, action_dim, members=5, latent=8, hidden=512, layers=3, beta=1.0, target="next_state",
+                 learn_sigma=False):
         super().__init__()
         if target not in TARGETS:
             raise ValueError(f"target must be one of {TARGETS}")
         self.config = dict(obs_dim=obs_dim, action_dim=action_dim, members=members, latent=latent,
-                           hidden=hidden, layers=layers, beta=beta, target=target)
+                           hidden=hidden, layers=layers, beta=beta, target=target, learn_sigma=learn_sigma)
         self.target = target
         self.beta = beta
-        self.members = torch.nn.ModuleList(CVAE(obs_dim, action_dim, latent, hidden, layers) for _ in range(members))
+        self.members = torch.nn.ModuleList(CVAE(obs_dim, action_dim, latent, hidden, layers, learn_sigma) for _ in range(members))
         self.register_buffer("x_mean", torch.zeros(obs_dim + action_dim))
         self.register_buffer("x_std", torch.ones(obs_dim + action_dim))
         self.register_buffer("y_mean", torch.zeros(obs_dim))
@@ -209,6 +216,7 @@ def fit(model, train, val, args, device, stats=None):
             kl_dims = (-0.5 * (1 + log_var - mu ** 2 - log_var.exp())).mean(0).cpu().numpy()
         bests.append(best)
         info.append({"best_epoch": best_epoch, "val_loss": best, "val_rec": best_rec, "val_kl": best_kl,
+                     "sigma": None if member.log_sigma is None else member.log_sigma.exp().item(),
                      "val_kl_per_dim": kl_dims})
     model.fit_info = info
     return model.eval(), bests
@@ -228,6 +236,9 @@ def main():
     parser.add_argument("--members", type=int, default=5, help="ensemble size N")
     parser.add_argument("--latent", type=int, default=8, help="dimension of z")
     parser.add_argument("--beta", type=float, default=1.0, help="weight of the KL term")
+    parser.add_argument("--learn_sigma", action="store_true",
+                        help="learn the std of the Gaussian decoder (shared by the dimensions) instead of fixing "
+                             "sigma^2 = 1/2; use with --beta 1 for the proper ELBO")
     parser.add_argument("--hidden", type=int, default=512)
     parser.add_argument("--layers", type=int, default=3)
     parser.add_argument("--epochs", type=int, default=300)
@@ -247,7 +258,7 @@ def main():
     print(f"train {len(train['s'])} transitions, validation {len(val['s'])}", flush=True)
 
     model = CVAEEnsemble(train["s"].shape[1], train["a"].shape[1], args.members, args.latent, args.hidden,
-                         args.layers, args.beta, args.target).to(device)
+                         args.layers, args.beta, args.target, args.learn_sigma).to(device)
     stats = exorl_statistics(args.stats_dataset) if args.stats_dataset else None
     model, bests = fit(model, train, val, args, device, stats)
     e_val = model.error(torch.as_tensor(val["s"], device=device),

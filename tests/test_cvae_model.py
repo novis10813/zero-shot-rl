@@ -112,6 +112,17 @@ class CVAETest(unittest.TestCase):
         self.assertEqual(float(out["gap_rollout"].max()), 0.0)
         self.assertGreater(np.median(out["mean_shift"]), np.median(out["mean_rollout"]))
 
+    def test_learned_sigma_tracks_residual(self):
+        torch.manual_seed(0)
+        files = [episodes(20)]
+        masks = split_episodes([20], 4, seed=0)
+        train, val = flatten(files, masks, False), flatten(files, masks, True)
+        model = CVAEEnsemble(3, 2, members=1, latent=2, hidden=64, layers=2, learn_sigma=True)
+        model, _ = fit(model, train, val, args(epochs=80, patience=80), torch.device("cpu"))
+        info = model.fit_info[0]
+        self.assertLess(info["sigma"], 0.5)   # the fixed decoder uses sigma = 0.71
+        self.assertIsNone(CVAEEnsemble(3, 2, members=1, hidden=8, layers=1).members[0].log_sigma)
+
     def test_unknown_target_is_rejected(self):
         with self.assertRaises(ValueError):
             CVAEEnsemble(3, 2, target="state")
