@@ -7,7 +7,8 @@ stock Walker or --dynamics), with one critic update per step once the buffer hol
 transitions. Training executes the greedy candidate, or with probability --explore a uniform
 one.
 
-After each episode count of --eval_at (0 is before training) the critics are held fixed and
+After each episode count of --eval_every (0, every, 2 every, ... and the last one; 0 is before
+training) or of the explicit list --eval_at the critics are held fixed and
 the greedy rule runs one episode in each of the --eval_episodes environments seeded
 0..eval_episodes-1, with the same candidate noise at every count. Variant `fb` is the frozen FB
 actor in the same environments. The test seeds must differ from --train_seed.
@@ -49,8 +50,12 @@ from zero_shot_rl.utils import set_seed_everywhere
 
 EVAL_FIELDS = ["variant", "task", "train_episodes", "seed", "return", "moved"]
 TRAIN_FIELDS = ["variant", "task", "episode", "return", "loss", "q_pred", "q_actual", "moved"]
-EVAL_AT = [0, 1, 2, 5, 10, 20, 50, 100]
 VALUE_STEPS = STEPS - 300  # steps whose discounted return the episode covers
+
+
+def eval_points(episodes, every):
+    """Episode counts to test at: 0, every, 2 every, ... and the last one."""
+    return sorted({*range(0, episodes + 1, every), episodes})
 
 
 def evaluate(args, agent, z, model, reward_fn):
@@ -148,7 +153,10 @@ def main():
     parser.add_argument("--dynamics", type=str, default=None,
                         help="yaml of zero_shot_rl.env.dynamics; default is the stock environment")
     parser.add_argument("--episodes", type=int, default=100)
-    parser.add_argument("--eval_at", nargs="*", type=int, default=EVAL_AT)
+    parser.add_argument("--eval_every", type=int, default=10,
+                        help="test after 0, eval_every, 2 eval_every, ... episodes")
+    parser.add_argument("--eval_at", nargs="+", type=int, default=None,
+                        help="explicit episode counts to test after; replaces --eval_every")
     parser.add_argument("--eval_episodes", type=int, default=20)
     parser.add_argument("--train_seed", type=int, default=1000)
     parser.add_argument("--candidates", type=int, default=32)
@@ -166,6 +174,8 @@ def main():
     args = parser.parse_args()
     if args.train_seed < args.eval_episodes:
         raise ValueError("--train_seed is one of the test seeds 0..eval_episodes-1")
+    if args.eval_at is None:
+        args.eval_at = eval_points(args.episodes, args.eval_every)
     args.dynamics = load_dynamics(args.dynamics) if args.dynamics else None
     out_dir = Path(args.out_dir)
     (out_dir / "q").mkdir(parents=True, exist_ok=True)
