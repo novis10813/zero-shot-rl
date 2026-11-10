@@ -1,6 +1,6 @@
 # T4.1.2.2：CVAE 轉移模型 $P(s_{t+1}\mid s_t,a_t)$
 
-依 Prashant et al. 2025（arXiv 2503.05238）實作條件 VAE ensemble，資料、切分、標準化、測試配對與 T4.1.2.1 完全相同，所以分數可直接與 T4.1.2.1 比較。結果表格見 `data/`，尚未寫 REPORT.md。
+依 Prashant et al. 2025（arXiv 2503.05238）實作條件 VAE ensemble，資料、切分、標準化、測試配對與 T4.1.2.1 完全相同，所以分數可直接與 T4.1.2.1 比較。結果見 `REPORT.md`，表格在 `data/`。
 
 | 路徑 | 內容 |
 |---|---|
