@@ -15,7 +15,7 @@ ARTIFACTS=${ARTIFACTS:-$HOME/zsrl-artifacts}
 DATASET=${DATASET:-$HOME/zsrl-datasets/walker/rnd/dataset.npz}
 CHECKPOINTS=(zsrl-32/800000.pt zsrl-41/680000.pt zsrl-42/200000.pt)
 
-export MUJOCO_GL=egl PYTHONPATH=.
+export MUJOCO_GL=egl PYTHONPATH=. OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
 uv run python -m zero_shot_rl.eval.value_correction \
   --checkpoint "$ARTIFACTS/T04-mcfb-pessimism/${CHECKPOINTS[$SEED]}" --dataset_path "$DATASET" \
   --out_dir "out/${NAME}_s${SEED}" "$@"
