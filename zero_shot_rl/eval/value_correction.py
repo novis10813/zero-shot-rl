@@ -15,12 +15,14 @@ actor in the same environments. The test seeds must differ from --train_seed.
 
 --out_dir gets
 
-    eval.csv    variant, task, train_episodes, seed, return, moved
-    train.csv   variant, task, episode, return, loss, q_pred, q_actual, moved
+    eval.csv    variant, task, train_episodes, seed, return, shift, gain
+    train.csv   variant, task, episode, return, loss, q_pred, q_actual, shift, gain
     q/<variant>_<task>.pt   the critics after the last episode (QAdapt.save)
 
-`return` is the sum of the task reward and `moved` the fraction of steps whose greedy
-candidate is not the FB action. `loss` is the mean TD loss of the episode's updates. q_pred is
+`return` is the sum of the task reward, `shift` the mean over the steps of |a - a_0|, the
+distance of the executed action to the FB action, and `gain` the mean of
+Q_adapt(s, a) - Q_adapt(s, a_0), what Q_adapt claims the executed action gains over a_0 (the
+rows of variant `fb` have 0 in both). `loss` is the mean TD loss of the episode's updates. q_pred is
 the mean Q_adapt of the executed action over the steps t < 700 of the episode and q_actual the
 mean discounted return sum_i discount^i r_{t+1+i} to the end of the episode from the same
 steps (discount^300 < 0.003).
@@ -48,8 +50,8 @@ from zero_shot_rl.online.value_correction import VARIANTS, Buffer, QAdapt, rewar
 from zero_shot_rl.provenance import no_clobber
 from zero_shot_rl.utils import set_seed_everywhere
 
-EVAL_FIELDS = ["variant", "task", "train_episodes", "seed", "return", "moved"]
-TRAIN_FIELDS = ["variant", "task", "episode", "return", "loss", "q_pred", "q_actual", "moved"]
+EVAL_FIELDS = ["variant", "task", "train_episodes", "seed", "return", "shift", "gain"]
+TRAIN_FIELDS = ["variant", "task", "episode", "return", "loss", "q_pred", "q_actual", "shift", "gain"]
 VALUE_STEPS = STEPS - 300  # steps whose discounted return the episode covers
 
 
@@ -60,27 +62,28 @@ def eval_points(episodes, every):
 
 def evaluate(args, agent, z, model, reward_fn):
     """One greedy episode per test environment; model None is the frozen FB actor. Returns
-    the returns [eval_episodes] and the fraction of moved steps [eval_episodes]."""
+    the returns, shifts and gains [eval_episodes] (see the module docstring)."""
     n = args.eval_episodes
     generator = torch.Generator().manual_seed(args.seed)
     envs = [make_env(i, args.dynamics) for i in range(n)]
     obs = np.stack([env.reset().observation["observations"] for env in envs])
-    returns, moved = np.zeros(n), np.zeros(n)
+    returns, shift, gain = np.zeros(n), np.zeros(n), np.zeros(n)
     for _ in range(STEPS):
         s = torch.as_tensor(obs, dtype=torch.float32, device=z.device)
         if model is None:
             with torch.no_grad():
                 a = policy(agent, s, z.expand(n, -1))
         else:
-            a, index, _ = model.act(s, generator)
-            moved += (index != 0).cpu().numpy()
+            a, info = model.act(s, generator)
+            shift += info["shift"].cpu().numpy()
+            gain += info["gain"].cpu().numpy()
         a = a.cpu().numpy()
         for i, env in enumerate(envs):
             obs[i] = env.step(a[i]).observation["observations"]
             returns[i] += reward_fn(env.physics)
     for env in envs:
         env.close()
-    return returns, moved / STEPS
+    return returns, shift / STEPS, gain / STEPS
 
 
 def run(args, agent, z, scale, variant, task, reward_fn):
@@ -99,25 +102,28 @@ def run(args, agent, z, scale, variant, task, reward_fn):
     eval_rows, train_rows = [], []
 
     def test(train_episodes):
-        returns, moved = evaluate(args, agent, z, model, reward_fn)
+        returns, shift, gain = evaluate(args, agent, z, model, reward_fn)
         eval_rows.extend({"variant": variant, "task": task, "train_episodes": train_episodes,
-                          "seed": i, "return": returns[i], "moved": moved[i]}
+                          "seed": i, "return": returns[i], "shift": shift[i],
+                          "gain": gain[i]}
                          for i in range(len(returns)))
         print(f"{variant} {task} after {train_episodes} episodes: "
-              f"test return {returns.mean():.1f}, moved {moved.mean():.2f}", flush=True)
+              f"test return {returns.mean():.1f}, shift {shift.mean():.2f}, "
+              f"gain {gain.mean():.2f}", flush=True)
 
     if 0 in args.eval_at:
         test(0)
     for episode in range(args.episodes):
         obs = torch.as_tensor(env.reset().observation["observations"],
                               dtype=torch.float32, device=z.device)
-        rewards, values, losses, moved = np.zeros(STEPS), np.zeros(STEPS), [], 0
+        rewards, values, losses = np.zeros(STEPS), np.zeros(STEPS), []
+        shift, gain = np.zeros(STEPS), np.zeros(STEPS)
         for t in range(STEPS):
-            a, index, value = model.act(obs.unsqueeze(0), generator, args.explore)
+            a, info = model.act(obs.unsqueeze(0), generator, args.explore)
             next_obs = torch.as_tensor(env.step(a[0].cpu().numpy()).observation["observations"],
                                        dtype=torch.float32, device=z.device)
-            rewards[t], values[t] = reward_fn(env.physics), value.item()
-            moved += index.item() != 0
+            rewards[t], values[t] = reward_fn(env.physics), info["value"].item()
+            shift[t], gain[t] = info["shift"].item(), info["gain"].item()
             buffer.add(obs, a[0], rewards[t], next_obs)
             obs = next_obs
             if buffer.size >= args.warmup:
@@ -127,7 +133,7 @@ def run(args, agent, z, scale, variant, task, reward_fn):
             "variant": variant, "task": task, "episode": episode, "return": rewards.sum(),
             "loss": np.mean(losses) if losses else float("nan"),
             "q_pred": values[:VALUE_STEPS].mean(), "q_actual": np.mean(actual),
-            "moved": moved / STEPS})
+            "shift": shift.mean(), "gain": gain.mean()})
         if episode + 1 in args.eval_at:
             test(episode + 1)
     env.close()
@@ -202,7 +208,7 @@ def main():
         scale = reward_scale(agent, observations_z, rewards)
         returns, _ = evaluate(args, agent, z, None, reward_fns[task])
         eval_rows += [{"variant": "fb", "task": task, "train_episodes": 0, "seed": i,
-                       "return": r, "moved": 0.0} for i, r in enumerate(returns)]
+                       "return": r, "shift": 0.0, "gain": 0.0} for i, r in enumerate(returns)]
         print(f"fb {task}: test return {returns.mean():.1f}, scale {scale:.4g}", flush=True)
         for variant in args.variants:
             start = time.time()

@@ -115,8 +115,9 @@ class QAdapt:
 
     @torch.no_grad()
     def act(self, obs, generator, explore=0.0):
-        """[b, d_s] -> the action [b, d_a], its candidate index [b] and its value [b]. The
-        action is the greedy candidate, or with probability `explore` a uniform one."""
+        """[b, d_s] -> the action [b, d_a] and a dict of [b] tensors: its candidate `index`,
+        its `value` Q_adapt, `shift` = |a - a_0| and `gain` = Q_adapt(s, a) - Q_adapt(s, a_0).
+        The action is the greedy candidate, or with probability `explore` a uniform one."""
         candidates = self.propose(obs, generator)
         values = self.values(obs, candidates)
         index = values.argmax(1)
@@ -125,7 +126,11 @@ class QAdapt:
             random = torch.rand(len(obs), generator=generator) < explore
             index = torch.where(random.to(index.device), uniform.to(index.device), index)
         rows = torch.arange(len(obs), device=index.device)
-        return candidates[rows, index], index, values[rows, index]
+        action = candidates[rows, index]
+        info = {"index": index, "value": values[rows, index],
+                "shift": (action - candidates[:, 0]).norm(dim=1),
+                "gain": values[rows, index] - values[:, 0]}
+        return action, info
 
     def update(self, batch, generator):
         """One gradient step of both critics on (s, a, r, s'); returns the TD loss."""

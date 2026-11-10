@@ -76,14 +76,18 @@ class TestQAdapt(unittest.TestCase):
     def test_act_is_greedy_and_explores(self):
         _, _, model = make("residual")
         obs = torch.randn(64, D_S)
-        action, index, value = model.act(obs, torch.Generator().manual_seed(3))
+        action, info = model.act(obs, torch.Generator().manual_seed(3))
+        index, value = info["index"], info["value"]
         candidates = model.propose(obs, torch.Generator().manual_seed(3))
         values = model.values(obs, candidates)
         torch.testing.assert_close(index, values.argmax(1))
         torch.testing.assert_close(value, values.max(1).values)
         torch.testing.assert_close(action, candidates[torch.arange(64), index])
-        _, explored, _ = model.act(obs, torch.Generator().manual_seed(3), explore=1.0)
-        self.assertGreater((explored != index).float().mean().item(), 0.5)
+        torch.testing.assert_close(info["shift"], (action - candidates[:, 0]).norm(dim=1))
+        torch.testing.assert_close(info["gain"], value - values[:, 0])
+        self.assertGreaterEqual(info["gain"].min().item(), 0.0)
+        _, info = model.act(obs, torch.Generator().manual_seed(3), explore=1.0)
+        self.assertGreater((info["index"] != index).float().mean().item(), 0.5)
 
     def test_direct_converges_to_constant_reward_value(self):
         # s' = s and a = pi(s) with one candidate, so the target is evaluated on the batch
