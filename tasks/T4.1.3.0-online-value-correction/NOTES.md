@@ -29,11 +29,11 @@ Frozen FB（F、B、actor、z 全部凍結），在固定 task latent $z$ 下線
 | 組 | 內容 | job 數 |
 |---|---|---|
 | A（表 1、3） | Direct、Residual × 3 個環境 × 3 個 FB seed，不限制半徑 | 18 |
-| B（表 2） | Residual × $\epsilon\in\{0.1,0.2,0.4\}$ × `friction_mild`、`actuator_mild` × 3 個 FB seed | 18 |
+| B（表 2） | Residual × $\epsilon\in\{0.1,0.2,0.4\}$ × clean、`friction_mild`、`actuator_mild` × 3 個 FB seed | 27 |
 
 每個 job 是 1 個 task（walk）、500 個 episode。上一批 pilot 的時間（100 個 episode 約 32 分鐘 Direct、45 分鐘 Residual，兩個 job 共用一張 GPU）推算，一個 job 約 3 到 4 小時。每個 job 約 8GB RAM、GPU 不到 1.5GB。idlab1 有 24 核、123GB RAM、2 張 GPU，同時最多跑 6 個 job。
 
-Clean 上不跑組 B，因為沒有 drift 就沒有修正的對象。
+組 B 包含 clean：沒有 drift 時，可以看學到的 Q 能把原本 FB 的 F 改善到什麼程度。
 
 ## 開跑前的程式待辦
 
@@ -51,7 +51,7 @@ Clean 上不跑組 B，因為沒有 drift 就沒有修正的對象。
 | `zsrl-ovc-4`、`zsrl-ovc-5` | idlab，Direct 與 Residual，walk，Actuator Strong，seed 0，500 個 episode | 舊輸出格式（`moved`） |
 | `zsrl-ovc-12` 到 `17` | idlab1，clean、Friction Strong、Actuator Strong 各 Direct 與 Residual，4 個 task，seed 0，500 個 episode | 新輸出格式（`shift`、`gain`） |
 
-它們的結果不進三張表（Strong 與 4 個 task），要不要停掉待使用者決定。
+`zsrl-ovc-12` 到 `17` 已由使用者決定停掉（`lab stop`，狀態 cancelled），其輸出不使用。`zsrl-ovc-4`、`zsrl-ovc-5` 仍在 idlab 上跑，結果不進三張表。
 
 ## 在 ssh novis 上跑實驗的注意事項
 
