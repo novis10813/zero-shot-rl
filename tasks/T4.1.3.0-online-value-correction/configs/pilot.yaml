@@ -1,0 +1,11 @@
+# Pilot: Direct and Residual Q on walk in Actuator Strong of T3.2, FB seed 0, 100 training
+# episodes each, tested after 0, 1, 2, 5, 10, 20, 50 and 100 episodes on 20 test episodes.
+# Each job value is "<name> <value_correction args>".
+on: idlab
+vram: 4G
+command: tasks/T4.1.3.0-online-value-correction/run.sh {seed} {job}
+grid:
+  seed: [0]
+  job:
+    - "pilot.direct --variants direct --tasks walk --dynamics tasks/T3.2-ood-robustness/configs/actuator_strong.yaml"
+    - "pilot.residual --variants residual --tasks walk --dynamics tasks/T3.2-ood-robustness/configs/actuator_strong.yaml"
