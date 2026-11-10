@@ -1,0 +1,11 @@
+# Pilot: Residual Q (256x2) on walk in Actuator Mild of T3.2, FB seed 0, 100 training episodes,
+# tested after 0, 10, ... 100 episodes on 5 test episodes. radius 0.2 against unbounded.
+# Each job value is "<name> <value_correction args>".
+on: idlab
+vram: 4G
+command: tasks/T4.1.3.0-online-value-correction/run.sh {seed} {job} --tasks walk --episodes 100 --eval_every 10 --eval_episodes 5 --hidden 256 --variants residual --dynamics tasks/T3.2-ood-robustness/configs/actuator_mild.yaml
+grid:
+  seed: [0]
+  job:
+    - "pilot_radius.r0.2 --radius 0.2"
+    - "pilot_radius.unbounded"
