@@ -86,6 +86,13 @@ def evaluate(args, agent, z, model, reward_fn):
     return returns, shift / STEPS, gain / STEPS
 
 
+def frozen_rows(args, agent, z, task, reward_fn):
+    """The rows of eval.csv of the frozen FB actor."""
+    returns, _, _ = evaluate(args, agent, z, None, reward_fn)
+    return [{"variant": "fb", "task": task, "train_episodes": 0, "seed": i, "return": r,
+             "shift": 0.0, "gain": 0.0} for i, r in enumerate(returns)]
+
+
 def run(args, agent, z, scale, variant, task, reward_fn):
     """Trains one Q_adapt and tests it at args.eval_at. Returns the rows of eval.csv, the
     rows of train.csv and the trained QAdapt."""
@@ -208,10 +215,10 @@ def main():
         z = torch.as_tensor(agent.infer_z(observations_z, rewards),
                             dtype=torch.float32, device=device)
         scale = reward_scale(agent, observations_z, rewards)
-        returns, _ = evaluate(args, agent, z, None, reward_fns[task])
-        eval_rows += [{"variant": "fb", "task": task, "train_episodes": 0, "seed": i,
-                       "return": r, "shift": 0.0, "gain": 0.0} for i, r in enumerate(returns)]
-        print(f"fb {task}: test return {returns.mean():.1f}, scale {scale:.4g}", flush=True)
+        rows = frozen_rows(args, agent, z, task, reward_fns[task])
+        eval_rows += rows
+        print(f"fb {task}: test return {np.mean([r['return'] for r in rows]):.1f}, "
+              f"scale {scale:.4g}", flush=True)
         for variant in args.variants:
             start = time.time()
             rows, logs, model = run(args, agent, z, scale, variant, task, reward_fns[task])

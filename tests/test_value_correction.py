@@ -200,6 +200,17 @@ class TestEntry(unittest.TestCase):
         self.assertEqual(entry.eval_points(100, 25), [0, 25, 50, 75, 100])
         self.assertEqual(entry.eval_points(100, 30), [0, 30, 60, 90, 100])
 
+    def test_frozen_fb_rows(self):
+        agent = FakeAgent()
+        args = Namespace(seed=0, dynamics=None, eval_episodes=3)
+        z = torch.ones(D_Z)
+        rows = entry.frozen_rows(args, agent, z, "walk", lambda physics: physics / 20)
+        self.assertEqual([r["seed"] for r in rows], [0, 1, 2])
+        for row in rows:
+            self.assertEqual(list(row), entry.EVAL_FIELDS)
+            self.assertEqual((row["variant"], row["shift"], row["gain"]), ("fb", 0.0, 0.0))
+            self.assertAlmostEqual(row["return"], sum(range(1, 21)) / 20)
+
     def test_run_rows_and_determinism(self):
         eval_rows, train_rows, _ = self.run_once()
         self.assertEqual([(r["train_episodes"], r["seed"]) for r in eval_rows],
