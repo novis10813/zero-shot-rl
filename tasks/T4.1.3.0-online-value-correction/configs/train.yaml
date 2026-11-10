@@ -1,0 +1,27 @@
+# Training of Direct and Residual Q on walk in the stock Walker, Friction Mild and Actuator Mild of
+# T3.2, FB seed 0: 500 training episodes, the critics saved after every 10 episodes (q/*_ep<n>.pt),
+# no tests. The tests of the saved critics run apart, with zero_shot_rl.eval.value_correction_checkpoints.
+# Unbounded Direct and Residual make table 1 and the last column of table 2; residual_r<e> are
+# the radii of table 2.
+# Each job value is "<environment>.<variant> <value_correction args>".
+on: idlab1
+vram: 4G
+command: tasks/T4.1.3.0-online-value-correction/run.sh {seed} {job} --tasks walk --episodes 500 --train_only --save_every 10
+grid:
+  seed: [0]
+  job:
+    - "clean.direct --variants direct"
+    - "clean.residual --variants residual"
+    - "clean.residual_r0.1 --variants residual --radius 0.1"
+    - "clean.residual_r0.2 --variants residual --radius 0.2"
+    - "clean.residual_r0.4 --variants residual --radius 0.4"
+    - "friction_mild.direct --variants direct --dynamics tasks/T3.2-ood-robustness/configs/friction_mild.yaml"
+    - "friction_mild.residual --variants residual --dynamics tasks/T3.2-ood-robustness/configs/friction_mild.yaml"
+    - "friction_mild.residual_r0.1 --variants residual --radius 0.1 --dynamics tasks/T3.2-ood-robustness/configs/friction_mild.yaml"
+    - "friction_mild.residual_r0.2 --variants residual --radius 0.2 --dynamics tasks/T3.2-ood-robustness/configs/friction_mild.yaml"
+    - "friction_mild.residual_r0.4 --variants residual --radius 0.4 --dynamics tasks/T3.2-ood-robustness/configs/friction_mild.yaml"
+    - "actuator_mild.direct --variants direct --dynamics tasks/T3.2-ood-robustness/configs/actuator_mild.yaml"
+    - "actuator_mild.residual --variants residual --dynamics tasks/T3.2-ood-robustness/configs/actuator_mild.yaml"
+    - "actuator_mild.residual_r0.1 --variants residual --radius 0.1 --dynamics tasks/T3.2-ood-robustness/configs/actuator_mild.yaml"
+    - "actuator_mild.residual_r0.2 --variants residual --radius 0.2 --dynamics tasks/T3.2-ood-robustness/configs/actuator_mild.yaml"
+    - "actuator_mild.residual_r0.4 --variants residual --radius 0.4 --dynamics tasks/T3.2-ood-robustness/configs/actuator_mild.yaml"

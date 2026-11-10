@@ -1,7 +1,9 @@
 """Component tests for zero_shot_rl.online.value_correction and its entry module."""
 
 import math
+import tempfile
 import unittest
+from pathlib import Path
 from argparse import Namespace
 from unittest import mock
 
@@ -9,6 +11,7 @@ import torch
 
 from zero_shot_rl.env.walker import policy
 from zero_shot_rl.eval import value_correction as entry
+from zero_shot_rl.eval import value_correction_checkpoints as checkpoints
 from zero_shot_rl.online.value_correction import Buffer, QAdapt, reward_scale
 
 D_S, D_A, D_Z = 24, 6, 5
@@ -105,6 +108,7 @@ class TestQAdapt(unittest.TestCase):
         torch.testing.assert_close(action, candidates[torch.arange(64), index])
         torch.testing.assert_close(info["shift"], (action - candidates[:, 0]).norm(dim=1))
         torch.testing.assert_close(info["gain"], value - values[:, 0])
+        torch.testing.assert_close(info["at_fb"], (index == 0).float())
         self.assertGreaterEqual(info["gain"].min().item(), 0.0)
         _, info = model.act(obs, torch.Generator().manual_seed(3), explore=1.0)
         self.assertGreater((info["index"] != index).float().mean().item(), 0.5)
@@ -134,6 +138,20 @@ class TestQAdapt(unittest.TestCase):
                 self.assertIsNone(p.grad)
         self.assertEqual(losses[0], losses[1])
         self.assertNotEqual(losses[0][0], losses[0][-1])
+
+    def test_save_and_load_round_trip(self):
+        agent, _, model = make("residual", radius=0.3, layers=3)
+        g = torch.Generator().manual_seed(0)
+        for _ in range(3):
+            model.update(batch(32), g)
+        with tempfile.TemporaryDirectory() as d:
+            model.save(Path(d) / "m.pt")
+            loaded = QAdapt.load(Path(d) / "m.pt", agent, D_S, D_A)
+        obs = torch.randn(8, D_S)
+        a, _ = model.act(obs, torch.Generator().manual_seed(5))
+        b, _ = loaded.act(obs, torch.Generator().manual_seed(5))
+        torch.testing.assert_close(a, b)
+        self.assertEqual((loaded.radius, loaded.layers), (0.3, 3))
 
     def test_reward_scale(self):
         agent = FakeAgent()
@@ -193,7 +211,7 @@ class TestEntry(unittest.TestCase):
         args = Namespace(seed=0, train_seed=1000, dynamics=None, candidates=4, sigma=0.2, radius=0.3,
                          hidden=16, learning_rate=1e-3, tau=0.01, discount=0.98, episodes=2,
                          eval_at=[0, 2], eval_episodes=3, explore=0.3, warmup=10,
-                         batch_size=8)
+                         batch_size=8, save_every=0, out_dir=".")
         return entry.run(args, agent, z, 0.3, "residual", "walk", lambda physics: physics / 20)
 
     def test_eval_points_are_a_fixed_interval(self):
@@ -208,8 +226,34 @@ class TestEntry(unittest.TestCase):
         self.assertEqual([r["seed"] for r in rows], [0, 1, 2])
         for row in rows:
             self.assertEqual(list(row), entry.EVAL_FIELDS)
-            self.assertEqual((row["variant"], row["shift"], row["gain"]), ("fb", 0.0, 0.0))
+            self.assertEqual((row["variant"], row["shift"], row["gain"], row["a0_frac"]),
+                             ("fb", 0.0, 0.0, 1.0))
             self.assertAlmostEqual(row["return"], sum(range(1, 21)) / 20)
+
+    def test_saved_critics_are_tested_like_in_training(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "q").mkdir()
+            torch.manual_seed(0)
+            agent = FakeAgent()
+            z = math.sqrt(D_Z) * torch.nn.functional.normalize(torch.randn(D_Z), dim=0)
+            args = Namespace(seed=0, train_seed=1000, dynamics=None, candidates=4, sigma=0.2,
+                             radius=0.3, hidden=16, learning_rate=1e-3, tau=0.01, discount=0.98,
+                             episodes=2, eval_at=[2], eval_episodes=3, explore=0.3, warmup=10,
+                             batch_size=8, save_every=1, out_dir=d)
+            eval_rows, _, _ = entry.run(args, agent, z, 0.3, "residual", "walk",
+                                        lambda physics: physics / 20)
+            found = checkpoints.find(Path(d) / "q")
+            self.assertEqual([(v, t, n) for v, t, n, _ in found],
+                             [("residual", "walk", n) for n in (0, 1, 2)])
+            self.assertEqual([n for *_, n, _ in checkpoints.find(Path(d) / "q", [1])], [1])
+            model = QAdapt.load(found[-1][3], agent, D_S, D_A)
+            returns, shift, gain, a0 = entry.evaluate(args, agent, z, model,
+                                                      lambda physics: physics / 20)
+        last = [r for r in eval_rows if r["train_episodes"] == 2]
+        self.assertEqual([r["return"] for r in last], list(returns))
+        self.assertEqual([r["shift"] for r in last], list(shift))
+        self.assertEqual([r["a0_frac"] for r in last], list(a0))
+        self.assertTrue(all(0.0 <= x <= 1.0 for x in a0))
 
     def test_run_rows_and_determinism(self):
         eval_rows, train_rows, _ = self.run_once()

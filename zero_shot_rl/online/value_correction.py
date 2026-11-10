@@ -77,6 +77,7 @@ class QAdapt:
         self.agent, self.z, self.scale, self.variant = agent, z, scale, variant
         self.candidates, self.sigma, self.radius = candidates, sigma, radius
         self.tau, self.discount = tau, discount
+        self.hidden, self.layers = hidden, layers
         self.critics = torch.nn.ModuleList(
             mlp(observation_length + action_length, hidden, layers) for _ in range(2)
         ).to(z.device)
@@ -122,7 +123,8 @@ class QAdapt:
     @torch.no_grad()
     def act(self, obs, generator, explore=0.0):
         """[b, d_s] -> the action [b, d_a] and a dict of [b] tensors: its candidate `index`,
-        its `value` Q_adapt, `shift` = |a - a_0| and `gain` = Q_adapt(s, a) - Q_adapt(s, a_0).
+        its `value` Q_adapt, `shift` = |a - a_0|, `gain` = Q_adapt(s, a) - Q_adapt(s, a_0) and
+        `at_fb` = 1 if the action is a_0 (index 0) else 0.
         The action is the greedy candidate, or with probability `explore` a uniform one."""
         candidates = self.propose(obs, generator)
         values = self.values(obs, candidates)
@@ -135,7 +137,8 @@ class QAdapt:
         action = candidates[rows, index]
         info = {"index": index, "value": values[rows, index],
                 "shift": (action - candidates[:, 0]).norm(dim=1),
-                "gain": values[rows, index] - values[:, 0]}
+                "gain": values[rows, index] - values[:, 0],
+                "at_fb": (index == 0).float()}
         return action, info
 
     def update(self, batch, generator):
@@ -156,4 +159,16 @@ class QAdapt:
         """The critics and what is needed to rebuild Q_adapt on the same FB checkpoint."""
         torch.save({"variant": self.variant, "scale": self.scale, "z": self.z.cpu(),
                     "candidates": self.candidates, "sigma": self.sigma, "radius": self.radius,
+                    "hidden": self.hidden, "layers": self.layers,
                     "critics": self.critics.state_dict()}, path)
+
+    @classmethod
+    def load(cls, path, agent, observation_length, action_length):
+        """The QAdapt saved at `path`, on `agent` (the FB checkpoint it was trained on)."""
+        state = torch.load(path, map_location="cpu")
+        model = cls(agent, state["z"].to(next(agent.parameters()).device), state["scale"],
+                    state["variant"], observation_length, action_length,
+                    candidates=state["candidates"], sigma=state["sigma"], radius=state["radius"],
+                    hidden=state["hidden"], layers=state["layers"])
+        model.critics.load_state_dict(state["critics"])
+        return model

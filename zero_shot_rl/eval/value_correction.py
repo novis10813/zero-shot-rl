@@ -15,14 +15,19 @@ actor in the same environments. The test seeds must differ from --train_seed.
 
 --out_dir gets
 
-    eval.csv    variant, task, train_episodes, seed, return, shift, gain
-    train.csv   variant, task, episode, return, loss, q_pred, q_actual, shift, gain
+    eval.csv    variant, task, train_episodes, seed, return, shift, gain, a0_frac
+    train.csv   variant, task, episode, return, loss, q_pred, q_actual, shift, gain, a0_frac
     q/<variant>_<task>.pt   the critics after the last episode (QAdapt.save)
+    q/<variant>_<task>_ep<n>.pt   with --save_every, the critics after n episodes, for
+                            zero_shot_rl.eval.value_correction_checkpoints
+
+With --train_only nothing is tested here (no eval.csv, no frozen FB rows).
 
 `return` is the sum of the task reward, `shift` the mean over the steps of |a - a_0|, the
 distance of the executed action to the FB action, and `gain` the mean of
-Q_adapt(s, a) - Q_adapt(s, a_0), what Q_adapt claims the executed action gains over a_0 (the
-rows of variant `fb` have 0 in both). `loss` is the mean TD loss of the episode's updates. q_pred is
+Q_adapt(s, a) - Q_adapt(s, a_0), what Q_adapt claims the executed action gains over a_0 and
+`a0_frac` the fraction of steps whose executed action is a_0 (the rows of variant `fb` have
+0, 0 and 1). In train.csv the executed action includes the --explore draws. `loss` is the mean TD loss of the episode's updates. q_pred is
 the mean Q_adapt of the executed action over the steps t < 700 of the episode and q_actual the
 mean discounted return sum_i discount^i r_{t+1+i} to the end of the episode from the same
 steps (discount^300 < 0.003).
@@ -50,8 +55,9 @@ from zero_shot_rl.online.value_correction import VARIANTS, Buffer, QAdapt, rewar
 from zero_shot_rl.provenance import no_clobber
 from zero_shot_rl.utils import set_seed_everywhere
 
-EVAL_FIELDS = ["variant", "task", "train_episodes", "seed", "return", "shift", "gain"]
-TRAIN_FIELDS = ["variant", "task", "episode", "return", "loss", "q_pred", "q_actual", "shift", "gain"]
+EVAL_FIELDS = ["variant", "task", "train_episodes", "seed", "return", "shift", "gain", "a0_frac"]
+TRAIN_FIELDS = ["variant", "task", "episode", "return", "loss", "q_pred", "q_actual", "shift", "gain",
+                "a0_frac"]
 VALUE_STEPS = STEPS - 300  # steps whose discounted return the episode covers
 
 
@@ -62,12 +68,13 @@ def eval_points(episodes, every):
 
 def evaluate(args, agent, z, model, reward_fn):
     """One greedy episode per test environment; model None is the frozen FB actor. Returns
-    the returns, shifts and gains [eval_episodes] (see the module docstring)."""
+    the returns, shifts, gains and a0 fractions [eval_episodes] (see the module docstring)."""
     n = args.eval_episodes
     generator = torch.Generator().manual_seed(args.seed)
     envs = [make_env(i, args.dynamics) for i in range(n)]
     obs = np.stack([env.reset().observation["observations"] for env in envs])
     returns, shift, gain = np.zeros(n), np.zeros(n), np.zeros(n)
+    a0 = np.zeros(n)
     for _ in range(STEPS):
         s = torch.as_tensor(obs, dtype=torch.float32, device=z.device)
         if model is None:
@@ -77,20 +84,22 @@ def evaluate(args, agent, z, model, reward_fn):
             a, info = model.act(s, generator)
             shift += info["shift"].cpu().numpy()
             gain += info["gain"].cpu().numpy()
+            a0 += info["at_fb"].cpu().numpy()
         a = a.cpu().numpy()
         for i, env in enumerate(envs):
             obs[i] = env.step(a[i]).observation["observations"]
             returns[i] += reward_fn(env.physics)
     for env in envs:
         env.close()
-    return returns, shift / STEPS, gain / STEPS
+    a0 = np.ones(n) if model is None else a0 / STEPS
+    return returns, shift / STEPS, gain / STEPS, a0
 
 
 def frozen_rows(args, agent, z, task, reward_fn):
     """The rows of eval.csv of the frozen FB actor."""
-    returns, _, _ = evaluate(args, agent, z, None, reward_fn)
+    returns, *_ = evaluate(args, agent, z, None, reward_fn)
     return [{"variant": "fb", "task": task, "train_episodes": 0, "seed": i, "return": r,
-             "shift": 0.0, "gain": 0.0} for i, r in enumerate(returns)]
+             "shift": 0.0, "gain": 0.0, "a0_frac": 1.0} for i, r in enumerate(returns)]
 
 
 def run(args, agent, z, scale, variant, task, reward_fn):
@@ -108,29 +117,36 @@ def run(args, agent, z, scale, variant, task, reward_fn):
     discounts = args.discount ** np.arange(STEPS)
     eval_rows, train_rows = [], []
 
+    def save(train_episodes):
+        if args.save_every and train_episodes % args.save_every == 0:
+            with no_clobber(Path(args.out_dir) / "q" / f"{variant}_{task}_ep{train_episodes}.pt") as partial:
+                model.save(partial)
+
     def test(train_episodes):
-        returns, shift, gain = evaluate(args, agent, z, model, reward_fn)
+        returns, shift, gain, a0 = evaluate(args, agent, z, model, reward_fn)
         eval_rows.extend({"variant": variant, "task": task, "train_episodes": train_episodes,
                           "seed": i, "return": returns[i], "shift": shift[i],
-                          "gain": gain[i]}
+                          "gain": gain[i], "a0_frac": a0[i]}
                          for i in range(len(returns)))
         print(f"{variant} {task} after {train_episodes} episodes: "
               f"test return {returns.mean():.1f}, shift {shift.mean():.2f}, "
-              f"gain {gain.mean():.2f}", flush=True)
+              f"gain {gain.mean():.2f}, a0 {a0.mean():.2f}", flush=True)
 
+    save(0)
     if 0 in args.eval_at:
         test(0)
     for episode in range(args.episodes):
         obs = torch.as_tensor(env.reset().observation["observations"],
                               dtype=torch.float32, device=z.device)
         rewards, values, losses = np.zeros(STEPS), np.zeros(STEPS), []
-        shift, gain = np.zeros(STEPS), np.zeros(STEPS)
+        shift, gain, a0 = np.zeros(STEPS), np.zeros(STEPS), np.zeros(STEPS)
         for t in range(STEPS):
             a, info = model.act(obs.unsqueeze(0), generator, args.explore)
             next_obs = torch.as_tensor(env.step(a[0].cpu().numpy()).observation["observations"],
                                        dtype=torch.float32, device=z.device)
             rewards[t], values[t] = reward_fn(env.physics), info["value"].item()
             shift[t], gain[t] = info["shift"].item(), info["gain"].item()
+            a0[t] = info["at_fb"].item()
             buffer.add(obs, a[0], rewards[t], next_obs)
             obs = next_obs
             if buffer.size >= args.warmup:
@@ -140,7 +156,8 @@ def run(args, agent, z, scale, variant, task, reward_fn):
             "variant": variant, "task": task, "episode": episode, "return": rewards.sum(),
             "loss": np.mean(losses) if losses else float("nan"),
             "q_pred": values[:VALUE_STEPS].mean(), "q_actual": np.mean(actual),
-            "shift": shift.mean(), "gain": gain.mean()})
+            "shift": shift.mean(), "gain": gain.mean(), "a0_frac": a0.mean()})
+        save(episode + 1)
         if episode + 1 in args.eval_at:
             test(episode + 1)
     env.close()
@@ -171,6 +188,12 @@ def main():
     parser.add_argument("--eval_at", nargs="+", type=int, default=None,
                         help="explicit episode counts to test after; replaces --eval_every")
     parser.add_argument("--eval_episodes", type=int, default=20)
+    parser.add_argument("--save_every", type=int, default=0,
+                        help="save the critics after every save_every episodes (0 is before "
+                             "training); default 0 saves only the last")
+    parser.add_argument("--train_only", action="store_true",
+                        help="no tests and no frozen FB rows; test the saved critics with "
+                             "zero_shot_rl.eval.value_correction_checkpoints")
     parser.add_argument("--train_seed", type=int, default=1000)
     parser.add_argument("--candidates", type=int, default=32)
     parser.add_argument("--sigma", type=float, default=0.2)
@@ -189,7 +212,9 @@ def main():
     args = parser.parse_args()
     if args.train_seed < args.eval_episodes:
         raise ValueError("--train_seed is one of the test seeds 0..eval_episodes-1")
-    if args.eval_at is None:
+    if args.train_only:
+        args.eval_at = []
+    elif args.eval_at is None:
         args.eval_at = eval_points(args.episodes, args.eval_every)
     args.dynamics = load_dynamics(args.dynamics) if args.dynamics else None
     out_dir = Path(args.out_dir)
@@ -215,10 +240,11 @@ def main():
         z = torch.as_tensor(agent.infer_z(observations_z, rewards),
                             dtype=torch.float32, device=device)
         scale = reward_scale(agent, observations_z, rewards)
-        rows = frozen_rows(args, agent, z, task, reward_fns[task])
-        eval_rows += rows
-        print(f"fb {task}: test return {np.mean([r['return'] for r in rows]):.1f}, "
-              f"scale {scale:.4g}", flush=True)
+        if not args.train_only:
+            rows = frozen_rows(args, agent, z, task, reward_fns[task])
+            eval_rows += rows
+            print(f"fb {task}: test return {np.mean([r['return'] for r in rows]):.1f}, "
+                  f"scale {scale:.4g}", flush=True)
         for variant in args.variants:
             start = time.time()
             rows, logs, model = run(args, agent, z, scale, variant, task, reward_fns[task])
@@ -227,7 +253,8 @@ def main():
             with no_clobber(out_dir / "q" / f"{variant}_{task}.pt") as partial:
                 model.save(partial)
             print(f"{variant} {task}: {time.time() - start:.0f} s", flush=True)
-    write_csv(out_dir / "eval.csv", EVAL_FIELDS, eval_rows)
+    if not args.train_only:
+        write_csv(out_dir / "eval.csv", EVAL_FIELDS, eval_rows)
     write_csv(out_dir / "train.csv", TRAIN_FIELDS, train_rows)
 
 
