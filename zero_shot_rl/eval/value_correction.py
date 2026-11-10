@@ -95,7 +95,7 @@ def run(args, agent, z, scale, variant, task, reward_fn):
     observation_length = env.observation_spec()["observations"].shape[0]
     action_length = env.action_spec().shape[0]
     model = QAdapt(agent, z, scale, variant, observation_length, action_length,
-                   candidates=args.candidates, sigma=args.sigma, hidden=args.hidden,
+                   candidates=args.candidates, sigma=args.sigma, radius=args.radius, hidden=args.hidden,
                    learning_rate=args.learning_rate, tau=args.tau, discount=args.discount)
     buffer = Buffer(args.episodes * STEPS, observation_length, action_length, z.device)
     discounts = args.discount ** np.arange(STEPS)
@@ -167,6 +167,8 @@ def main():
     parser.add_argument("--train_seed", type=int, default=1000)
     parser.add_argument("--candidates", type=int, default=32)
     parser.add_argument("--sigma", type=float, default=0.2)
+    parser.add_argument("--radius", type=float, default=None,
+                        help="L2 bound of the candidate offsets from the FB action; default none")
     parser.add_argument("--explore", type=float, default=0.3)
     parser.add_argument("--hidden", type=int, default=1024)
     parser.add_argument("--learning_rate", type=float, default=1e-4)

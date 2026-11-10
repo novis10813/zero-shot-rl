@@ -63,6 +63,26 @@ class TestQAdapt(unittest.TestCase):
         self.assertLessEqual(candidates.abs().max().item(), 1.0)
         self.assertGreater((candidates[:, 1:] - candidates[:, :1]).abs().max().item(), 0.0)
 
+    def test_radius_bounds_the_offsets(self):
+        obs = torch.randn(16, D_S)
+        _, _, model = make("direct", candidates=64, radius=0.1)
+        near = model.propose(obs, torch.Generator().manual_seed(0))
+        offsets = (near - near[:, :1]).norm(dim=-1)
+        self.assertLessEqual(offsets.max().item(), 0.1 + 1e-6)
+        self.assertGreater(offsets[:, 1:].min().item(), 0.0)
+        _, _, off = make("direct", candidates=64)
+        unbounded = off.propose(obs, torch.Generator().manual_seed(0))
+        self.assertGreater((unbounded - unbounded[:, :1]).norm(dim=-1).max().item(), 0.1)
+
+    def test_zero_radius_is_the_fb_action(self):
+        _, _, model = make("direct", radius=0.0)
+        obs = torch.randn(8, D_S)
+        candidates = model.propose(obs, torch.Generator().manual_seed(0))
+        torch.testing.assert_close(candidates, candidates[:, :1].expand_as(candidates))
+        action, info = model.act(obs, torch.Generator().manual_seed(0))
+        torch.testing.assert_close(action, candidates[:, 0])
+        torch.testing.assert_close(info["shift"], torch.zeros(8))
+
     def test_residual_starts_as_fb_value(self):
         agent, z, model = make("residual")
         obs, actions, _, _ = batch(16)
@@ -170,7 +190,7 @@ class TestEntry(unittest.TestCase):
         torch.manual_seed(0)
         agent = FakeAgent()
         z = math.sqrt(D_Z) * torch.nn.functional.normalize(torch.randn(D_Z), dim=0)
-        args = Namespace(seed=0, train_seed=1000, dynamics=None, candidates=4, sigma=0.2,
+        args = Namespace(seed=0, train_seed=1000, dynamics=None, candidates=4, sigma=0.2, radius=0.3,
                          hidden=16, learning_rate=1e-3, tau=0.01, discount=0.98, episodes=2,
                          eval_at=[0, 2], eval_episodes=3, explore=0.3, warmup=10,
                          batch_size=8)

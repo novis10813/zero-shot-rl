@@ -11,7 +11,8 @@ task vector E_D[r B(s)] normalised to the sphere of radius sqrt(d). Q_phi is two
 last layer of the residual critics starts at zero, so Q_adapt starts as the FB value.
 
 Candidates of a state: a_0 = pi(s, z), the deterministic action of
-zero_shot_rl.env.walker.policy, and a_i = clip(a_0 + sigma eps_i, -1, 1) for i = 1..n-1. The
+zero_shot_rl.env.walker.policy, and a_i = clip(a_0 + delta_i, -1, 1) for i = 1..n-1, where delta_i = sigma eps_i and, if
+`radius` is set, delta_i is scaled down to |delta_i|_2 <= radius (radius 0 keeps only a_0). The
 greedy action maximises min_critics Q_adapt over the candidates. Both critics regress
 
     y = r + discount * max_i min_critics Q_adapt_target(s', a'_i)
@@ -68,13 +69,14 @@ class Buffer:
 
 class QAdapt:
     def __init__(self, agent, z, scale, variant, observation_length, action_length, *,
-                 candidates=32, sigma=0.2, hidden=1024, layers=2, learning_rate=1e-4,
+                 candidates=32, sigma=0.2, radius=None, hidden=1024, layers=2, learning_rate=1e-4,
                  tau=0.01, discount=0.98):
         """z [d] is the latent the actor and F are conditioned on."""
         if variant not in VARIANTS:
             raise ValueError(f"unknown variant {variant!r}")
         self.agent, self.z, self.scale, self.variant = agent, z, scale, variant
-        self.candidates, self.sigma, self.tau, self.discount = candidates, sigma, tau, discount
+        self.candidates, self.sigma, self.radius = candidates, sigma, radius
+        self.tau, self.discount = tau, discount
         self.critics = torch.nn.ModuleList(
             mlp(observation_length + action_length, hidden, layers) for _ in range(2)
         ).to(z.device)
@@ -103,8 +105,12 @@ class QAdapt:
         """[b, d_s] -> candidates [b, n, d_a]; candidate 0 is the FB action."""
         a0 = policy(self.agent, obs, self.z.expand(len(obs), -1))
         noise = torch.randn(len(obs), self.candidates - 1, a0.shape[1], generator=generator)
-        noisy = (a0.unsqueeze(1) + self.sigma * noise.to(a0.device)).clamp(-1.0, 1.0)
-        return torch.cat([a0.unsqueeze(1), noisy], dim=1)
+        delta = self.sigma * noise.to(a0.device)
+        if self.radius is not None:
+            norm = torch.linalg.vector_norm(delta, dim=-1, keepdim=True)
+            delta = delta * (self.radius / norm.clamp_min(1e-8)).clamp(max=1.0)
+        actions = torch.clamp(a0[:, None, :] + delta, -1.0, 1.0)
+        return torch.cat([a0[:, None, :], actions], dim=1)
 
     @torch.no_grad()
     def values(self, obs, candidates, target=False):
@@ -149,5 +155,5 @@ class QAdapt:
     def save(self, path):
         """The critics and what is needed to rebuild Q_adapt on the same FB checkpoint."""
         torch.save({"variant": self.variant, "scale": self.scale, "z": self.z.cpu(),
-                    "candidates": self.candidates, "sigma": self.sigma,
+                    "candidates": self.candidates, "sigma": self.sigma, "radius": self.radius,
                     "critics": self.critics.state_dict()}, path)
