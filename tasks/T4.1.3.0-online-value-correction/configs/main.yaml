@@ -1,12 +1,12 @@
 # Direct and Residual Q on the four tasks in the stock Walker and in Friction Strong and
-# Actuator Strong of T3.2, 3 FB seeds: 100 training episodes per task and variant, tested after
-# 0, 1, 2, 5, 10, 20, 50 and 100 episodes on 20 test episodes.
+# Actuator Strong of T3.2, FB seed 0: 500 training episodes per task and variant, tested after
+# 0, 50, 100, ... 500 episodes on 20 test episodes. Seeds 1 and 2 follow once seed 0 is read.
 # Each job value is "<environment>.<variant> <value_correction args>".
-on: idlab
+on: idlab1
 vram: 4G
-command: tasks/T4.1.3.0-online-value-correction/run.sh {seed} {job}
+command: tasks/T4.1.3.0-online-value-correction/run.sh {seed} {job} --episodes 500 --eval_every 50
 grid:
-  seed: [0, 1, 2]
+  seed: [0]
   job:
     - "clean.direct --variants direct"
     - "clean.residual --variants residual"
