@@ -1,0 +1,17 @@
+# Baseline: frozen FB with action search and no training, on walk in the stock Walker, Actuator
+# Mild and Strong of T3.2, FB seed 0. The greedy rule over 32 candidates around the FB action
+# (sigma 0.2, radius 0.2 or unbounded) on scale * min_heads F^T z alone; 20 test episodes, and the
+# frozen FB actor on the same episodes.
+# Each job value is "<name> <value_correction args>".
+on: idlab
+vram: 4G
+command: tasks/T4.1.3.0-online-value-correction/run.sh {seed} {job} --tasks walk --variants search --episodes 0 --eval_every 1 --eval_episodes 20
+grid:
+  seed: [0]
+  job:
+    - "search.clean_unbounded"
+    - "search.clean_r0.2 --radius 0.2"
+    - "search.mild_unbounded --dynamics tasks/T3.2-ood-robustness/configs/actuator_mild.yaml"
+    - "search.mild_r0.2 --radius 0.2 --dynamics tasks/T3.2-ood-robustness/configs/actuator_mild.yaml"
+    - "search.strong_unbounded --dynamics tasks/T3.2-ood-robustness/configs/actuator_strong.yaml"
+    - "search.strong_r0.2 --radius 0.2 --dynamics tasks/T3.2-ood-robustness/configs/actuator_strong.yaml"
