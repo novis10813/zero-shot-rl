@@ -18,7 +18,8 @@ the largest difference without failing.
 Usage (repo root):
     PYTHONPATH=. MUJOCO_GL=egl uv run python -m zero_shot_rl.eval.fb_trajectories \
         --config <sources.json> --out-dir <dir> --episodes 50 [--tasks stand walk run flip] \
-        [--seed 0] [--workers 4] [--batch 20] [--compare-trace <behavior_fb_seed0.npz> ...]
+        [--seed 0] [--workers 4] [--batch 20]
+        [--checkpoint-root <dir>] [--compare-trace <behavior_fb_seed0.npz> ...]
 """
 
 import argparse
@@ -98,6 +99,8 @@ def main():
     parser.add_argument("--episodes", type=int, required=True)
     parser.add_argument("--tasks", nargs="+", default=ALL_TASKS, choices=ALL_TASKS)
     parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--checkpoint-root", type=Path, default=REPO,
+                        help="directory the config's checkpoint paths are relative to")
     parser.add_argument("--batch", type=int, default=20, help="episodes per policy batch")
     parser.add_argument("--seed", type=int, default=None, help="training seed; default: all")
     parser.add_argument("--compare-trace", nargs="*", type=Path, default=[],
@@ -122,7 +125,7 @@ def main():
         with np.load(latents, allow_pickle=False) as archive:
             data = dict(archive)
         validate(data, latents.name, ALL_TASKS, data["z"].shape[1])
-        checkpoint = REPO / model["checkpoint"]
+        checkpoint = args.checkpoint_root / model["checkpoint"]
         if sha256(checkpoint) != model["checkpoint_sha256"]:
             raise ValueError(f"Checkpoint hash mismatch: seed {seed}")
         agent = load_agent(checkpoint, torch.device("cpu"))
