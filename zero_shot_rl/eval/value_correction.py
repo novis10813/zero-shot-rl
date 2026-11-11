@@ -5,7 +5,9 @@ zero_shot_rl.online.value_correction, with z fixed at z_r of offline task infere
 --episodes consecutive 1000-step episodes in one environment seeded with --train_seed (the
 stock Walker or --dynamics), with one critic update per step once the buffer holds --warmup
 transitions. Training executes the greedy candidate, or with probability --explore a uniform
-one.
+one. The residual variant is residual soft Q-learning (zero_shot_rl.online.value_correction):
+it executes a sample of softmax(score / --alpha), ignores --explore, and --omega weights the
+prior policy.
 
 After each episode count of --eval_every (0, every, 2 every, ... and the last one; 0 is before
 training) or of the explicit list --eval_at the critics are held fixed and
@@ -112,6 +114,7 @@ def run(args, agent, z, scale, variant, task, reward_fn):
     action_length = env.action_spec().shape[0]
     model = QAdapt(agent, z, scale, variant, observation_length, action_length,
                    candidates=args.candidates, sigma=args.sigma, radius=args.radius, hidden=args.hidden,
+                   omega=args.omega, alpha=args.alpha,
                    learning_rate=args.learning_rate, tau=args.tau, discount=args.discount)
     buffer = Buffer(args.episodes * STEPS, observation_length, action_length, z.device)
     discounts = args.discount ** np.arange(STEPS)
@@ -141,7 +144,7 @@ def run(args, agent, z, scale, variant, task, reward_fn):
         rewards, values, losses = np.zeros(STEPS), np.zeros(STEPS), []
         shift, gain, a0 = np.zeros(STEPS), np.zeros(STEPS), np.zeros(STEPS)
         for t in range(STEPS):
-            a, info = model.act(obs.unsqueeze(0), generator, args.explore)
+            a, info = model.act(obs.unsqueeze(0), generator, args.explore, sample=True)
             next_obs = torch.as_tensor(env.step(a[0].cpu().numpy()).observation["observations"],
                                        dtype=torch.float32, device=z.device)
             rewards[t], values[t] = reward_fn(env.physics), info["value"].item()
@@ -205,6 +208,11 @@ def main():
     parser.add_argument("--batch_size", type=int, default=512)
     parser.add_argument("--tau", type=float, default=0.01)
     parser.add_argument("--discount", type=float, default=0.98)
+    parser.add_argument("--omega", type=float, default=1.0,
+                        help="residual variant: weight of the prior policy log pi (omega' of "
+                             "Li et al. 2023); large values keep the FB action")
+    parser.add_argument("--alpha", type=float, default=1.0,
+                        help="residual variant: temperature of the soft Q target and policy")
     parser.add_argument("--warmup", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--dataset_transitions", type=int, default=100000)

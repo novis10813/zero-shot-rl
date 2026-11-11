@@ -18,6 +18,19 @@ greedy action maximises min_critics Q_adapt over the candidates. Both critics re
     y = r + discount * max_i min_critics Q_adapt_target(s', a'_i)
 
 with fresh candidates a'_i at s'. Episodes have no terminal state, so y has no done mask.
+
+The residual variant follows the discrete residual soft Q-learning of Li et al. 2023 (Residual
+Q-Learning, arXiv:2306.09526, eqs. 6 and 8) over the candidate set, with the FB actor as the
+prior policy pi(a|s) = N(a_0, prior_sigma^2) and the observed task reward as the add-on reward.
+With score(s, a) = min_critics Q_adapt(s, a) + omega log pi(a|s), the policy is
+softmax_i(score(s, a_i) / alpha), the critics regress
+
+    y = r + discount * alpha * log sum_i exp(score_target(s', a'_i) / alpha)
+
+and the executed action in training is a sample of that policy (the test action is the argmax
+of the score). omega is omega' = omega alpha of the paper and alpha its temperature. The
+log-sum-exp is over the candidates, so y holds the constant alpha log n more than a mean over
+them. The direct variant keeps the greedy rule and the max target.
 """
 
 import copy
@@ -28,6 +41,7 @@ import torch
 from zero_shot_rl.env.walker import policy
 
 VARIANTS = ("direct", "residual")
+PRIOR_SIGMA = 0.2  # the std of the FB actor in zero_shot_rl.env.walker.policy
 
 
 def reward_scale(agent, observations, rewards):
@@ -94,13 +108,17 @@ class QAdapt:
         learning_rate=1e-4,
         tau=0.01,
         discount=0.98,
+        omega=1.0,
+        alpha=1.0,
     ):
-        """z [d] is the latent the actor and F are conditioned on."""
+        """z [d] is the latent the actor and F are conditioned on. omega and alpha are the
+        weight of the prior policy and the temperature of the residual variant."""
         if variant not in VARIANTS:
             raise ValueError(f"unknown variant {variant!r}")
         self.agent, self.z, self.scale, self.variant = agent, z, scale, variant
         self.candidates, self.sigma, self.radius = candidates, sigma, radius
         self.tau, self.discount = tau, discount
+        self.omega, self.alpha = omega, alpha
         self.hidden, self.layers = hidden, layers
         self.critics = torch.nn.ModuleList(
             mlp(observation_length + action_length, hidden, layers) for _ in range(2)
@@ -152,16 +170,37 @@ class QAdapt:
             self.q(o, candidates.reshape(b * n, -1), target).min(0).values.reshape(b, n)
         )
 
+    def log_prior(self, candidates):
+        """[b, n, d_a] -> log pi(a|s) of the candidates [b, n], pi = N(a_0, PRIOR_SIGMA^2)."""
+        prior = torch.distributions.Normal(candidates[:, :1], PRIOR_SIGMA)
+        return prior.log_prob(candidates).sum(-1)
+
     @torch.no_grad()
-    def act(self, obs, generator, explore=0.0):
+    def scores(self, obs, candidates, target=False):
+        """[b, d_s], [b, n, d_a] -> what the rule ranks the candidates by [b, n]: Q_adapt, and
+        for the residual variant also omega log pi(a|s)."""
+        values = self.values(obs, candidates, target)
+        if self.variant == "residual":
+            values = values + self.omega * self.log_prior(candidates)
+        return values
+
+    @torch.no_grad()
+    def act(self, obs, generator, explore=0.0, sample=False):
         """[b, d_s] -> the action [b, d_a] and a dict of [b] tensors: its candidate `index`,
         its `value` Q_adapt, `shift` = |a - a_0|, `gain` = Q_adapt(s, a) - Q_adapt(s, a_0) and
         `at_fb` = 1 if the action is a_0 (index 0) else 0.
-        The action is the greedy candidate, or with probability `explore` a uniform one."""
+        The action is the candidate of the highest score, or with probability `explore` a
+        uniform one. With `sample` the residual variant draws it from softmax(score / alpha)."""
         candidates = self.propose(obs, generator)
         values = self.values(obs, candidates)
-        index = values.argmax(1)
-        if explore > 0:
+        scores = self.scores(obs, candidates)
+        index = scores.argmax(1)
+        if sample and self.variant == "residual":
+            probs = torch.softmax(scores / self.alpha, dim=1).cpu()
+            index = torch.multinomial(probs, 1, generator=generator)[:, 0].to(
+                index.device
+            )
+        elif explore > 0:
             uniform = torch.randint(self.candidates, (len(obs),), generator=generator)
             random = torch.rand(len(obs), generator=generator) < explore
             index = torch.where(
@@ -178,11 +217,21 @@ class QAdapt:
         }
         return action, info
 
+    @torch.no_grad()
+    def next_value(self, next_obs, generator):
+        """[b, d_s] -> the value of the next state in the target y [b]: the max over fresh
+        candidates of the target critics, or for the residual variant their soft maximum
+        alpha log sum_i exp(score_i / alpha)."""
+        candidates = self.propose(next_obs, generator)
+        if self.variant == "residual":
+            scores = self.scores(next_obs, candidates, target=True)
+            return self.alpha * torch.logsumexp(scores / self.alpha, dim=1)
+        return self.values(next_obs, candidates, target=True).max(1).values
+
     def update(self, batch, generator):
         """One gradient step of both critics on (s, a, r, s'); returns the TD loss."""
         obs, actions, rewards, next_obs = batch
-        target = self.values(next_obs, self.propose(next_obs, generator), target=True)
-        y = rewards + self.discount * target.max(1).values
+        y = rewards + self.discount * self.next_value(next_obs, generator)
         loss = ((self.q(obs, actions) - y) ** 2).mean(1).sum()
         self.optimizer.zero_grad(set_to_none=True)
         loss.backward()
@@ -206,6 +255,8 @@ class QAdapt:
                 "radius": self.radius,
                 "hidden": self.hidden,
                 "layers": self.layers,
+                "omega": self.omega,
+                "alpha": self.alpha,
                 "critics": self.critics.state_dict(),
             },
             path,
@@ -227,6 +278,8 @@ class QAdapt:
             radius=state["radius"],
             hidden=state["hidden"],
             layers=state["layers"],
+            omega=state.get("omega", 1.0),
+            alpha=state.get("alpha", 1.0),
         )
         model.critics.load_state_dict(state["critics"])
         return model

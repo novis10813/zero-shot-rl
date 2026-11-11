@@ -97,7 +97,7 @@ class TestQAdapt(unittest.TestCase):
         torch.testing.assert_close(q[1], expected)
 
     def test_act_is_greedy_and_explores(self):
-        _, _, model = make("residual")
+        _, _, model = make("residual", omega=0.0)
         obs = torch.randn(64, D_S)
         action, info = model.act(obs, torch.Generator().manual_seed(3))
         index, value = info["index"], info["value"]
@@ -139,8 +139,70 @@ class TestQAdapt(unittest.TestCase):
         self.assertEqual(losses[0], losses[1])
         self.assertNotEqual(losses[0][0], losses[0][-1])
 
+    def test_prior_log_probability_is_highest_at_a0(self):
+        _, _, model = make("residual")
+        candidates = model.propose(torch.randn(16, D_S), torch.Generator().manual_seed(0))
+        log_prior = model.log_prior(candidates)
+        self.assertTrue((log_prior[:, 0:1] >= log_prior).all())
+        expected = torch.distributions.Normal(candidates[:, 0], 0.2).log_prob(candidates[:, 3]).sum(-1)
+        torch.testing.assert_close(log_prior[:, 3], expected)
+
+    def test_residual_scores_add_the_weighted_prior(self):
+        _, _, model = make("residual", omega=2.5)
+        obs = torch.randn(8, D_S)
+        candidates = model.propose(obs, torch.Generator().manual_seed(0))
+        torch.testing.assert_close(
+            model.scores(obs, candidates),
+            model.values(obs, candidates) + 2.5 * model.log_prior(candidates))
+        _, _, direct = make("direct", omega=2.5)
+        torch.testing.assert_close(direct.scores(obs, candidates),
+                                   direct.values(obs, candidates))
+
+    def test_large_omega_keeps_the_fb_action(self):
+        _, _, model = make("residual", omega=1e4, candidates=16)
+        obs = torch.randn(32, D_S)
+        for sample in (False, True):
+            action, info = model.act(obs, torch.Generator().manual_seed(1), sample=sample)
+            self.assertEqual(info["at_fb"].min().item(), 1.0)
+            torch.testing.assert_close(info["shift"], torch.zeros(32))
+
+    def test_sampling_follows_softmax_of_the_score(self):
+        _, _, model = make("residual", omega=0.0, alpha=1e-6)
+        obs = torch.randn(32, D_S)
+        _, greedy = model.act(obs, torch.Generator().manual_seed(2))
+        _, sampled = model.act(obs, torch.Generator().manual_seed(2), sample=True)
+        torch.testing.assert_close(sampled["index"], greedy["index"])
+        _, _, wide = make("residual", omega=0.0, alpha=1e6)
+        counts = torch.zeros(8)
+        for i in range(40):
+            _, info = wide.act(torch.randn(64, D_S), torch.Generator().manual_seed(i), sample=True)
+            counts += torch.bincount(info["index"], minlength=8)
+        self.assertGreater(counts.min().item(), 0.5 * counts.mean().item())
+
+    def test_soft_target_is_the_log_sum_exp_of_the_scores(self):
+        _, _, model = make("residual", omega=0.7, alpha=0.5, candidates=6)
+        g = torch.Generator().manual_seed(4)
+        for _ in range(3):
+            model.update(batch(32), g)  # nonzero critics
+        obs = torch.randn(10, D_S)
+        candidates = model.propose(obs, torch.Generator().manual_seed(9))
+        scores = model.scores(obs, candidates, target=True)
+        expected = 0.5 * torch.log(torch.exp(scores / 0.5).sum(1))
+        torch.testing.assert_close(model.next_value(obs, torch.Generator().manual_seed(9)), expected)
+        # no larger than the max by more than alpha log n, never below it
+        hard = scores.max(1).values
+        self.assertTrue(((expected - hard) >= -1e-6).all())
+        self.assertTrue(((expected - hard) <= 0.5 * math.log(6) + 1e-6).all())
+
+    def test_direct_target_is_the_max(self):
+        _, _, model = make("direct", candidates=6)
+        obs = torch.randn(10, D_S)
+        candidates = model.propose(obs, torch.Generator().manual_seed(9))
+        torch.testing.assert_close(model.next_value(obs, torch.Generator().manual_seed(9)),
+                                   model.values(obs, candidates, target=True).max(1).values)
+
     def test_save_and_load_round_trip(self):
-        agent, _, model = make("residual", radius=0.3, layers=3)
+        agent, _, model = make("residual", radius=0.3, layers=3, omega=2.0, alpha=0.5)
         g = torch.Generator().manual_seed(0)
         for _ in range(3):
             model.update(batch(32), g)
@@ -151,7 +213,7 @@ class TestQAdapt(unittest.TestCase):
         a, _ = model.act(obs, torch.Generator().manual_seed(5))
         b, _ = loaded.act(obs, torch.Generator().manual_seed(5))
         torch.testing.assert_close(a, b)
-        self.assertEqual((loaded.radius, loaded.layers), (0.3, 3))
+        self.assertEqual((loaded.radius, loaded.layers, loaded.omega, loaded.alpha), (0.3, 3, 2.0, 0.5))
 
     def test_reward_scale(self):
         agent = FakeAgent()
@@ -211,7 +273,7 @@ class TestEntry(unittest.TestCase):
         args = Namespace(seed=0, train_seed=1000, dynamics=None, candidates=4, sigma=0.2, radius=0.3,
                          hidden=16, learning_rate=1e-3, tau=0.01, discount=0.98, episodes=2,
                          eval_at=[0, 2], eval_episodes=3, explore=0.3, warmup=10,
-                         batch_size=8, save_every=0, out_dir=".")
+                         batch_size=8, save_every=0, out_dir=".", omega=1.0, alpha=1.0)
         return entry.run(args, agent, z, 0.3, "residual", "walk", lambda physics: physics / 20)
 
     def test_eval_points_are_a_fixed_interval(self):
@@ -239,7 +301,7 @@ class TestEntry(unittest.TestCase):
             args = Namespace(seed=0, train_seed=1000, dynamics=None, candidates=4, sigma=0.2,
                              radius=0.3, hidden=16, learning_rate=1e-3, tau=0.01, discount=0.98,
                              episodes=2, eval_at=[2], eval_episodes=3, explore=0.3, warmup=10,
-                             batch_size=8, save_every=1, out_dir=d)
+                             batch_size=8, save_every=1, out_dir=d, omega=1.0, alpha=1.0)
             eval_rows, _, _ = entry.run(args, agent, z, 0.3, "residual", "walk",
                                         lambda physics: physics / 20)
             found = checkpoints.find(Path(d) / "q")
