@@ -53,7 +53,9 @@ class Buffer:
         self.observations = torch.zeros(capacity, observation_length, device=device)
         self.actions = torch.zeros(capacity, action_length, device=device)
         self.rewards = torch.zeros(capacity, device=device)
-        self.next_observations = torch.zeros(capacity, observation_length, device=device)
+        self.next_observations = torch.zeros(
+            capacity, observation_length, device=device
+        )
         self.size = 0
 
     def add(self, observation, action, reward, next_observation):
@@ -63,14 +65,36 @@ class Buffer:
         self.size += 1
 
     def sample(self, batch_size, generator):
-        i = torch.randint(self.size, (batch_size,), generator=generator).to(self.rewards.device)
-        return self.observations[i], self.actions[i], self.rewards[i], self.next_observations[i]
+        i = torch.randint(self.size, (batch_size,), generator=generator).to(
+            self.rewards.device
+        )
+        return (
+            self.observations[i],
+            self.actions[i],
+            self.rewards[i],
+            self.next_observations[i],
+        )
 
 
 class QAdapt:
-    def __init__(self, agent, z, scale, variant, observation_length, action_length, *,
-                 candidates=32, sigma=0.2, radius=None, hidden=1024, layers=2, learning_rate=1e-4,
-                 tau=0.01, discount=0.98):
+    def __init__(
+        self,
+        agent,
+        z,
+        scale,
+        variant,
+        observation_length,
+        action_length,
+        *,
+        candidates=32,
+        sigma=0.2,
+        radius=None,
+        hidden=64,
+        layers=2,
+        learning_rate=1e-4,
+        tau=0.01,
+        discount=0.98,
+    ):
         """z [d] is the latent the actor and F are conditioned on."""
         if variant not in VARIANTS:
             raise ValueError(f"unknown variant {variant!r}")
@@ -92,20 +116,26 @@ class QAdapt:
     def fb_value(self, obs, actions):
         """[m, d_s], [m, d_a] -> scale * min_heads F(s, a, z)^T z [m]."""
         z = self.z.expand(len(obs), -1)
-        heads = self.agent.FB.forward_representation(observation=obs, action=actions, z=z)
+        heads = self.agent.FB.forward_representation(
+            observation=obs, action=actions, z=z
+        )
         return self.scale * torch.stack([(F * z).sum(-1) for F in heads]).min(0).values
 
     def q(self, obs, actions, target=False):
         """[m, d_s], [m, d_a] -> Q_adapt of each critic [2, m]."""
         x = torch.cat([obs, actions], dim=-1)
-        q = torch.stack([c(x).squeeze(-1) for c in (self.targets if target else self.critics)])
+        q = torch.stack(
+            [c(x).squeeze(-1) for c in (self.targets if target else self.critics)]
+        )
         return q + self.fb_value(obs, actions) if self.variant == "residual" else q
 
     @torch.no_grad()
     def propose(self, obs, generator):
         """[b, d_s] -> candidates [b, n, d_a]; candidate 0 is the FB action."""
         a0 = policy(self.agent, obs, self.z.expand(len(obs), -1))
-        noise = torch.randn(len(obs), self.candidates - 1, a0.shape[1], generator=generator)
+        noise = torch.randn(
+            len(obs), self.candidates - 1, a0.shape[1], generator=generator
+        )
         delta = self.sigma * noise.to(a0.device)
         if self.radius is not None:
             norm = torch.linalg.vector_norm(delta, dim=-1, keepdim=True)
@@ -118,7 +148,9 @@ class QAdapt:
         """[b, d_s], [b, n, d_a] -> min_critics Q_adapt [b, n]."""
         b, n, _ = candidates.shape
         o = obs.unsqueeze(1).expand(b, n, obs.shape[1]).reshape(b * n, -1)
-        return self.q(o, candidates.reshape(b * n, -1), target).min(0).values.reshape(b, n)
+        return (
+            self.q(o, candidates.reshape(b * n, -1), target).min(0).values.reshape(b, n)
+        )
 
     @torch.no_grad()
     def act(self, obs, generator, explore=0.0):
@@ -132,13 +164,18 @@ class QAdapt:
         if explore > 0:
             uniform = torch.randint(self.candidates, (len(obs),), generator=generator)
             random = torch.rand(len(obs), generator=generator) < explore
-            index = torch.where(random.to(index.device), uniform.to(index.device), index)
+            index = torch.where(
+                random.to(index.device), uniform.to(index.device), index
+            )
         rows = torch.arange(len(obs), device=index.device)
         action = candidates[rows, index]
-        info = {"index": index, "value": values[rows, index],
-                "shift": (action - candidates[:, 0]).norm(dim=1),
-                "gain": values[rows, index] - values[:, 0],
-                "at_fb": (index == 0).float()}
+        info = {
+            "index": index,
+            "value": values[rows, index],
+            "shift": (action - candidates[:, 0]).norm(dim=1),
+            "gain": values[rows, index] - values[:, 0],
+            "at_fb": (index == 0).float(),
+        }
         return action, info
 
     def update(self, batch, generator):
@@ -151,24 +188,45 @@ class QAdapt:
         loss.backward()
         self.optimizer.step()
         with torch.no_grad():
-            for p, p_target in zip(self.critics.parameters(), self.targets.parameters()):
+            for p, p_target in zip(
+                self.critics.parameters(), self.targets.parameters()
+            ):
                 p_target.lerp_(p, self.tau)
         return loss.item()
 
     def save(self, path):
         """The critics and what is needed to rebuild Q_adapt on the same FB checkpoint."""
-        torch.save({"variant": self.variant, "scale": self.scale, "z": self.z.cpu(),
-                    "candidates": self.candidates, "sigma": self.sigma, "radius": self.radius,
-                    "hidden": self.hidden, "layers": self.layers,
-                    "critics": self.critics.state_dict()}, path)
+        torch.save(
+            {
+                "variant": self.variant,
+                "scale": self.scale,
+                "z": self.z.cpu(),
+                "candidates": self.candidates,
+                "sigma": self.sigma,
+                "radius": self.radius,
+                "hidden": self.hidden,
+                "layers": self.layers,
+                "critics": self.critics.state_dict(),
+            },
+            path,
+        )
 
     @classmethod
     def load(cls, path, agent, observation_length, action_length):
         """The QAdapt saved at `path`, on `agent` (the FB checkpoint it was trained on)."""
         state = torch.load(path, map_location="cpu")
-        model = cls(agent, state["z"].to(next(agent.parameters()).device), state["scale"],
-                    state["variant"], observation_length, action_length,
-                    candidates=state["candidates"], sigma=state["sigma"], radius=state["radius"],
-                    hidden=state["hidden"], layers=state["layers"])
+        model = cls(
+            agent,
+            state["z"].to(next(agent.parameters()).device),
+            state["scale"],
+            state["variant"],
+            observation_length,
+            action_length,
+            candidates=state["candidates"],
+            sigma=state["sigma"],
+            radius=state["radius"],
+            hidden=state["hidden"],
+            layers=state["layers"],
+        )
         model.critics.load_state_dict(state["critics"])
         return model
