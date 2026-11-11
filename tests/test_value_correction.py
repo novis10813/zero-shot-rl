@@ -139,6 +139,21 @@ class TestQAdapt(unittest.TestCase):
         self.assertEqual(losses[0], losses[1])
         self.assertNotEqual(losses[0][0], losses[0][-1])
 
+    def test_search_ranks_candidates_by_the_fb_value(self):
+        agent, z, model = make("search")
+        obs = torch.randn(16, D_S)
+        action, info = model.act(obs, torch.Generator().manual_seed(3))
+        candidates = model.propose(obs, torch.Generator().manual_seed(3))
+        with torch.no_grad():
+            flat = candidates.reshape(-1, D_A)
+            F1, F2 = agent.FB.forward_representation(
+                obs.repeat_interleave(8, 0), flat, z.expand(len(flat), -1))
+            fb = (0.3 * torch.minimum(F1 @ z, F2 @ z)).reshape(16, 8)
+        torch.testing.assert_close(info["index"], fb.argmax(1))
+        torch.testing.assert_close(info["value"], fb.max(1).values)
+        torch.testing.assert_close(model.next_value(obs, torch.Generator().manual_seed(3)),
+                                   fb.max(1).values)
+
     def test_prior_log_probability_is_highest_at_a0(self):
         _, _, model = make("residual")
         candidates = model.propose(torch.randn(16, D_S), torch.Generator().manual_seed(0))
@@ -316,6 +331,19 @@ class TestEntry(unittest.TestCase):
         self.assertEqual([r["shift"] for r in last], list(shift))
         self.assertEqual([r["a0_frac"] for r in last], list(a0))
         self.assertTrue(all(0.0 <= x <= 1.0 for x in a0))
+
+    def test_search_variant_tests_without_training(self):
+        torch.manual_seed(0)
+        agent = FakeAgent()
+        z = math.sqrt(D_Z) * torch.nn.functional.normalize(torch.randn(D_Z), dim=0)
+        args = Namespace(seed=0, train_seed=1000, dynamics=None, candidates=4, sigma=0.2, radius=None,
+                         hidden=16, learning_rate=1e-3, tau=0.01, discount=0.98, episodes=0,
+                         eval_at=entry.eval_points(0, 10), eval_episodes=3, explore=0.3, warmup=10,
+                         batch_size=8, save_every=0, out_dir=".", omega=1.0, alpha=1.0)
+        eval_rows, train_rows, _ = entry.run(args, agent, z, 0.3, "search", "walk",
+                                             lambda physics: physics / 20)
+        self.assertEqual([(r["variant"], r["train_episodes"]) for r in eval_rows], [("search", 0)] * 3)
+        self.assertEqual(train_rows, [])
 
     def test_run_rows_and_determinism(self):
         eval_rows, train_rows, _ = self.run_once()

@@ -5,6 +5,7 @@ of one environment, and the action is chosen by Q_adapt among candidates around 
 
     direct     Q_adapt(s, a) = Q_phi(s, a)
     residual   Q_adapt(s, a) = scale * min_heads F(s, a, z)^T z + Q_phi(s, a)
+    search     Q_adapt(s, a) = scale * min_heads F(s, a, z)^T z, no critic and no training
 
 `scale` = |E_D[r B(s)]| / sqrt(d) (`reward_scale`) puts F^T z in reward units, because z is the
 task vector E_D[r B(s)] normalised to the sphere of radius sqrt(d). Q_phi is two critics; the
@@ -40,7 +41,7 @@ import torch
 
 from zero_shot_rl.env.walker import policy
 
-VARIANTS = ("direct", "residual")
+VARIANTS = ("direct", "residual", "search")
 PRIOR_SIGMA = 0.2  # the std of the FB actor in zero_shot_rl.env.walker.policy
 
 
@@ -145,6 +146,8 @@ class QAdapt:
         q = torch.stack(
             [c(x).squeeze(-1) for c in (self.targets if target else self.critics)]
         )
+        if self.variant == "search":
+            return self.fb_value(obs, actions).expand(2, -1)
         return q + self.fb_value(obs, actions) if self.variant == "residual" else q
 
     @torch.no_grad()

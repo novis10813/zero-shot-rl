@@ -181,7 +181,9 @@ def main():
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--dataset_path", type=str, required=True)
     parser.add_argument("--out_dir", type=str, required=True)
-    parser.add_argument("--variants", nargs="+", default=list(VARIANTS), choices=VARIANTS)
+    parser.add_argument("--variants", nargs="+", default=["direct", "residual"], choices=VARIANTS,
+                        help="`search` is the greedy rule on the FB value alone, with no "
+                             "training: use it with --episodes 0")
     parser.add_argument("--tasks", nargs="+", default=task_z.TASKS)
     parser.add_argument("--dynamics", type=str, default=None,
                         help="yaml of zero_shot_rl.env.dynamics; default is the stock environment")
