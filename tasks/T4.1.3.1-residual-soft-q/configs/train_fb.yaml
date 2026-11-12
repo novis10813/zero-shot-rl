@@ -1,0 +1,12 @@
+# lab sweep spec for the vanilla FB used by T4.1.3.1: walker rnd-100k, seeds 0-4, trained from scratch.
+# Paper hyperparameters (agents/fb/config.yaml defaults): 1M learning steps, evaluated every 20k steps
+# with 10 rollouts per task (stand, walk, run, flip). The model of every evaluation is saved
+# (51 files of about 80 MB per job), so one training step can be picked for all seeds with
+# analysis.table6_aggregate.
+# Peak VRAM is about 8.4 GB per job, reached while loading the dataset after the job starts.
+on: idlab
+command: PYTHONUNBUFFERED=1 uv run python -m zero_shot_rl.train.main_exorl fb walker rnd --eval_tasks stand walk run flip --wandb_logging False --dataset_path $HOME/zsrl-datasets/walker/rnd/dataset.npz --seed {seed}
+vram: 10G
+gpus: 1
+grid:
+  seed: [0, 1, 2, 3, 4]

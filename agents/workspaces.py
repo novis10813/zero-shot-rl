@@ -90,9 +90,6 @@ class OfflineRLWorkspace(AbstractWorkspace):
             makedirs(str(model_path))
 
         logger.info(f"Training {agent.name}.")
-        best_mean_task_reward = -np.inf
-        best_model_path = None
-
         # sample set transitions for z inference
         if isinstance(agent, (FB, SF, GCIQL)):
             if self.domain_name == "point_mass_maze":
@@ -123,22 +120,12 @@ class OfflineRLWorkspace(AbstractWorkspace):
                     + ", ".join(f"{k}={v:.3f}" for k, v in eval_metrics.items())
                 )
 
-                if eval_metrics["eval/task_reward_iqm"] > best_mean_task_reward:
-                    logger.info(
-                        f"New max IQM task reward: {best_mean_task_reward:.3f} -> "
-                        f"{eval_metrics['eval/task_reward_iqm']:.3f}."
-                        f" Saving model."
-                    )
-
-                    # delete current best model
-                    if best_model_path is not None:
-                        best_model_path.unlink(missing_ok=True)
-
-                    agent._name = i  # pylint: disable=protected-access
-                    # save locally
-                    best_model_path = agent.save(model_path)
-
-                    best_mean_task_reward = eval_metrics["eval/task_reward_iqm"]
+                # keep the model of every evaluation: reports pick one training step
+                # for all seeds (analysis.table6_aggregate), which is not the best step
+                # of each seed
+                agent._name = i  # pylint: disable=protected-access
+                saved_path = agent.save(model_path)
+                logger.info(f"Model of step {i} saved at {saved_path}.")
 
                 agent.train()
 
@@ -147,17 +134,8 @@ class OfflineRLWorkspace(AbstractWorkspace):
             if self.wandb_logging:
                 run.log(metrics)
 
-        # keep the final model too: reports may cite a step other than this run's best
-        agent._name = self.learning_steps  # pylint: disable=protected-access
-        final_model_path = agent.save(model_path)
-
         if self.wandb_logging:
-            # save to wandb_logging
-            run.save(best_model_path.as_posix(), base_path=model_path.as_posix())
             run.finish()
-
-        logger.info(f"Best model kept at {best_model_path}.")
-        logger.info(f"Final model kept at {final_model_path}.")
 
     def eval(
         self,
