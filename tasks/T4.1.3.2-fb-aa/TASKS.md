@@ -18,6 +18,8 @@
 1. 辨明之前判斷 distribution drift 的方式是否有問題（例如配對單步評估、只看單筆轉移、分數的正規化方式）。
 2. 找出更好的 metric 來判斷 drift 是否發生。
 
+**進度（zero-shot-rl-291）：** 單步分類器（每個偏移設定一個，輸入 $(s,a,s'-s)$）的 test AUROC：friction 0.71 到 0.75（調高 mild 0.51），只看 $\delta\neq0$ 的步驟 0.83 到 0.88；actuator 0.91 到 0.98。T4.1.2.1 的 $\lVert e\rVert_2$ 在同樣 15 個 test episode 上，friction 0.51 到 0.53，actuator 0.61 到 0.80。Friction 只在約 55% 的步驟改變 $s'$。
+
 ## 2. 基於之前的 module 建立新的 detector
 
 **背景：** 其他論文用 $(s,a)$ 序列學習環境動力學，用來偵測或預測 distribution drift。
