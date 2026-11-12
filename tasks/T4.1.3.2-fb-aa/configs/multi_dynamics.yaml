@@ -1,0 +1,22 @@
+# Dynamics sampled for training the context encoder (zero_shot_rl.data.multi_dynamics).
+# Sliding friction of all geoms (XML 0.7) and one gear multiplier shared by the six actuators
+# (XML gear hip 100, knee 50, ankle 20). A third of the sets change friction only, a third the
+# gear only, a third both; the unchanged parameter stays at its XML value. Both are log-uniform
+# in their range, and values within a factor `margin` of a test value are redrawn, so the eight
+# test configs (tasks/T3.2-ood-robustness/configs, tasks/T4.1.2-dynamic-shift-detection/configs)
+# are not seen in training. The stock dynamics come from the T07 trajectories instead.
+seed: 0
+sets: 300
+friction:
+  range: [0.01, 5.0]
+  test: [0.02, 0.1, 1.5, 3.0]
+gear:
+  range: [0.5, 2.0]
+  test: [0.62, 0.76, 1.3, 1.6]
+margin: 1.1
+# Episodes per set; episode j of set i uses FB training seed and task number (episodes * i + j) mod 12,
+# as seed = number // 4 and task = tasks[number % 4].
+episodes: 6
+tasks: [stand, walk, run, flip]
+# Environment seed of episode j of set i: first_env_seed + episodes * i + j.
+first_env_seed: 100000
