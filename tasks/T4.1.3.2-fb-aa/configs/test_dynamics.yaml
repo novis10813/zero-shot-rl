@@ -1,0 +1,19 @@
+# Test dynamics of the context encoder (zero_shot_rl.data.multi_dynamics with listed sets): the
+# stock walker and the eight shifts of tasks/T3.2-ood-robustness/configs and
+# tasks/T4.1.2-dynamic-shift-detection/configs, written as sliding friction of all geoms and a gear
+# multiplier of the XML gear (hip 100, knee 50, ankle 20).
+values:
+  - {name: baseline, friction: 0.7, gear: 1.0}
+  - {name: friction_mild, friction: 0.1, gear: 1.0}
+  - {name: friction_strong, friction: 0.02, gear: 1.0}
+  - {name: actuator_mild, friction: 0.7, gear: 0.76}
+  - {name: actuator_strong, friction: 0.7, gear: 0.62}
+  - {name: friction_high_mild, friction: 1.5, gear: 1.0}
+  - {name: friction_high_strong, friction: 3.0, gear: 1.0}
+  - {name: actuator_high_mild, friction: 0.7, gear: 1.3}
+  - {name: actuator_high_strong, friction: 0.7, gear: 1.6}
+# 240 episodes per set: episode j uses FB seed and task number j mod 12, so 20 episodes of every
+# seed and task. Environment seeds 200000 + 240 * set + j.
+episodes: 240
+tasks: [stand, walk, run, flip]
+first_env_seed: 200000

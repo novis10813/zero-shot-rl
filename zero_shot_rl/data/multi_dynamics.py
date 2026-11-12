@@ -4,7 +4,7 @@
 tasks/T4.1.3.2-fb-aa/configs/multi_dynamics.yaml): sliding friction of all geoms and one gear
 multiplier for the six actuators, log-uniform in their ranges, redrawn within a factor `margin`
 of any test value. The first third of the sets change friction only, the second gear only, the
-last both.
+last both. A config may instead list its sets under `values` (the test configs).
 
 The entry runs, for one FB training seed, the episodes the config assigns to it: episode j of
 set i belongs to number (episodes * i + j) mod 12, seed number // 4 and task number % 4, and
@@ -61,7 +61,13 @@ def _draw(rng, low, high, tests, margin):
 
 
 def sample_sets(config):
-    """Friction [S] and gear multiplier [S] of the config's dynamics sets."""
+    """Friction [S] and gear multiplier [S] of the config's dynamics sets.
+
+    A config with `values` (a list of {friction, gear}) lists its sets instead of sampling them.
+    """
+    if "values" in config:
+        return (np.array([float(v["friction"]) for v in config["values"]]),
+                np.array([float(v["gear"]) for v in config["values"]]))
     rng = np.random.default_rng(config["seed"])
     n, f, g = config["sets"], config["friction"], config["gear"]
     friction, gear = np.full(n, nominal_friction()), np.ones(n)
@@ -95,7 +101,7 @@ def assignment(config):
     """(set, seed, task, env_seed) of every episode, in set and episode order."""
     k, tasks = config["episodes"], config["tasks"]
     out = []
-    for i in range(config["sets"]):
+    for i in range(len(config["values"]) if "values" in config else config["sets"]):
         for j in range(k):
             number = (k * i + j) % (SEEDS * len(tasks))
             out.append((i, number // len(tasks), tasks[number % len(tasks)], config["first_env_seed"] + k * i + j))

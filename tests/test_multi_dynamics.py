@@ -46,6 +46,27 @@ class MultiDynamicsTest(unittest.TestCase):
             b = stock.step(action).observation["observations"]
         np.testing.assert_array_equal(a, b)
 
+    def test_listed_values_and_test_configs(self):
+        import yaml
+        from zero_shot_rl.env.dynamics import load_dynamics
+        config = yaml.safe_load(open("tasks/T4.1.3.2-fb-aa/configs/test_dynamics.yaml"))
+        friction, gear = sample_sets(config)
+        self.assertEqual(len(assignment(config)), 9 * 240)
+        counts = collections.Counter((e[0], e[1], e[2]) for e in assignment(config))
+        self.assertEqual(set(counts.values()), {20})
+        roots = {"friction_mild": "tasks/T3.2-ood-robustness/configs", "actuator_strong": "tasks/T3.2-ood-robustness/configs",
+                 "friction_high_strong": "tasks/T4.1.2-dynamic-shift-detection/configs",
+                 "actuator_high_mild": "tasks/T4.1.2-dynamic-shift-detection/configs"}
+        for i, v in enumerate(config["values"]):
+            if v["name"] not in roots:
+                continue
+            base = load_dynamics(f"{roots[v['name']]}/{v['name']}.yaml")["base"]
+            listed = dynamics_config(friction[i], np.full(6, gear[i]))["base"]
+            if "geom_friction" in base:
+                self.assertAlmostEqual(base["geom_friction"]["all"], listed["geom_friction"]["all"])
+            if "actuator_gear" in base:
+                np.testing.assert_allclose(list(base["actuator_gear"].values()), listed["actuator_gear"])
+
     def test_gear_is_a_multiplier_of_the_xml_gear(self):
         gear = dynamics_config(0.7, 0.5)["base"]["actuator_gear"]
         self.assertEqual(gear, [50.0, 25.0, 10.0, 50.0, 25.0, 10.0])
