@@ -1,0 +1,18 @@
+# Action search with the frozen FB and no training: at every step 32 candidates, a_0 = pi(s, z)
+# and 31 actions a_0 + N(0, 0.2^2) clipped to [-1, 1], with the offsets bounded to an L2 radius
+# of 0.2 or unbounded; the executed action maximises scale * min_heads F(s, a, z)^T z.
+# Selected FB checkpoint (FB seed 1, step 660000), stand, walk, run and flip in the stock Walker,
+# Actuator Mild and Actuator Strong of T3.2, one episode in each of 20 test environments seeded
+# 5..24. Each job also tests the frozen FB actor in the same environments.
+# Each job value is "<name> <value_correction args>".
+on: idlab
+vram: 4G
+command: tasks/T4.1.3.1-residual-soft-q/run.sh {job} --variants search --episodes 0 --eval_every 1 --eval_episodes 20 --eval_seed_start 5
+grid:
+  job:
+    - "search.clean_unbounded"
+    - "search.clean_r0.2 --radius 0.2"
+    - "search.mild_unbounded --dynamics tasks/T3.2-ood-robustness/configs/actuator_mild.yaml"
+    - "search.mild_r0.2 --radius 0.2 --dynamics tasks/T3.2-ood-robustness/configs/actuator_mild.yaml"
+    - "search.strong_unbounded --dynamics tasks/T3.2-ood-robustness/configs/actuator_strong.yaml"
+    - "search.strong_r0.2 --radius 0.2 --dynamics tasks/T3.2-ood-robustness/configs/actuator_strong.yaml"
