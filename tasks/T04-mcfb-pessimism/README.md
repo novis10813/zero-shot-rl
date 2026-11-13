@@ -64,7 +64,7 @@ IQM over the four tasks) and the final model in `agents/<fb|cfb>/saved_models/lo
 `step,stand,walk,run,flip,mean` (IQM over eval episodes per task, `mean` over tasks):
 
 ```bash
-python tasks/T04-mcfb-pessimism/extract_eval.py <job output.log> \
+python analysis/extract_eval.py <job output.log> \
   tasks/T04-mcfb-pessimism/data/eval_<algo>_s<seed>.csv
 ```
 

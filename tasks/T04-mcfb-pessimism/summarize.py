@@ -10,7 +10,7 @@ Per model and task, on the same 1000 training states (paired):
     d_visited  mean(Q_hat - G) on states the eval policy visits minus the same on
                training states (both with a = pi(s)); < 0 means more pessimistic off-data
 Each is averaged over the four tasks per seed, then mean and std over seeds.
-Table 0 reads the training eval curves in data/eval_<algo>_s<seed>.csv (extract_eval.py).
+Table 0 reads the training eval curves in data/eval_<algo>_s<seed>.csv (analysis/extract_eval.py).
 
 Usage: python tasks/T04-mcfb-pessimism/summarize.py [--fig <png>]
 """

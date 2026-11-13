@@ -1,7 +1,7 @@
 """Extract the periodic eval scores from a training log into a CSV.
 
 Usage:
-    python tasks/T04-mcfb-pessimism/extract_eval.py <output.log> <out.csv>
+    python analysis/extract_eval.py <output.log> <out.csv>
 
 Reads the "Step <i> eval: eval/<task>/episode_reward_iqm=<x>, ..." lines written by
 agents/workspaces.py and writes one row per eval step: step, one column per task, mean.
