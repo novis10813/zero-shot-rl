@@ -15,6 +15,6 @@ ARTIFACTS=${ARTIFACTS:-$HOME/zsrl-artifacts}
 DATASET=${DATASET:-$HOME/zsrl-datasets/walker/rnd/dataset.npz}
 CHECKPOINT=$ARTIFACTS/T4.1.3.1-residual-soft-q/zero-shot-rl-297/660000.pt
 
-export MUJOCO_GL=egl PYTHONPATH=. OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+export MUJOCO_GL=egl PYTHONPATH=. OMP_NUM_THREADS=${OMP_NUM_THREADS:-4} MKL_NUM_THREADS=${MKL_NUM_THREADS:-4}
 uv run python -m zero_shot_rl.eval.value_correction \
   --checkpoint "$CHECKPOINT" --dataset_path "$DATASET" --out_dir "out/$NAME" "$@"
