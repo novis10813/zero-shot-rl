@@ -1,9 +1,10 @@
-# T4.1.3.2 結果：動力學偏移偵測的診斷
+# T4.1.3.2 結果：動力學偏移偵測的診斷與序列 context encoder
 
 **結論：**
 
 - 單步轉移 $(s,a,s')$ 含有區分 friction 偏移的資訊，T4.1.2.1 偵測不到是分數設計的問題。直接訓練分類器區分 baseline 與偏移的 $s'$，friction strong 的 AUC 從 0.515 升到 0.751，actuator strong 從 0.697 升到 0.961。Friction 只在約 55% 的步驟改變 $s'$，只看這些步驟時分類器的 AUC 為 0.83 到 0.88。
 - Friction 造成的狀態差異約 5 步就與 actuator mild 的單步差異同量級，但 walker 是混沌的：只差浮點誤差的兩條軌跡約 30 到 50 步後也完全分開，所以偏移的資訊集中在前 5 到 20 步。動力學模型的多步預測誤差放大得和偏移差異一樣快，多步預測的 AUC 最高只有約 0.58。
+- 用多組隨機動力學訓練的序列 context encoder，不看任何測試設定的資料，就能從 32 步的閉迴路片段偵測偏移：Transformer 版本在調低的四個設定 AUC 為 0.972 到 0.988，friction 也偵測得到。調高的 friction mild（1.5）仍只有 0.590。同一個 context 讓 $B_0(s')$ 的預測在偏移環境中誤差降低 5% 到 16%，在 baseline 不變差。
 - 預訓練 FB 的 $B_0(s')$ 保留了 friction 造成的 $s'$ 差異，相對大小與原始狀態相近或更大。Friction 改變的是 $B_0(s')$ 的落點，不是單步移動的距離，所以只看大小的分數抓不到 friction，要比較預測與實際的 $B_0(s')$ 向量。
 
 ## 單步：設定
@@ -117,6 +118,94 @@ $B_0$ 為各 seed 預訓練 FB 的 backward representation（50 維，範數 $\s
 - Actuator 改變每一步移動的距離：gear 調低時移動變少，AUC 低於 0.5；調高時相反。這與 T4.1.2 的 FB 殘差方向一致。
 - Friction 幾乎不改變移動的距離，但改變落點：$B_0(s'_{\text{shift}})$ 與 $B_0(s'_{\text{base}})$ 的差異如上表保留下來。所以大小類的分數（$\lVert e\rVert$、Mahalanobis 距離、單步移動距離）都抓不到 friction，需要比較預測與實際的 $B_0(s')$ 向量。
 
+## 序列 context encoder：設定
+
+**訓練資料：** 300 組隨機動力學，各 6 個閉迴路 episode（1000 步），另加 T07 的 baseline 軌跡。前 100 組只改 friction，接著 100 組只改 gear，最後 100 組兩者都改。Friction 在 $[0.01,5]$ 內 log-uniform 抽樣，baseline 為 0.7；gear 倍率在 $[0.5,2]$ 內 log-uniform 抽樣。8 個測試設定的參數值前後 10% 範圍內不抽樣。Policy 為 3 個 FB 訓練 seed 的 stand、walk、run、flip $z_r$，在各組間輪流使用。
+
+**模型：** encoder $E$ 讀取 $H$ 步的 $(s,a,s'-s)$，輸出 16 維單位向量 $c$。比較兩種 encoder：
+
+- **Transformer：** 2 層、寬度 128、4 個 head，用 CLS token，不加位置編碼。
+- **Mean：** 每步經過同一個 MLP 後取平均。
+
+預測器 $g(s,a,c)$ 為寬度 512 的 3 層 MLP，目標是凍結的 $B_0(s')$（50 維）。$c$ 取自同一組動力學的另一個 episode。Loss 為
+
+$$L=\lVert g(s,a,c)-B_0(s')\rVert^2+0.1\,\mathrm{InfoNCE}(c_1,c_2),$$
+
+其中 $c_1,c_2$ 來自同組動力學的兩個不同 episode，batch 內其他組為負樣本，$\tau=0.1$。每步取 256 組動力學，$H$ 在 1 到 32 之間隨機。Adam（學習率 $3\times10^{-4}$）訓練 10 萬步，以驗證 loss 選最佳 checkpoint。每個 FB seed 用自己的 $B_0$ 各訓練一個模型，共 3 seed × 2 encoder = 6 個模型。
+
+**驗證：** 組號除以 10 餘 9 的 30 組動力學，加上 baseline 環境 seed 40 到 49 的 episode，不參與訓練。
+
+**測試：** baseline 與 8 個測試設定各跑 240 個閉迴路 episode（3 個 FB seed × 4 個任務 × 20 個）。每個 episode 從第 0、50、…、850 步各取一段長度 $H$ 的片段，分數為 $\lVert c-c_0\rVert$。$c_0$ 是 baseline 訓練 episode 同樣片段的 $c$ 平均後再正規化。AUC 把一個設定的所有片段與 baseline 的所有片段比較，下表列 3 個 FB seed 的平均，括號內為 seed 間的範圍。
+
+## 序列 context encoder：偵測
+
+驗證集上，從 31 組動力學中挑出正確一組的 InfoNCE 準確率（亂猜為 3.2%）：
+
+| Encoder | $H=1$ | $H=4$ | $H=16$ | $H=32$ |
+|---|---|---|---|---|
+| Transformer | 5.8% 到 9.0% | 11.6% 到 12.9% | 28.4% 到 31.6% | 40.0% 到 43.2% |
+| Mean | 2.6% 到 7.1% | 16.1% 到 16.8% | 20.6% 到 24.5% | 19.4% 到 27.7% |
+
+測試設定的偵測 AUC，Transformer：
+
+| 環境 | $H=1$ | $H=4$ | $H=16$ | $H=32$ |
+|---|---|---|---|---|
+| Friction Mild | 0.552 | 0.692 | 0.922 | 0.972（0.968 到 0.976） |
+| Friction Strong | 0.602 | 0.789 | 0.966 | 0.986（0.986 到 0.988） |
+| Actuator Mild | 0.729 | 0.909 | 0.980 | 0.987（0.985 到 0.989） |
+| Actuator Strong | 0.879 | 0.971 | 0.986 | 0.988（0.987 到 0.990） |
+
+調高的設定，$H=32$：friction mild 0.590、friction strong 0.952、actuator mild 0.996、actuator strong 0.994。
+
+Mean encoder：
+
+| 環境 | $H=1$ | $H=4$ | $H=16$ | $H=32$ |
+|---|---|---|---|---|
+| Friction Mild | 0.596 | 0.690 | 0.831 | 0.899（0.893 到 0.906） |
+| Friction Strong | 0.670 | 0.775 | 0.903 | 0.957（0.952 到 0.961） |
+| Actuator Mild | 0.663 | 0.818 | 0.941 | 0.968（0.965 到 0.970） |
+| Actuator Strong | 0.794 | 0.926 | 0.983 | 0.991（0.989 到 0.995） |
+
+調高的設定，$H=32$：friction mild 0.545、friction strong 0.798、actuator mild 0.981、actuator strong 0.994。
+
+- **片段越長越容易偵測。** Friction 在 $H=1$ 時低於單步分類器（0.71、0.75），到 $H=16$ 才超過 0.9。
+- **Transformer 在長片段較好**，friction 差異最大：$H=32$ 時 friction mild 0.972 比 0.899，調高的 friction strong 0.952 比 0.798。$H=1$ 時 friction 反而是 mean 較好。
+- **調高的 friction mild 仍偵測不到。** 單步分類器在這個設定的 AUC 也只有 0.51。
+- **只看 walk 的 episode 結果相近**：Transformer 在 $H=32$ 時調低的四個設定為 0.988 到 0.997。
+
+上一節的單步分類器看過偏移資料，context encoder 沒有，但兩者的測試資料不同：分類器是配對單步轉移，這裡是從 reset 開始的閉迴路 episode。
+
+## 序列 context encoder：偵測是否只靠狀態分布
+
+閉迴路 episode 中，偏移會改變 walker 的姿勢分布，encoder 可能只是辨認姿勢。把片段按起點分開計算（Transformer，3 個 seed 平均）：
+
+| 環境 | $H=8$，起點 0 | $H=8$，起點 50 | $H=32$，起點 0 | $H=32$，起點 50 |
+|---|---|---|---|---|
+| Friction Mild | 0.524 | 0.850 | 0.965 | 0.970 |
+| Friction Strong | 0.542 | 0.918 | 0.991 | 0.989 |
+| Actuator Mild | 0.907 | 0.954 | 0.988 | 0.989 |
+| Actuator Strong | 0.983 | 0.982 | 0.993 | 0.992 |
+
+起點 0 的片段從 reset 開始，baseline 與偏移的初始狀態分布相同，$H=32$ 的 friction 仍有 0.965 與 0.991。這支持 encoder 用到的是動力學。Friction 在 $H=8$ 起點 0 接近 0.5，但起點 50 時明顯較高，可能是 reset 後前幾步尚未接觸地面，friction 不起作用。閉迴路中狀態與動力學同時改變，這個檢查無法完全分開兩者。
+
+## 序列 context encoder：$B_0(s')$ 的預測
+
+在每個片段之後的 100 步，比較 $g$ 用片段自己的 $c$ 與用 $c_0$ 時的誤差 $\lVert g-B_0(s')\rVert^2$。下表為 Transformer，3 個 seed 平均的改善比例 $1-\text{err}(c)/\text{err}(c_0)$：
+
+| 環境 | $H=1$ | $H=32$ | $H=32$ 時 err($c$) / err($c_0$)（seed 0） |
+|---|---|---|---|
+| Baseline | −3.0% | −0.3% | 1.777 / 1.775 |
+| Friction Mild | −0.4% | 12.0% | 1.604 / 1.856 |
+| Friction Strong | 2.3% | 16.3% | 1.963 / 2.401 |
+| Actuator Mild | 3.3% | 4.6% | 1.332 / 1.395 |
+| Actuator Strong | 14.8% | 15.3% | 1.050 / 1.235 |
+
+調高的設定在 $H=32$ 時：friction mild 0.0%、friction strong 6.7%、actuator mild 5.9%、actuator strong 16.5%。Mean encoder 在 $H=32$ 時調低的四個設定為 8.1%、11.4%、5.6%、17.0%。
+
+- $g(s,a,c_1)$ 比 $g(s,a,c_0)$ 更接近偏移環境的 $B_0(s')$，即使該設定的參數不在訓練範圍內抽樣。
+- 改善只有 5% 到 16%，剩下的誤差（約 1.0 到 2.0）比偏移造成的差異大，$g$ 本身的誤差仍是主要部分。
+- 驗證集的預測 loss 在 $H=1$ 與 $H=32$ 幾乎相同（每維 0.034 到 0.038），因為驗證集是所有動力學的平均，大多數組與 baseline 差異不大，看不出 context 的作用。
+
 ## 限制
 
 - 分類器訓練時看過偏移資料，只能說明單步的資訊量，不代表只用 baseline 資料訓練的偵測器能達到同樣的效果。
@@ -125,3 +214,6 @@ $B_0$ 為各 seed 預訓練 FB 的 backward representation（50 維，範數 $\s
 - 單步的評估是把 baseline rollout 的 $(s,a)$ 放進偏移環境走一步，不是讓 policy 在偏移環境中執行。多步預測一節使用閉迴路軌跡，但起點仍取自 baseline rollout。
 - $B_0$ 的檢查只比較差異的大小，沒有測試用 $B_0(s')$ 能否區分偏移。
 - 多步預測只用 T4.1.2.1 的一個模型。
+- Context encoder 的 AUC 把同一個 episode 的 18 個片段都算進去，片段之間不獨立。
+- Context encoder 只訓練一個 torch seed，seed 間的範圍只反映 FB seed（即 $B_0$）的差異。
+- Context encoder 只用一組訓練範圍（friction $[0.01,5]$、gear $[0.5,2]$），測試設定都在範圍內，沒有測試範圍外的偏移。
