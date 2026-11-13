@@ -1,0 +1,12 @@
+# Frozen FB baseline: the FB actor of the selected checkpoint (FB seed 1, step 660000) with no
+# value correction, on stand, walk, run and flip in the stock Walker, Actuator Mild and Actuator
+# Strong of T3.2. One episode in each of 20 test environments seeded 5..24.
+# Each job value is "<name> <value_correction args>".
+on: idlab
+vram: 4G
+command: tasks/T4.1.3.1-residual-soft-q/run.sh {job} --variants --eval_episodes 20 --eval_seed_start 5
+grid:
+  job:
+    - "frozen_fb.clean"
+    - "frozen_fb.mild --dynamics tasks/T3.2-ood-robustness/configs/actuator_mild.yaml"
+    - "frozen_fb.strong --dynamics tasks/T3.2-ood-robustness/configs/actuator_strong.yaml"

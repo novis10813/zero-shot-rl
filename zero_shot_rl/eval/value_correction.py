@@ -12,8 +12,10 @@ prior policy.
 After each episode count of --eval_every (0, every, 2 every, ... and the last one; 0 is before
 training) or of the explicit list --eval_at the critics are held fixed and
 the greedy rule runs one episode in each of the --eval_episodes environments seeded
-0..eval_episodes-1, with the same candidate noise at every count. Variant `fb` is the frozen FB
-actor in the same environments. The test seeds must differ from --train_seed.
+--eval_seed_start, ..., --eval_seed_start + eval_episodes - 1 (default 0..eval_episodes-1),
+with the same candidate noise at every count. Variant `fb` is the frozen FB actor in the same
+environments. The test seeds must differ from --train_seed. `--variants` with no names tests
+only the frozen FB actor.
 
 --out_dir gets
 
@@ -68,12 +70,18 @@ def eval_points(episodes, every):
     return sorted({*range(0, episodes + 1, every), episodes})
 
 
+def eval_seeds(args):
+    """The seeds of the test environments; args without eval_seed_start start at 0."""
+    start = getattr(args, "eval_seed_start", 0)
+    return list(range(start, start + args.eval_episodes))
+
+
 def evaluate(args, agent, z, model, reward_fn):
     """One greedy episode per test environment; model None is the frozen FB actor. Returns
     the returns, shifts, gains and a0 fractions [eval_episodes] (see the module docstring)."""
     n = args.eval_episodes
     generator = torch.Generator().manual_seed(args.seed)
-    envs = [make_env(i, args.dynamics) for i in range(n)]
+    envs = [make_env(seed, args.dynamics) for seed in eval_seeds(args)]
     obs = np.stack([env.reset().observation["observations"] for env in envs])
     returns, shift, gain = np.zeros(n), np.zeros(n), np.zeros(n)
     a0 = np.zeros(n)
@@ -100,8 +108,8 @@ def evaluate(args, agent, z, model, reward_fn):
 def frozen_rows(args, agent, z, task, reward_fn):
     """The rows of eval.csv of the frozen FB actor."""
     returns, *_ = evaluate(args, agent, z, None, reward_fn)
-    return [{"variant": "fb", "task": task, "train_episodes": 0, "seed": i, "return": r,
-             "shift": 0.0, "gain": 0.0, "a0_frac": 1.0} for i, r in enumerate(returns)]
+    return [{"variant": "fb", "task": task, "train_episodes": 0, "seed": seed, "return": r,
+             "shift": 0.0, "gain": 0.0, "a0_frac": 1.0} for seed, r in zip(eval_seeds(args), returns)]
 
 
 def run(args, agent, z, scale, variant, task, reward_fn):
@@ -128,9 +136,9 @@ def run(args, agent, z, scale, variant, task, reward_fn):
     def test(train_episodes):
         returns, shift, gain, a0 = evaluate(args, agent, z, model, reward_fn)
         eval_rows.extend({"variant": variant, "task": task, "train_episodes": train_episodes,
-                          "seed": i, "return": returns[i], "shift": shift[i],
+                          "seed": seed, "return": returns[i], "shift": shift[i],
                           "gain": gain[i], "a0_frac": a0[i]}
-                         for i in range(len(returns)))
+                         for i, seed in enumerate(eval_seeds(args)))
         print(f"{variant} {task} after {train_episodes} episodes: "
               f"test return {returns.mean():.1f}, shift {shift.mean():.2f}, "
               f"gain {gain.mean():.2f}, a0 {a0.mean():.2f}", flush=True)
@@ -181,9 +189,10 @@ def main():
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--dataset_path", type=str, required=True)
     parser.add_argument("--out_dir", type=str, required=True)
-    parser.add_argument("--variants", nargs="+", default=["direct", "residual"], choices=VARIANTS,
+    parser.add_argument("--variants", nargs="*", default=["direct", "residual"], choices=VARIANTS,
                         help="`search` is the greedy rule on the FB value alone, with no "
-                             "training: use it with --episodes 0")
+                             "training: use it with --episodes 0; no names tests only the "
+                             "frozen FB actor")
     parser.add_argument("--tasks", nargs="+", default=task_z.TASKS)
     parser.add_argument("--dynamics", type=str, default=None,
                         help="yaml of zero_shot_rl.env.dynamics; default is the stock environment")
@@ -193,6 +202,9 @@ def main():
     parser.add_argument("--eval_at", nargs="+", type=int, default=None,
                         help="explicit episode counts to test after; replaces --eval_every")
     parser.add_argument("--eval_episodes", type=int, default=20)
+    parser.add_argument("--eval_seed_start", type=int, default=0,
+                        help="the test environments are seeded eval_seed_start, ..., "
+                             "eval_seed_start + eval_episodes - 1")
     parser.add_argument("--save_every", type=int, default=0,
                         help="save the critics after every save_every episodes (0 is before "
                              "training); default 0 saves only the last")
@@ -220,8 +232,8 @@ def main():
     parser.add_argument("--dataset_transitions", type=int, default=100000)
     parser.add_argument("--z_inference_steps", type=int, default=10000)
     args = parser.parse_args()
-    if args.train_seed < args.eval_episodes:
-        raise ValueError("--train_seed is one of the test seeds 0..eval_episodes-1")
+    if args.eval_seed_start <= args.train_seed < args.eval_seed_start + args.eval_episodes:
+        raise ValueError("--train_seed is one of the test seeds")
     if args.train_only:
         args.eval_at = []
     elif args.eval_at is None:

@@ -307,6 +307,21 @@ class TestEntry(unittest.TestCase):
                              ("fb", 0.0, 0.0, 1.0))
             self.assertAlmostEqual(row["return"], sum(range(1, 21)) / 20)
 
+    def test_eval_seed_start_shifts_the_test_environments(self):
+        agent = FakeAgent()
+        z = torch.ones(D_Z)
+        seeds = []
+
+        def make_env(seed, dynamics=None):
+            seeds.append(seed)
+            return FakeEnv(seed, dynamics)
+
+        args = Namespace(seed=0, dynamics=None, eval_episodes=3, eval_seed_start=5)
+        with mock.patch.object(entry, "make_env", make_env):
+            rows = entry.frozen_rows(args, agent, z, "walk", lambda physics: physics / 20)
+        self.assertEqual(seeds, [5, 6, 7])
+        self.assertEqual([r["seed"] for r in rows], [5, 6, 7])
+
     def test_saved_critics_are_tested_like_in_training(self):
         with tempfile.TemporaryDirectory() as d:
             (Path(d) / "q").mkdir()
