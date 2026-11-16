@@ -1,13 +1,31 @@
 # T4.1.3.2 結果：動力學偏移偵測的診斷、序列 context encoder 與動作修正的邊界
 
+## 名詞說明
+
+- **原環境（baseline、stock）：** 沒有改任何參數的 walker。
+- **偏移：** 改變環境的參數。friction 是地面摩擦，gear 是馬達輸出力矩的倍率。gear 為 1.0 是原本的馬達，小於 1 是馬達變弱（動力不足），大於 1 是馬達變強。mild 與 strong 是輕度與重度，「調高」是把參數調大。
+- **轉移 $(s,a,s')$：** 一筆紀錄，在狀態 $s$ 做了動作 $a$，下一步走到狀態 $s'$。「單步」只看一筆轉移，「多步」看連續很多步。
+- **episode 與 return：** episode 是從環境重置開始、連續跑 1000 步的一次完整執行。return 是這 1000 步的任務獎勵加總，越高越好。
+- **重播原動作：** 把事先記錄好的動作依序送進環境，不管環境現在變成什麼樣子。
+- **實際執行：** policy 每一步看著當下的狀態自己決定動作，動作會隨環境改變。報告正文的「實際執行」就是閉迴路，「重播原動作」就是開迴路。
+- **配對：** 同一個起點、同一組動作，只換環境，所以兩者的差別只來自環境。
+- **AUC：** 區分兩組資料的能力。0.5 等於亂猜，1.0 等於完全分得開。
+- **$B_0(s')$：** 預訓練 FB 對狀態 $s'$ 的 50 維描述，用來比較兩個狀態「對任務而言」差多少。
+- **context：** 從最近一段轉移估出的 16 維向量，描述現在環境的動力學。產生它的模型叫 context encoder。
+- **window 與 oracle：** window 是只用最近 32 步估出的 context，上線時拿得到。oracle 是用偏移環境所有步驟的平均 context，上線時拿不到，只用來看上限。
+- **飽和：** 動作已經是最大值（$\pm1$），沒辦法再加大。
+- **混沌：** 很小的差異會在後續步驟被放大。
+- **浮點誤差：** 電腦計算時的微小捨入誤差，$10^{-6}$ 左右。
+- **標準誤差：** 平均值的不確定程度。兩組的差值小於約 2 個標準誤差時，不能說有可靠的差異。
+
 **結論：**
 
 - 單步轉移 $(s,a,s')$ 含有區分 friction 偏移的資訊，T4.1.2.1 偵測不到是分數設計的問題。直接訓練分類器區分 baseline 與偏移的 $s'$，friction strong 的 AUC 從 0.515 升到 0.751，actuator strong 從 0.697 升到 0.961。Friction 只在約 55% 的步驟改變 $s'$，只看這些步驟時分類器的 AUC 為 0.83 到 0.88。
 - Friction 造成的狀態差異約 5 步就與 actuator mild 的單步差異同量級，但 walker 是混沌的：只差浮點誤差的兩條軌跡約 30 到 50 步後也完全分開，所以偏移的資訊集中在前 5 到 20 步。動力學模型的多步預測誤差放大得和偏移差異一樣快，多步預測的 AUC 最高只有約 0.58。
-- 用多組隨機動力學訓練的序列 context encoder，不看任何測試設定的資料，就能從 32 步的閉迴路片段偵測偏移：Transformer 版本在調低的四個設定 AUC 為 0.972 到 0.988，friction 也偵測得到。調高的 friction mild（1.5）仍只有 0.590。同一個 context 讓 $B_0(s')$ 的預測在偏移環境中誤差降低 5% 到 16%，在 baseline 不變差。
+- 用多組隨機動力學訓練的序列 context encoder，不看任何測試設定的資料，就能從 32 步的實際執行片段偵測偏移：Transformer 版本在調低的四個設定 AUC 為 0.972 到 0.988，friction 也偵測得到。調高的 friction mild（1.5）仍只有 0.590。同一個 context 讓 $B_0(s')$ 的預測在偏移環境中誤差降低 5% 到 16%，在 baseline 不變差。
 - 預訓練 FB 的 $B_0(s')$ 保留了 friction 造成的 $s'$ 差異，相對大小與原始狀態相近或更大。Friction 改變的是 $B_0(s')$ 的落點，不是單步移動的距離，所以只看大小的分數抓不到 friction，要比較預測與實際的 $B_0(s')$ 向量。
 - 動作修正在 gear 調低時有物理上限。walker 的 motor 力矩為 $m\cdot\text{gear}_i\cdot\text{clip}(a_i,-1,1)$，FB actor 的動作大多已在 $\pm1$，gear 調低後 93% 到 95% 的動作維度無法補償，stock 力矩的 23%（$m=0.76$）與 36%（$m=0.62$）在偏移環境中產生不出來。$[-1,1]$ 內的最佳動作 $\mathrm{clip}(a/m)$ 只能補回單步差距的 3% 到 4%，透過 $B_0$ 預測器學到的修正為 $-3\%$ 到 $-0.5\%$。Gear 調高時最佳動作能完全補回，學習到的修正補回 39% 到 50%。
-- 閉迴路 return 上，動作修正在調低 gear 時沒有回補：不修正、理想修正 $a^*$、FB-AA 在 gear 0.76 為 335.0、298.3、314.7，在 0.62 為 266.0、238.3、236.8，兩種修正都不高於不修正。Gear 調高時不修正的 return 高於 stock（+60、+98），$a^*$ 把它拉回 stock 附近（+10、+22），FB-AA 只拉回一半（+47、+48）。
+- 讓 policy 實際跑完整個 episode 的 return 上，動作修正在調低 gear 時沒有回補：不修正、理想修正 $a^*$、FB-AA 在 gear 0.76 為 335.0、298.3、314.7，在 0.62 為 266.0、238.3、236.8，兩種修正都不高於不修正。Gear 調高時不修正的 return 高於 stock（+60、+98），$a^*$ 把它拉回 stock 附近（+10、+22），FB-AA 只拉回一半（+47、+48）。
 
 ## 單步：設定
 
@@ -45,7 +63,7 @@ AUC 為隨機一筆偏移樣本的分數高於隨機一筆 baseline 樣本的機
 
 Actuator 偏移在每一步都改變 $s'$。Friction 偏移在 55% 到 56% 的步驟改變 $s'$，其餘步驟的 $s'$ 與 baseline 完全相同（差異小於 $10^{-6}$）。這些步驟推測是腳不在地上的步驟，資料中沒有接觸資訊，未直接驗證。差異也集中在少數步驟：$\lVert s'_{\text{shift}}-s'_{\text{base}}\rVert^2$ 最大的 10% 步驟，在 friction 占總量的 75% 到 90%，在 actuator 只占 34% 到 35%。
 
-只看 friction 有作用的步驟（約 8,200 對）：
+只看 friction 有改變 $s'$ 的步驟（約 8,200 對）：
 
 | 環境 | 舊方法 AUC | 新方法 AUC | 新方法正確率 | 偏移被判對 | baseline 被誤判 |
 |---|---|---|---|---|---|
@@ -58,11 +76,11 @@ Actuator 偏移在每一步都改變 $s'$。Friction 偏移在 55% 到 56% 的�
 
 $$\lVert e+\delta\rVert^2=\lVert e\rVert^2+2e^\top\delta+\lVert\delta\rVert^2$$
 
-$e$ 與 $\delta$ 的方向無關時，分數只多了 $\lVert\delta\rVert^2$。在有作用的步驟上，$\lVert\delta\rVert/\lVert e\rVert$ 的中位數在 friction 為 0.16 到 0.61，actuator 為 0.78 到 1.83，所以 friction 造成的分數變化小於 baseline 本身的變異。MuJoCo 是確定性的，$e$ 完全來自模型的近似誤差。
+$e$ 與 $\delta$ 的方向無關時，分數只多了 $\lVert\delta\rVert^2$。在偏移有改變 $s'$ 的步驟上，$\lVert\delta\rVert/\lVert e\rVert$ 的中位數在 friction 為 0.16 到 0.61，actuator 為 0.78 到 1.83，所以 friction 造成的分數變化小於 baseline 本身的變異。MuJoCo 是確定性的，$e$ 完全來自模型的近似誤差。
 
 ## 多步：偏移差異的累積
 
-從 baseline rollout（3 個 seed × 20 個 episode）的第 0、50、…、850 步取物理狀態，在 baseline 與各偏移環境各跑 100 步。開迴路照 baseline rollout 的動作執行，閉迴路由各環境中的 FB actor 自己決定動作。表為開迴路的 $\lVert s_k^{\text{shift}}-s_k^{\text{base}}\rVert$ 中位數（1,080 條軌跡）。最後一列為閉迴路 baseline 與原 rollout 的差異，兩者只差 actor 單筆與批次計算的浮點誤差。
+從 baseline rollout（3 個 seed × 20 個 episode）的第 0、50、…、850 步取物理狀態，在 baseline 與各偏移環境各跑 100 步。重播原動作是照 baseline 記錄的動作執行，實際執行是各環境中的 FB actor 看著當時的狀態自己決定動作。表為重播原動作的 $\lVert s_k^{\text{shift}}-s_k^{\text{base}}\rVert$ 中位數（1,080 條軌跡）。最後一列為實際執行的 baseline 與原 rollout 的差異，兩者只差 actor 單筆與批次計算的浮點誤差。
 
 | 環境 | $k=1$ | $k=5$ | $k=10$ | $k=20$ | $k=50$ | $k=100$ |
 |---|---|---|---|---|---|---|
@@ -74,11 +92,11 @@ $e$ 與 $\delta$ 的方向無關時，分數只多了 $\lVert\delta\rVert^2$。�
 
 - Friction 約 5 步達到 actuator mild 的單步差異（3.7）。調高的 friction strong 也是約 5 步（3.6），調高的 mild 要 10 到 20 步。
 - 第 50 步時表中四個設定都在 23 到 26，與浮點誤差造成的分開（第 50 步 15.5、第 100 步 34.8）是同一個量級，差異的大小不再反映偏移的類型或強度。
-- 閉迴路的差異更大，第 10 步時 friction 為 17.6 與 19.1，開迴路為 7.3 與 9.4。
+- 實際執行的差異更大，第 10 步時 friction 為 17.6 與 19.1，重播原動作為 7.3 與 9.4。
 
 ## 多步：動力學模型的多步預測
 
-用 T4.1.2.1 的動力學模型，從 $s_{t_0}$ 以閉迴路軌跡實際的動作預測 $k$ 步，分數為與實際狀態的距離。這不需要配對資料，與上線時的情況相同。另一個分數是前 $k$ 步單步誤差 $\lVert e\rVert_2$ 的平均。AUC 為 baseline 軌跡與偏移軌跡的比較。
+用 T4.1.2.1 的動力學模型，從 $s_{t_0}$ 以實際執行軌跡中的動作預測 $k$ 步，分數為與實際狀態的距離。這不需要配對資料，與上線時的情況相同。另一個分數是前 $k$ 步單步誤差 $\lVert e\rVert_2$ 的平均。AUC 為 baseline 軌跡與偏移軌跡的比較。
 
 | 環境 | 多步預測 $k=1$ | $k=5$ | $k=10$ | $k=30$ | 單步誤差平均 $k=5$ | $k=10$ | $k=30$ |
 |---|---|---|---|---|---|---|---|
@@ -92,7 +110,7 @@ $e$ 與 $\delta$ 的方向無關時，分數只多了 $\lVert\delta\rVert^2$。�
 
 ## $B_0(s')$ 是否保留偏移造成的差異
 
-$B_0$ 為各 seed 預訓練 FB 的 backward representation（50 維，範數 $\sqrt{50}$），用在該 seed 的配對單步資料上。只看偏移有作用的步驟，比較差異在 $B_0$ 與原始狀態中的相對大小：
+$B_0$ 為各 seed 預訓練 FB 的 backward representation（50 維，範數 $\sqrt{50}$），用在該 seed 的配對單步資料上。只看偏移有改變 $s'$ 的步驟，比較差異在 $B_0$ 與原始狀態中的相對大小：
 
 - **相對單步變化：** $\lVert x(s'_{\text{shift}})-x(s'_{\text{base}})\rVert/\lVert x(s'_{\text{base}})-x(s)\rVert$ 的中位數，$x$ 為原始狀態或 $B_0$。
 - **保留倍率：** $B_0$ 的相對單步變化除以原始狀態的。另以隨機兩個 baseline $s'$ 的距離中位數當尺度算同樣的倍率。
@@ -122,7 +140,7 @@ $B_0$ 為各 seed 預訓練 FB 的 backward representation（50 維，範數 $\s
 
 ## 序列 context encoder：設定
 
-**訓練資料：** 300 組隨機動力學，各 6 個閉迴路 episode（1000 步），另加 T07 的 baseline 軌跡。前 100 組只改 friction，接著 100 組只改 gear，最後 100 組兩者都改。Friction 在 $[0.01,5]$ 內 log-uniform 抽樣，baseline 為 0.7；gear 倍率在 $[0.5,2]$ 內 log-uniform 抽樣。8 個測試設定的參數值前後 10% 範圍內不抽樣。Policy 為 3 個 FB 訓練 seed 的 stand、walk、run、flip $z_r$，在各組間輪流使用。
+**訓練資料：** 300 組隨機動力學，各 6 個實際執行的 episode（1000 步），另加 T07 的 baseline 軌跡。前 100 組只改 friction，接著 100 組只改 gear，最後 100 組兩者都改。Friction 在 $[0.01,5]$ 內 log-uniform 抽樣，baseline 為 0.7；gear 倍率在 $[0.5,2]$ 內 log-uniform 抽樣。8 個測試設定的參數值前後 10% 範圍內不抽樣。Policy 為 3 個 FB 訓練 seed 的 stand、walk、run、flip $z_r$，在各組間輪流使用。
 
 **模型：** encoder $E$ 讀取 $H$ 步的 $(s,a,s'-s)$，輸出 16 維單位向量 $c$。比較兩種 encoder：
 
@@ -137,7 +155,7 @@ $$L=\lVert g(s,a,c)-B_0(s')\rVert^2+0.1\,\mathrm{InfoNCE}(c_1,c_2),$$
 
 **驗證：** 組號除以 10 餘 9 的 30 組動力學，加上 baseline 環境 seed 40 到 49 的 episode，不參與訓練。
 
-**測試：** baseline 與 8 個測試設定各跑 240 個閉迴路 episode（3 個 FB seed × 4 個任務 × 20 個）。每個 episode 從第 0、50、…、850 步各取一段長度 $H$ 的片段，分數為 $\lVert c-c_0\rVert$。$c_0$ 是 baseline 訓練 episode 同樣片段的 $c$ 平均後再正規化。AUC 把一個設定的所有片段與 baseline 的所有片段比較，下表列 3 個 FB seed 的平均，括號內為 seed 間的範圍。
+**測試：** baseline 與 8 個測試設定各跑 240 個實際執行的 episode（3 個 FB seed × 4 個任務 × 20 個）。每個 episode 從第 0、50、…、850 步各取一段長度 $H$ 的片段，分數為 $\lVert c-c_0\rVert$。$c_0$ 是 baseline 訓練 episode 同樣片段的 $c$ 平均後再正規化。AUC 把一個設定的所有片段與 baseline 的所有片段比較，下表列 3 個 FB seed 的平均，括號內為 seed 間的範圍。
 
 ## 序列 context encoder：偵測
 
@@ -175,11 +193,11 @@ Mean encoder：
 - **調高的 friction mild 仍偵測不到。** 單步分類器在這個設定的 AUC 也只有 0.51。
 - **只看 walk 的 episode 結果相近**：Transformer 在 $H=32$ 時調低的四個設定為 0.988 到 0.997。
 
-上一節的單步分類器看過偏移資料，context encoder 沒有，但兩者的測試資料不同：分類器是配對單步轉移，這裡是從 reset 開始的閉迴路 episode。
+上一節的單步分類器看過偏移資料，context encoder 沒有，但兩者的測試資料不同：分類器是配對單步轉移，這裡是從環境重置開始、實際執行的 episode。
 
 ## 序列 context encoder：偵測是否只靠狀態分布
 
-閉迴路 episode 中，偏移會改變 walker 的姿勢分布，encoder 可能只是辨認姿勢。把片段按起點分開計算（Transformer，3 個 seed 平均）：
+實際執行的 episode 中，偏移會改變 walker 的姿勢分布，encoder 可能只是辨認姿勢。把片段按起點分開計算（Transformer，3 個 seed 平均）：
 
 | 環境 | $H=8$，起點 0 | $H=8$，起點 50 | $H=32$，起點 0 | $H=32$，起點 50 |
 |---|---|---|---|---|
@@ -188,7 +206,7 @@ Mean encoder：
 | Actuator Mild | 0.907 | 0.954 | 0.988 | 0.989 |
 | Actuator Strong | 0.983 | 0.982 | 0.993 | 0.992 |
 
-起點 0 的片段從 reset 開始，baseline 與偏移的初始狀態分布相同，$H=32$ 的 friction 仍有 0.965 與 0.991。這支持 encoder 用到的是動力學。Friction 在 $H=8$ 起點 0 接近 0.5，但起點 50 時明顯較高，可能是 reset 後前幾步尚未接觸地面，friction 不起作用。閉迴路中狀態與動力學同時改變，這個檢查無法完全分開兩者。
+起點 0 的片段從環境重置開始，baseline 與偏移的初始狀態分布相同，$H=32$ 的 friction 仍有 0.965 與 0.991。這支持 encoder 用到的是動力學。Friction 在 $H=8$ 起點 0 接近 0.5，但起點 50 時明顯較高，可能是重置後前幾步尚未接觸地面，friction 不起作用。實際執行時狀態與動力學同時改變，這個檢查無法完全分開兩者。
 
 ## 序列 context encoder：$B_0(s')$ 的預測
 
@@ -216,7 +234,7 @@ $$a^*_i=\mathrm{clip}(a_i/m,\,-1,\,1)$$
 
 $m\ge1$ 時 $a^*_i/m$ 一定在範圍內，單步結果與 stock 完全相同。$m<1$ 時 $|a_i|>m$ 的維度飽和在 $\pm1$，缺少的力矩 $(|a_i|-m)\cdot\text{gear}_i$ 任何動作都補不回來，所以 $a^*$ 是這個偏移下任何方法的單步上限。
 
-**設定：** 3 個 FB seed 的 stand、walk、run、flip policy 各 5 個 stock episode（環境種子 300000 到 300019，每個 seed 20 個 episode，共 60,000 步）。每一步的物理狀態與動作，放進 baseline 與 4 個 gear 偏移環境各走一步，動作分別為 stock 的 $a$ 與 $a^*$。指標為 $\lVert B_0(s'_k(\cdot))-B_0(s'_0(a))\rVert$ 的中位數，$B_0$ 取自該 seed 的 FB。學習到的修正取自 `adapt_step` 的結果：以 context encoder（Transformer，32 步的片段）與預測器 $g$，從 $a'=a$ 出發對 $\lVert g(s,a',c_1)-g(s,a,c_0)\rVert^2$ 做 20 步 Adam（學習率 0.05），動作限制在 $[-1,1]$。$c_1$ 取自該步之前 32 步的轉移（window），或該偏移環境所有取樣步驟 context 的平均（oracle），$c_0$ 為 stock 環境的 oracle context。這個結果在每 8 步取一次、從第 32 步開始的 21,780 步上；其他欄位用全部 60,000 步。
+**設定：** 3 個 FB seed 的 stand、walk、run、flip policy 各 5 個 stock episode（環境種子 300000 到 300019，每個 seed 20 個 episode，共 60,000 步）。每一步的物理狀態與動作，放進原環境 與 4 個 gear 偏移環境各走一步，動作分別為 stock 的 $a$ 與 $a^*$。指標為 $\lVert B_0(s'_k(\cdot))-B_0(s'_0(a))\rVert$ 的中位數，$B_0$ 取自該 seed 的 FB。學習到的修正取自 `adapt_step` 的結果：以 context encoder（Transformer，32 步的片段）與預測器 $g$，從 $a'=a$ 出發對 $\lVert g(s,a',c_1)-g(s,a,c_0)\rVert^2$ 做 20 步 Adam（學習率 0.05），動作限制在 $[-1,1]$。$c_1$ 取自該步之前 32 步的轉移（window），或該偏移環境所有取樣步驟 context 的平均（oracle），$c_0$ 為 stock 環境的 oracle context。這個結果在每 8 步取一次、從第 32 步開始的 21,780 步上；其他欄位用全部 60,000 步。
 
 **結果：**
 
@@ -237,7 +255,7 @@ $m\ge1$ 時 $a^*_i/m$ 一定在範圍內，單步結果與 stock 完全相同。
 - **調高 gear 時有解，學習法補回約一半。** $a^*$ 讓 $B_0$ 的距離降到浮點誤差（$10^{-6}$）。學習到的修正在 window 為 39% 與 48%，oracle 為 42% 與 50%，兩者相差 3 個百分點，所以 context 估計不是主要的限制，剩下的差距來自 $g$ 對動作的預測。
 - 調低 gear 的動作已經用盡力矩，這個現象是由 FB policy 的動作分布造成的。若 policy 的動作較少飽和，修正的空間會變大，這個檢查沒有做。
 
-## 動作修正的閉迴路 return
+## 動作修正：讓 policy 實際跑完整個 episode 的 return
 
 **設定：** 3 個 FB seed 的 stand、walk、run、flip policy 各 5 個 episode（環境種子 300000 到 300019），共 60 個 episode，每個 1000 步。環境為 stock walker 與 4 個 gear 偏移（0.76、0.62、1.3、1.6）。每個環境、每個 episode 用三種動作各跑一次，環境種子相同，return 可以配對：
 
@@ -267,9 +285,9 @@ Return 為任務 reward 的總和，四個任務合併平均。括號內為與�
 ## 限制
 
 - 分類器訓練時看過偏移資料，只能說明單步的資訊量，不代表只用 baseline 資料訓練的偵測器能達到同樣的效果。
-- 「有作用的步驟」以 $s'$ 是否改變判定，上線時無法得知，除非能從狀態推得接觸。
+- 「偏移有改變 $s'$ 的步驟」以 $s'$ 是否改變判定，上線時無法得知，除非能從狀態推得接觸。
 - 只有一個分類器訓練種子與一種 episode 切分，AUC 沒有區間。
-- 單步的評估是把 baseline rollout 的 $(s,a)$ 放進偏移環境走一步，不是讓 policy 在偏移環境中執行。多步預測一節使用閉迴路軌跡，但起點仍取自 baseline rollout。
+- 單步的評估是把 baseline rollout 的 $(s,a)$ 放進偏移環境走一步，不是讓 policy 在偏移環境中執行。多步預測一節使用實際執行的軌跡，但起點仍取自 baseline rollout。
 - $B_0$ 的檢查只比較差異的大小，沒有測試用 $B_0(s')$ 能否區分偏移。
 - 多步預測只用 T4.1.2.1 的一個模型。
 - Context encoder 的 AUC 把同一個 episode 的 18 個片段都算進去，片段之間不獨立。
@@ -277,5 +295,5 @@ Return 為任務 reward 的總和，四個任務合併平均。括號內為與�
 - Context encoder 只用一組訓練範圍（friction $[0.01,5]$、gear $[0.5,2]$），測試設定都在範圍內，沒有測試範圍外的偏移。
 - 動作修正只檢查 gear 偏移。學習法只列一組超參數（20 步、學習率 0.05），其他 5 組超參數在 `adapt_step` 的資料中，沒有分析。
 - $B_0$ 距離為 3 個 FB seed 合併的中位數，沒有 seed 間的區間，也沒有以 episode 為單位的信賴區間。
-- 閉迴路 return 只有 60 個 episode，配對差值的標準誤差為 9 到 18，FB-AA 與不修正的差距多為 1 到 2 個標準誤差。四個任務的 return 差異很大（run 約 100 到 260，stand 約 400 到 775），合併平均時 stand 與 walk 占的影響較大。
-- 閉迴路只測 gear 偏移，FB-AA 只有一組超參數（20 步、學習率 0.05、窗口 32 步），沒有調參。理想修正 $a^*$ 在調低 gear 時 return 下降的原因沒有驗證。
+- 完整 episode 的 return 只有 60 個 episode，配對差值的標準誤差為 9 到 18，FB-AA 與不修正的差距多為 1 到 2 個標準誤差。四個任務的 return 差異很大（run 約 100 到 260，stand 約 400 到 775），合併平均時 stand 與 walk 占的影響較大。
+- 完整 episode 的評估只測 gear 偏移，FB-AA 只有一組超參數（20 步、學習率 0.05、窗口 32 步），沒有調參。理想修正 $a^*$ 在調低 gear 時 return 下降的原因沒有驗證。
