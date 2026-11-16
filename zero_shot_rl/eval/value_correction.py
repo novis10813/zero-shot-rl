@@ -4,9 +4,7 @@ zero_shot_rl.online.value_correction, with z fixed at z_r of offline task infere
 (zero_shot_rl.latent.task_z). Per variant of --variants and task, one Q_adapt is trained for
 --episodes consecutive 1000-step episodes in one environment seeded with --train_seed (the
 stock Walker or --dynamics), with one critic update per step once the buffer holds --warmup
-transitions. Training executes the greedy candidate, or with probability --explore a uniform
-one. The residual variant is residual soft Q-learning (zero_shot_rl.online.value_correction):
-it executes a sample of softmax(score / --alpha), ignores --explore, and --omega weights the
+transitions. Training executes a sample of softmax(score / --alpha), where --omega weights the
 prior policy.
 
 After each episode count of --eval_every (0, every, 2 every, ... and the last one; 0 is before
@@ -31,7 +29,7 @@ With --train_only nothing is tested here (no eval.csv, no frozen FB rows).
 distance of the executed action to the FB action, and `gain` the mean of
 Q_adapt(s, a) - Q_adapt(s, a_0), what Q_adapt claims the executed action gains over a_0 and
 `a0_frac` the fraction of steps whose executed action is a_0 (the rows of variant `fb` have
-0, 0 and 1). In train.csv the executed action includes the --explore draws. `loss` is the mean TD loss of the episode's updates. q_pred is
+0, 0 and 1). `loss` is the mean TD loss of the episode's updates. q_pred is
 the mean Q_adapt of the executed action over the steps t < 700 of the episode and q_actual the
 mean discounted return sum_i discount^i r_{t+1+i} to the end of the episode from the same
 steps (discount^300 < 0.003).
@@ -121,7 +119,7 @@ def run(args, agent, z, scale, variant, task, reward_fn):
     observation_length = env.observation_spec()["observations"].shape[0]
     action_length = env.action_spec().shape[0]
     model = QAdapt(agent, z, scale, variant, observation_length, action_length,
-                   candidates=args.candidates, sigma=args.sigma, radius=args.radius, hidden=args.hidden,
+                   candidates=args.candidates, sigma=args.sigma, hidden=args.hidden,
                    omega=args.omega, alpha=args.alpha,
                    learning_rate=args.learning_rate, tau=args.tau, discount=args.discount)
     buffer = Buffer(args.episodes * STEPS, observation_length, action_length, z.device)
@@ -152,7 +150,7 @@ def run(args, agent, z, scale, variant, task, reward_fn):
         rewards, values, losses = np.zeros(STEPS), np.zeros(STEPS), []
         shift, gain, a0 = np.zeros(STEPS), np.zeros(STEPS), np.zeros(STEPS)
         for t in range(STEPS):
-            a, info = model.act(obs.unsqueeze(0), generator, args.explore, sample=True)
+            a, info = model.act(obs.unsqueeze(0), generator, sample=True)
             next_obs = torch.as_tensor(env.step(a[0].cpu().numpy()).observation["observations"],
                                        dtype=torch.float32, device=z.device)
             rewards[t], values[t] = reward_fn(env.physics), info["value"].item()
@@ -189,10 +187,8 @@ def main():
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--dataset_path", type=str, required=True)
     parser.add_argument("--out_dir", type=str, required=True)
-    parser.add_argument("--variants", nargs="*", default=["direct", "residual"], choices=VARIANTS,
-                        help="`search` is the greedy rule on the FB value alone, with no "
-                             "training: use it with --episodes 0; no names tests only the "
-                             "frozen FB actor")
+    parser.add_argument("--variants", nargs="*", default=["residual"], choices=VARIANTS,
+                        help="no names tests only the frozen FB actor")
     parser.add_argument("--tasks", nargs="+", default=task_z.TASKS)
     parser.add_argument("--dynamics", type=str, default=None,
                         help="yaml of zero_shot_rl.env.dynamics; default is the stock environment")
@@ -214,9 +210,6 @@ def main():
     parser.add_argument("--train_seed", type=int, default=1000)
     parser.add_argument("--candidates", type=int, default=32)
     parser.add_argument("--sigma", type=float, default=0.2)
-    parser.add_argument("--radius", type=float, default=None,
-                        help="L2 bound of the candidate offsets from the FB action; default none")
-    parser.add_argument("--explore", type=float, default=0.3)
     parser.add_argument("--hidden", type=int, default=1024)
     parser.add_argument("--learning_rate", type=float, default=1e-4)
     parser.add_argument("--batch_size", type=int, default=512)

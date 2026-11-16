@@ -5,7 +5,7 @@
 | 路徑 | 內容 |
 |---|---|
 | `configs/train_fb.yaml` | vanilla FB，Walker RND 100k，seed 0 到 4，每次評估都存 checkpoint |
-| `configs/frozen_fb.yaml`、`configs/search.yaml` | frozen FB 與無訓練的動作搜尋，測試 seed 5 到 24 |
+| `configs/frozen_fb.yaml` | frozen FB，測試 seed 5 到 24 |
 | `configs/omega_{clean,mild,strong}.yaml` | ω 掃描，每個環境 12 個 job（3 個 ω × 4 個任務） |
 | `run_omega_dicos.sh` | 同一個 ω 掃描的 Slurm array 版本（DiCOS A100）；報告的結果沒有用它 |
 | `run.sh` | 以選出的 FB checkpoint 執行 `zero_shot_rl.eval.value_correction` |

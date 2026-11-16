@@ -41,7 +41,7 @@ class FakeAgent(torch.nn.Module):
         return 2 * torch.tanh(self.actor_net(torch.cat([obs, z], dim=-1))), None
 
 
-def make(variant, **kwargs):
+def make(variant="residual", **kwargs):
     torch.manual_seed(0)
     agent = FakeAgent()
     z = math.sqrt(D_Z) * torch.nn.functional.normalize(torch.randn(D_Z), dim=0)
@@ -57,7 +57,7 @@ def batch(n, reward=1.0, seed=1):
 
 class TestQAdapt(unittest.TestCase):
     def test_candidates(self):
-        agent, z, model = make("direct")
+        agent, z, model = make()
         obs = torch.randn(4, D_S)
         candidates = model.propose(obs, torch.Generator().manual_seed(0))
         self.assertEqual(candidates.shape, (4, 8, D_A))
@@ -65,26 +65,6 @@ class TestQAdapt(unittest.TestCase):
             torch.testing.assert_close(candidates[:, 0], policy(agent, obs, z.expand(4, -1)))
         self.assertLessEqual(candidates.abs().max().item(), 1.0)
         self.assertGreater((candidates[:, 1:] - candidates[:, :1]).abs().max().item(), 0.0)
-
-    def test_radius_bounds_the_offsets(self):
-        obs = torch.randn(16, D_S)
-        _, _, model = make("direct", candidates=64, radius=0.1)
-        near = model.propose(obs, torch.Generator().manual_seed(0))
-        offsets = (near - near[:, :1]).norm(dim=-1)
-        self.assertLessEqual(offsets.max().item(), 0.1 + 1e-6)
-        self.assertGreater(offsets[:, 1:].min().item(), 0.0)
-        _, _, off = make("direct", candidates=64)
-        unbounded = off.propose(obs, torch.Generator().manual_seed(0))
-        self.assertGreater((unbounded - unbounded[:, :1]).norm(dim=-1).max().item(), 0.1)
-
-    def test_zero_radius_is_the_fb_action(self):
-        _, _, model = make("direct", radius=0.0)
-        obs = torch.randn(8, D_S)
-        candidates = model.propose(obs, torch.Generator().manual_seed(0))
-        torch.testing.assert_close(candidates, candidates[:, :1].expand_as(candidates))
-        action, info = model.act(obs, torch.Generator().manual_seed(0))
-        torch.testing.assert_close(action, candidates[:, 0])
-        torch.testing.assert_close(info["shift"], torch.zeros(8))
 
     def test_residual_starts_as_fb_value(self):
         agent, z, model = make("residual")
@@ -96,7 +76,7 @@ class TestQAdapt(unittest.TestCase):
         torch.testing.assert_close(q[0], expected)
         torch.testing.assert_close(q[1], expected)
 
-    def test_act_is_greedy_and_explores(self):
+    def test_act_is_greedy_at_eval(self):
         _, _, model = make("residual", omega=0.0)
         obs = torch.randn(64, D_S)
         action, info = model.act(obs, torch.Generator().manual_seed(3))
@@ -110,21 +90,6 @@ class TestQAdapt(unittest.TestCase):
         torch.testing.assert_close(info["gain"], value - values[:, 0])
         torch.testing.assert_close(info["at_fb"], (index == 0).float())
         self.assertGreaterEqual(info["gain"].min().item(), 0.0)
-        _, info = model.act(obs, torch.Generator().manual_seed(3), explore=1.0)
-        self.assertGreater((info["index"] != index).float().mean().item(), 0.5)
-
-    def test_direct_converges_to_constant_reward_value(self):
-        # s' = s and a = pi(s) with one candidate, so the target is evaluated on the batch
-        agent, z, model = make("direct", candidates=1, discount=0.5, tau=0.1, learning_rate=1e-3)
-        g = torch.Generator().manual_seed(0)
-        obs, _, rewards, _ = batch(256)
-        with torch.no_grad():
-            data = (obs, policy(agent, obs, z.expand(256, -1)), rewards, obs)
-        for _ in range(1500):
-            model.update(data, g)
-        with torch.no_grad():
-            q = model.q(data[0], data[1])
-        torch.testing.assert_close(q, torch.full_like(q, 2.0), atol=0.05, rtol=0)
 
     def test_update_leaves_fb_unchanged_and_is_deterministic(self):
         losses = []
@@ -138,21 +103,6 @@ class TestQAdapt(unittest.TestCase):
                 self.assertIsNone(p.grad)
         self.assertEqual(losses[0], losses[1])
         self.assertNotEqual(losses[0][0], losses[0][-1])
-
-    def test_search_ranks_candidates_by_the_fb_value(self):
-        agent, z, model = make("search")
-        obs = torch.randn(16, D_S)
-        action, info = model.act(obs, torch.Generator().manual_seed(3))
-        candidates = model.propose(obs, torch.Generator().manual_seed(3))
-        with torch.no_grad():
-            flat = candidates.reshape(-1, D_A)
-            F1, F2 = agent.FB.forward_representation(
-                obs.repeat_interleave(8, 0), flat, z.expand(len(flat), -1))
-            fb = (0.3 * torch.minimum(F1 @ z, F2 @ z)).reshape(16, 8)
-        torch.testing.assert_close(info["index"], fb.argmax(1))
-        torch.testing.assert_close(info["value"], fb.max(1).values)
-        torch.testing.assert_close(model.next_value(obs, torch.Generator().manual_seed(3)),
-                                   fb.max(1).values)
 
     def test_prior_log_probability_is_highest_at_a0(self):
         _, _, model = make("residual")
@@ -169,9 +119,6 @@ class TestQAdapt(unittest.TestCase):
         torch.testing.assert_close(
             model.scores(obs, candidates),
             model.values(obs, candidates) + 2.5 * model.log_prior(candidates))
-        _, _, direct = make("direct", omega=2.5)
-        torch.testing.assert_close(direct.scores(obs, candidates),
-                                   direct.values(obs, candidates))
 
     def test_large_omega_keeps_the_fb_action(self):
         _, _, model = make("residual", omega=1e4, candidates=16)
@@ -209,15 +156,8 @@ class TestQAdapt(unittest.TestCase):
         self.assertTrue(((expected - hard) >= -1e-6).all())
         self.assertTrue(((expected - hard) <= 0.5 * math.log(6) + 1e-6).all())
 
-    def test_direct_target_is_the_max(self):
-        _, _, model = make("direct", candidates=6)
-        obs = torch.randn(10, D_S)
-        candidates = model.propose(obs, torch.Generator().manual_seed(9))
-        torch.testing.assert_close(model.next_value(obs, torch.Generator().manual_seed(9)),
-                                   model.values(obs, candidates, target=True).max(1).values)
-
     def test_save_and_load_round_trip(self):
-        agent, _, model = make("residual", radius=0.3, layers=3, omega=2.0, alpha=0.5)
+        agent, _, model = make("residual", layers=3, omega=2.0, alpha=0.5)
         g = torch.Generator().manual_seed(0)
         for _ in range(3):
             model.update(batch(32), g)
@@ -228,7 +168,7 @@ class TestQAdapt(unittest.TestCase):
         a, _ = model.act(obs, torch.Generator().manual_seed(5))
         b, _ = loaded.act(obs, torch.Generator().manual_seed(5))
         torch.testing.assert_close(a, b)
-        self.assertEqual((loaded.radius, loaded.layers, loaded.omega, loaded.alpha), (0.3, 3, 2.0, 0.5))
+        self.assertEqual((loaded.layers, loaded.omega, loaded.alpha), (3, 2.0, 0.5))
 
     def test_reward_scale(self):
         agent = FakeAgent()
@@ -285,9 +225,9 @@ class TestEntry(unittest.TestCase):
         torch.manual_seed(0)
         agent = FakeAgent()
         z = math.sqrt(D_Z) * torch.nn.functional.normalize(torch.randn(D_Z), dim=0)
-        args = Namespace(seed=0, train_seed=1000, dynamics=None, candidates=4, sigma=0.2, radius=0.3,
+        args = Namespace(seed=0, train_seed=1000, dynamics=None, candidates=4, sigma=0.2,
                          hidden=16, learning_rate=1e-3, tau=0.01, discount=0.98, episodes=2,
-                         eval_at=[0, 2], eval_episodes=3, explore=0.3, warmup=10,
+                         eval_at=[0, 2], eval_episodes=3, warmup=10,
                          batch_size=8, save_every=0, out_dir=".", omega=1.0, alpha=1.0)
         return entry.run(args, agent, z, 0.3, "residual", "walk", lambda physics: physics / 20)
 
@@ -329,8 +269,8 @@ class TestEntry(unittest.TestCase):
             agent = FakeAgent()
             z = math.sqrt(D_Z) * torch.nn.functional.normalize(torch.randn(D_Z), dim=0)
             args = Namespace(seed=0, train_seed=1000, dynamics=None, candidates=4, sigma=0.2,
-                             radius=0.3, hidden=16, learning_rate=1e-3, tau=0.01, discount=0.98,
-                             episodes=2, eval_at=[2], eval_episodes=3, explore=0.3, warmup=10,
+                             hidden=16, learning_rate=1e-3, tau=0.01, discount=0.98,
+                             episodes=2, eval_at=[2], eval_episodes=3, warmup=10,
                              batch_size=8, save_every=1, out_dir=d, omega=1.0, alpha=1.0)
             eval_rows, _, _ = entry.run(args, agent, z, 0.3, "residual", "walk",
                                         lambda physics: physics / 20)
@@ -346,19 +286,6 @@ class TestEntry(unittest.TestCase):
         self.assertEqual([r["shift"] for r in last], list(shift))
         self.assertEqual([r["a0_frac"] for r in last], list(a0))
         self.assertTrue(all(0.0 <= x <= 1.0 for x in a0))
-
-    def test_search_variant_tests_without_training(self):
-        torch.manual_seed(0)
-        agent = FakeAgent()
-        z = math.sqrt(D_Z) * torch.nn.functional.normalize(torch.randn(D_Z), dim=0)
-        args = Namespace(seed=0, train_seed=1000, dynamics=None, candidates=4, sigma=0.2, radius=None,
-                         hidden=16, learning_rate=1e-3, tau=0.01, discount=0.98, episodes=0,
-                         eval_at=entry.eval_points(0, 10), eval_episodes=3, explore=0.3, warmup=10,
-                         batch_size=8, save_every=0, out_dir=".", omega=1.0, alpha=1.0)
-        eval_rows, train_rows, _ = entry.run(args, agent, z, 0.3, "search", "walk",
-                                             lambda physics: physics / 20)
-        self.assertEqual([(r["variant"], r["train_episodes"]) for r in eval_rows], [("search", 0)] * 3)
-        self.assertEqual(train_rows, [])
 
     def test_run_rows_and_determinism(self):
         eval_rows, train_rows, _ = self.run_once()
