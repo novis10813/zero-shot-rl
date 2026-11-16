@@ -4,7 +4,7 @@ import unittest
 
 import torch
 
-from zero_shot_rl.latent.action_adapt import adapt
+from zero_shot_rl.latent.action_adapt import adapt, gear_inverse
 
 
 class Shift:
@@ -34,3 +34,11 @@ class ActionAdaptTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GearInverseTest(unittest.TestCase):
+    def test_scales_inside_the_range_and_saturates_outside(self):
+        a = torch.tensor([[0.5, -0.5, 1.0, -1.0]])
+        torch.testing.assert_close(gear_inverse(a, 0.5), torch.tensor([[1.0, -1.0, 1.0, -1.0]]))
+        torch.testing.assert_close(gear_inverse(a, 2.0), torch.tensor([[0.25, -0.25, 0.5, -0.5]]))
+        torch.testing.assert_close(gear_inverse(a, 1.0), a)

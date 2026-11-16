@@ -35,3 +35,13 @@ def adapt(model, s, a, c1, c0, steps, lr):
     with torch.no_grad():
         after = objective()
     return x.detach(), before, after
+
+
+def gear_inverse(a, gear):
+    """Action that reproduces the stock torque under a gear multiplier, inside [-1, 1]: clip(a / gear).
+
+    The walker's motors apply gear * clip(a, -1, 1), so a / gear matches the stock torque of a
+    wherever |a| <= gear and is saturated at +-1 elsewhere. This is the best one-step action for
+    a gear shift, whatever method looks for it. a [N, d_a], gear scalar or [N, 1].
+    """
+    return (a / gear).clip(-1.0, 1.0)
