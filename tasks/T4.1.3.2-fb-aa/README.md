@@ -4,6 +4,7 @@
 
 - 偵測動力學偏移的診斷：單步轉移是否含有 friction 偏移的資訊（每個偏移設定一個分類器，與 T4.1.2.1 的動力學模型誤差比較）、偏移差異隨步數的累積與多步預測、預訓練 FB 的 $B_0(s')$ 是否保留偏移差異。
 - 序列 context encoder：在多組隨機動力學上訓練 encoder 與 $B_0(s')$ 預測器，在 8 個測試設定上評估偵測與預測。
+- 動作修正：以 context 條件的 $B_0(s')$ 預測器優化動作（`zero_shot_rl.eval.adapt_step`）的單步檢查，以及 gear 偏移下動作範圍造成的上限（`zero_shot_rl.eval.action_bound`）。
 
 | 路徑 | 內容 |
 |---|---|
@@ -21,6 +22,10 @@
 | `run_context_eval.sh` | 產生測試 episode，再用 6 個模型的最佳 checkpoint 評分（`zero_shot_rl.latent.context_score`） |
 | `analyze/pack_context.py` | 把訓練的驗證紀錄與評分結果壓成 `data/inputs/context.npz` |
 | `analyze/context.py` | 驗證準確率、偵測 AUC（全部片段、按起點）、$g$ 的誤差 → `data/context_val.csv`、`context_auc.csv`、`context_start.csv`、`context_err.csv` |
+| `zero_shot_rl/latent/action_adapt.py` | 對預測器優化動作 `adapt()`，以及 gear 偏移下動作範圍內的最佳動作 `gear_inverse()` |
+| `zero_shot_rl/eval/adapt_step.py`、`run_adapt_step.sh` | 優化後的動作在各動力學中走一步，與 stock 結果比較：3 個 FB seed 平行，CPU |
+| `zero_shot_rl/eval/action_bound.py`、`run_action_bound.sh` | stock 動作與 $a^*=\mathrm{clip}(a/m)$ 在各動力學中走一步：3 個 FB seed 平行，CPU，約 1 分鐘 |
+| `analyze/action_bound.py` | 把兩個 job 的輸出壓成 `data/inputs/action_bound.npz`；力矩缺口與補回比例 → `data/action_bound.csv`；`figures/action_bound.png` |
 | `tests/` | 分析函式的測試 |
 | `data/inputs/classifier.npz` | `run_classifier.sh` 輸出的 `out/classifier.npz` |
 
@@ -53,12 +58,25 @@ Baseline 軌跡取自 T07 的 `fb_trajectories_seed{0,1,2}.npz`（環境 seed 0 
 
 配對資料與多步重播在 CPU 上產生，三個 seed 平行；8 個分類器在一張 GPU 上依序訓練，各 60 epoch。重新訓練不保證逐位元相同，所以 `data/inputs/classifier.npz` 是某一次訓練的結果。`analyze.pack` 只做推論，在 CPU 上約一分鐘。
 
+動作修正：
+
+```bash
+CKPT_DIR=<同上> MODEL_DIR=<含 context_s*_transformer_best.pt 的目錄> bash tasks/T4.1.3.2-fb-aa/run_adapt_step.sh
+CKPT_DIR=<同上> bash tasks/T4.1.3.2-fb-aa/run_action_bound.sh
+PYTHONPATH=.:tasks/T4.1.3.2-fb-aa uv run python -m analyze.action_bound pack \
+  --bound <含 action_bound_s*.npz 的目錄> --adapt <含 adapt_step_s*.npz 的目錄>
+```
+
+兩個 job 的環境種子與 policy 相同，stock 軌跡是確定的，`pack` 會核對兩者的取樣步驟與不修正的 $B_0$ 距離一致。
+
 ## 重現表格
 
 ```bash
 PYTHONPATH=.:tasks/T4.1.3.2-fb-aa uv run python -m analyze.single_step [--check]
 PYTHONPATH=.:tasks/T4.1.3.2-fb-aa uv run python -m analyze.diagnose [--check]
 PYTHONPATH=.:tasks/T4.1.3.2-fb-aa uv run python -m analyze.context [--check]
+PYTHONPATH=.:tasks/T4.1.3.2-fb-aa uv run python -m analyze.action_bound [--check]
+PYTHONPATH=.:tasks/T4.1.3.2-fb-aa uv run python -m analyze.action_bound figure
 ```
 
 `--check` 逐 byte 核對 `data/` 的 CSV。對應 REPORT 的欄位：
@@ -68,3 +86,4 @@ PYTHONPATH=.:tasks/T4.1.3.2-fb-aa uv run python -m analyze.context [--check]
 - 多步預測：`multistep.csv` 的 `auc_multi`、`auc_onestep`，baseline 的誤差為 `err_stock`。
 - $B_0$：`b0.csv` 的 `ratio_s`、`ratio_b`、`keep_step`、`keep_scale`、`step_stock`、`step_config`、`auc_step`。
 - Context encoder：驗證準確率為 `context_val.csv` 的 `acc_h*`；偵測 AUC 為 `context_auc.csv` 的 `mean`、`min`、`max`（`tasks` 為 `all` 或 `walk`）；按起點的 AUC 為 `context_start.csv` 的 `auc`；預測的改善比例為 `context_err.csv` 的 `gain`，誤差為 `ctx_s0`、`stock_s0`。
+- 動作修正：`action_bound.csv` 的 `infeasible`（無法補償的動作維度）、`shortfall`（無法產生的力矩）、`rec_star`、`rec_window`、`rec_oracle`（補回比例），距離為 `b_none`、`b_star`、`b_window`、`b_oracle`。圖由 `figure` 子命令重畫，不核對 byte。
