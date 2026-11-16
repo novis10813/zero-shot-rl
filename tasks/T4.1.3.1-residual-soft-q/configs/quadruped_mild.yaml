@@ -1,0 +1,3 @@
+# Actuator gear at 76% of quadruped XML (nominal 1.0 on all 12 actuators).
+base:
+  actuator_gear: 0.76

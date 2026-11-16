@@ -193,7 +193,7 @@ class FakeEnv:
     """The parts of the Walker environment the entry module uses, without the simulator:
     the observation is noise from the seed and `physics` is the number of steps taken."""
 
-    def __init__(self, seed, dynamics=None):
+    def __init__(self, seed, dynamics=None, domain="walker"):
         self.generator = torch.Generator().manual_seed(seed)
         self.physics = 0
 
@@ -252,9 +252,9 @@ class TestEntry(unittest.TestCase):
         z = torch.ones(D_Z)
         seeds = []
 
-        def make_env(seed, dynamics=None):
+        def make_env(seed, dynamics=None, domain="walker"):
             seeds.append(seed)
-            return FakeEnv(seed, dynamics)
+            return FakeEnv(seed, dynamics, domain)
 
         args = Namespace(seed=0, dynamics=None, eval_episodes=3, eval_seed_start=5)
         with mock.patch.object(entry, "make_env", make_env):

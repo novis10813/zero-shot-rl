@@ -33,7 +33,9 @@ import numpy as np
 import yaml
 from dm_control.rl import control
 
+import custom_dmc_tasks as cdmc
 import custom_dmc_tasks.walker as cw
+from rewards import DEFAULT_TASKS
 
 FIELDS = ("geom_friction", "actuator_gear", "dof_damping", "opt.gravity", "body_mass")
 _NAME_TYPES = {
@@ -222,15 +224,30 @@ class ShiftedWalkerEnv(control.Environment):
         return super().step(action)
 
 
-def make_shifted_env(seed, dynamics):
-    """The flip walker of cdmc.make("walker", "flip") with flat observations and `dynamics`."""
-    physics = cw.Physics.from_xml_string(*cw.get_model_and_assets())
-    task = cw.PlanarWalker(move_speed=cw._RUN_SPEED, flip=True, random=seed)  # pylint: disable=protected-access
+def make_shifted_env(seed, dynamics, domain="walker"):
+    """Stock `domain` env with flat observations and `dynamics`."""
+    if domain == "walker":
+        physics = cw.Physics.from_xml_string(*cw.get_model_and_assets())
+        task = cw.PlanarWalker(move_speed=cw._RUN_SPEED, flip=True, random=seed)  # pylint: disable=protected-access
+        return ShiftedWalkerEnv(
+            physics,
+            task,
+            dynamics=dynamics,
+            time_limit=cw._DEFAULT_TIME_LIMIT,  # pylint: disable=protected-access
+            control_timestep=cw._CONTROL_TIMESTEP,  # pylint: disable=protected-access
+            flat_observation=True,
+        )
+    base = cdmc.make(
+        domain=domain,
+        task=DEFAULT_TASKS[domain],
+        environment_kwargs={"flat_observation": True},
+        task_kwargs={"random": seed},
+    )
     return ShiftedWalkerEnv(
-        physics,
-        task,
+        base.physics,
+        base.task,
         dynamics=dynamics,
-        time_limit=cw._DEFAULT_TIME_LIMIT,  # pylint: disable=protected-access
-        control_timestep=cw._CONTROL_TIMESTEP,  # pylint: disable=protected-access
+        time_limit=base._step_limit * base.control_timestep(),  # pylint: disable=protected-access
+        control_timestep=base.control_timestep(),
         flat_observation=True,
     )

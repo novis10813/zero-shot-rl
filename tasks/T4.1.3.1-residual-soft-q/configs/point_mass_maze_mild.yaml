@@ -1,0 +1,3 @@
+# Actuator gear at 76% of point_mass_maze XML (nominal 0.1 on both actuators).
+base:
+  actuator_gear: 0.076

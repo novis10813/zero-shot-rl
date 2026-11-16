@@ -57,6 +57,8 @@ def main():
     parser.add_argument("--checkpoint", type=str, required=True, help="the FB checkpoint")
     parser.add_argument("--q_dir", type=str, required=True)
     parser.add_argument("--out_dir", type=str, required=True)
+    parser.add_argument("--domain", type=str, default="walker",
+                        choices=tuple(task_z.DOMAIN_TASKS))
     parser.add_argument("--dynamics", type=str, default=None)
     parser.add_argument("--at", nargs="+", type=int, default=None,
                         help="only these episode counts; default all")
@@ -77,8 +79,9 @@ def main():
     if not isinstance(agent, FB):
         raise ValueError("Only standard FB is supported")
     agent.eval()
+    args.tasks = task_z.DOMAIN_TASKS[args.domain]
     reward_fns = task_z.reward_functions(args, device)
-    probe = make_env(0, args.dynamics)
+    probe = make_env(0, args.dynamics, domain=args.domain)
     observation_length = probe.observation_spec()["observations"].shape[0]
     action_length = probe.action_spec().shape[0]
     probe.close()

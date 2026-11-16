@@ -78,8 +78,9 @@ def evaluate(args, agent, z, model, reward_fn):
     """One greedy episode per test environment; model None is the frozen FB actor. Returns
     the returns, shifts, gains and a0 fractions [eval_episodes] (see the module docstring)."""
     n = args.eval_episodes
+    domain = getattr(args, "domain", "walker")
     generator = torch.Generator().manual_seed(args.seed)
-    envs = [make_env(seed, args.dynamics) for seed in eval_seeds(args)]
+    envs = [make_env(seed, args.dynamics, domain=domain) for seed in eval_seeds(args)]
     obs = np.stack([env.reset().observation["observations"] for env in envs])
     returns, shift, gain = np.zeros(n), np.zeros(n), np.zeros(n)
     a0 = np.zeros(n)
@@ -114,8 +115,9 @@ def run(args, agent, z, scale, variant, task, reward_fn):
     """Trains one Q_adapt and tests it at args.eval_at. Returns the rows of eval.csv, the
     rows of train.csv and the trained QAdapt."""
     set_seed_everywhere(args.seed)
+    domain = getattr(args, "domain", "walker")
     generator = torch.Generator().manual_seed(args.seed)
-    env = make_env(args.train_seed, args.dynamics)
+    env = make_env(args.train_seed, args.dynamics, domain=domain)
     observation_length = env.observation_spec()["observations"].shape[0]
     action_length = env.action_spec().shape[0]
     model = QAdapt(agent, z, scale, variant, observation_length, action_length,
@@ -189,7 +191,9 @@ def main():
     parser.add_argument("--out_dir", type=str, required=True)
     parser.add_argument("--variants", nargs="*", default=["residual"], choices=VARIANTS,
                         help="no names tests only the frozen FB actor")
-    parser.add_argument("--tasks", nargs="+", default=task_z.TASKS)
+    parser.add_argument("--domain", type=str, default="walker",
+                        choices=tuple(task_z.DOMAIN_TASKS))
+    parser.add_argument("--tasks", nargs="+", default=None)
     parser.add_argument("--dynamics", type=str, default=None,
                         help="yaml of zero_shot_rl.env.dynamics; default is the stock environment")
     parser.add_argument("--episodes", type=int, default=100)
@@ -225,6 +229,8 @@ def main():
     parser.add_argument("--dataset_transitions", type=int, default=100000)
     parser.add_argument("--z_inference_steps", type=int, default=10000)
     args = parser.parse_args()
+    if args.tasks is None:
+        args.tasks = task_z.DOMAIN_TASKS[args.domain]
     if args.eval_seed_start <= args.train_seed < args.eval_seed_start + args.eval_episodes:
         raise ValueError("--train_seed is one of the test seeds")
     if args.train_only:
@@ -243,7 +249,8 @@ def main():
     _, observations_z, rewards_z = task_z.inference_set(
         Namespace(seed=args.seed, discount=0.98, dataset_path=args.dataset_path,
                   dataset_transitions=args.dataset_transitions,
-                  z_inference_steps=args.z_inference_steps),
+                  z_inference_steps=args.z_inference_steps,
+                  domain=args.domain, tasks=args.tasks),
         torch.device("cpu"),
     )
     observations_z = observations_z.to(device)

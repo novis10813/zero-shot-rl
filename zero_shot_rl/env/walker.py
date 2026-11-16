@@ -6,18 +6,19 @@ import numpy as np
 import torch
 
 import custom_dmc_tasks as cdmc
+from rewards import DEFAULT_TASKS
 from zero_shot_rl.env.dynamics import make_shifted_env
 
 STEPS = 1000  # episode length
 
 
-def make_env(seed, dynamics=None):
+def make_env(seed, dynamics=None, domain="walker"):
     """`dynamics` is a config of zero_shot_rl.env.dynamics; None gives the stock environment."""
     if dynamics is not None:
-        return make_shifted_env(seed, dynamics)
+        return make_shifted_env(seed, dynamics, domain=domain)
     return cdmc.make(
-        domain="walker",
-        task="flip",
+        domain=domain,
+        task=DEFAULT_TASKS[domain],
         environment_kwargs={"flat_observation": True},
         task_kwargs={"random": seed},
     )

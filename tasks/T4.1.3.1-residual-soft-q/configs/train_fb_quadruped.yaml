@@ -1,0 +1,7 @@
+# Vanilla FB on quadruped rnd-100k, seeds 0-4, 1M steps, evaluated every 20k steps.
+on: idlab
+command: PYTHONUNBUFFERED=1 uv run python -m zero_shot_rl.train.main_exorl fb quadruped rnd --eval_tasks stand jump roll roll_fast --wandb_logging False --dataset_path $HOME/zsrl-datasets/quadruped/rnd/dataset.npz --seed {seed}
+vram: 10G
+gpus: 1
+grid:
+  seed: [0, 1, 2, 3, 4]

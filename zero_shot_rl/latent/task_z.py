@@ -18,6 +18,12 @@ from rewards import RewardFunctionConstructor
 from zero_shot_rl.utils import set_seed_everywhere
 
 TASKS = ["stand", "walk", "run", "flip"]
+DOMAIN_TASKS = {
+    "walker": TASKS,
+    "quadruped": ["stand", "jump", "roll", "roll_fast", "escape", "fetch"],
+    "point_mass_maze": ["reach_bottom_left", "reach_bottom_right", "reach_top_left", "reach_top_right"],
+    "jaco": ["reach_bottom_left", "reach_bottom_right", "reach_top_left", "reach_top_right"],
+}
 
 
 def add_arguments(parser):
@@ -37,8 +43,10 @@ def device():
 def inference_set(args, device):
     """The dataset buffer and the task inference transitions, identical for every checkpoint."""
     set_seed_everywhere(args.seed)
+    domain = getattr(args, "domain", "walker")
+    tasks = getattr(args, "tasks", None) or DOMAIN_TASKS[domain]
     reward_constructor = RewardFunctionConstructor(
-        domain_name="walker", task_names=TASKS, seed=args.seed, device=device
+        domain_name=domain, task_names=tasks, seed=args.seed, device=device
     )
     buffer = FBReplayBuffer(
         reward_constructor=reward_constructor,
@@ -58,8 +66,10 @@ def inference_set(args, device):
 
 def reward_functions(args, device):
     """task -> reward function of the simulator physics."""
+    domain = getattr(args, "domain", "walker")
+    tasks = getattr(args, "tasks", None) or DOMAIN_TASKS[domain]
     return RewardFunctionConstructor(
-        domain_name="walker", task_names=TASKS, seed=args.seed, device=device
+        domain_name=domain, task_names=tasks, seed=args.seed, device=device
     ).reward_functions
 
 
