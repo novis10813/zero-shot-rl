@@ -1,0 +1,16 @@
+config,gear,method,mean,d_none,d_none_se,d_stock,d_stock_se,da
+baseline,1,none,409.672,0,0,0,0,0
+baseline,1,star,409.672,0,0,0,0,0
+baseline,1,adapt,420.004,10.332,17.3708,10.332,17.3708,0.156604
+actuator_mild,0.76,none,334.951,0,0,-74.7205,20.7468,0
+actuator_mild,0.76,star,298.262,-36.6888,11.4304,-111.409,21.8091,0.0823267
+actuator_mild,0.76,adapt,314.716,-20.2353,12.3925,-94.9559,19.46,0.449108
+actuator_strong,0.62,none,265.951,0,0,-143.721,17.8022,0
+actuator_strong,0.62,star,238.265,-27.6856,16.4847,-171.407,23.2853,0.112699
+actuator_strong,0.62,adapt,236.828,-29.1221,14.2823,-172.843,17.9581,0.593691
+actuator_high_mild,1.3,none,469.543,0,0,59.8715,18.4539,0
+actuator_high_mild,1.3,star,420.073,-49.47,17.9289,10.4015,15.7983,0.544086
+actuator_high_mild,1.3,adapt,456.582,-12.961,13.1221,46.9106,13.4597,0.415965
+actuator_high_strong,1.6,none,508.083,0,0,98.4109,18.2444,0
+actuator_high_strong,1.6,star,431.325,-76.7573,15.3218,21.6536,14.204,0.884405
+actuator_high_strong,1.6,adapt,458.072,-50.0109,9.23793,48.4,20.1083,0.641576
