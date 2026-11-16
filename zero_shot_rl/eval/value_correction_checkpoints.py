@@ -27,17 +27,24 @@ from agents.base import load_agent
 from agents.fb.agent import FB
 from zero_shot_rl.env.dynamics import load_dynamics
 from zero_shot_rl.env.walker import make_env
-from zero_shot_rl.eval.value_correction import EVAL_FIELDS, evaluate, frozen_rows, write_csv
+from zero_shot_rl.eval.value_correction import EVAL_FIELDS, eval_seeds, evaluate, frozen_rows, write_csv
 from zero_shot_rl.latent import task_z
 from zero_shot_rl.online.value_correction import QAdapt
 
 NAME = re.compile(r"(?P<variant>[a-z]+)_(?P<task>[a-z]+)_ep(?P<episodes>\d+)\.pt")
+FINAL_NAME = re.compile(r"(?P<variant>[a-z]+)_(?P<task>[a-z]+)\.pt")
 
 
-def find(q_dir, at=None):
+def find(q_dir, at=None, final=False):
     """[(variant, task, episodes, path)] of the saved critics, sorted, filtered to the counts
-    `at` if given."""
+    `at` if given. With `final`, matches `<variant>_<task>.pt` (episodes is None)."""
     found = []
+    if final:
+        for path in Path(q_dir).glob("*.pt"):
+            match = FINAL_NAME.fullmatch(path.name)
+            if match:
+                found.append((match["variant"], match["task"], None, path))
+        return sorted(found, key=lambda f: (f[0], f[1]))
     for path in Path(q_dir).glob("*_ep*.pt"):
         match = NAME.fullmatch(path.name)
         if match and (at is None or int(match["episodes"]) in at):
@@ -53,8 +60,13 @@ def main():
     parser.add_argument("--dynamics", type=str, default=None)
     parser.add_argument("--at", nargs="+", type=int, default=None,
                         help="only these episode counts; default all")
+    parser.add_argument("--final", action="store_true",
+                        help="test `<variant>_<task>.pt` instead of `*_ep*.pt`")
+    parser.add_argument("--episodes", type=int, default=0,
+                        help="train_episodes value recorded in eval.csv when --final is set")
     parser.add_argument("--frozen", action="store_true", help="also test the frozen FB actor")
     parser.add_argument("--eval_episodes", type=int, default=5)
+    parser.add_argument("--eval_seed_start", type=int, default=0)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
     args.dynamics = load_dynamics(args.dynamics) if args.dynamics else None
@@ -72,17 +84,18 @@ def main():
     probe.close()
 
     rows, frozen_done = [], set()
-    for variant, task, episodes, path in find(args.q_dir, args.at):
+    for variant, task, episodes, path in find(args.q_dir, args.at, final=args.final):
+        ep = args.episodes if episodes is None else episodes
         start = time.time()
         model = QAdapt.load(path, agent, observation_length, action_length)
         if args.frozen and task not in frozen_done:
             rows += frozen_rows(args, agent, model.z, task, reward_fns[task])
             frozen_done.add(task)
         returns, shift, gain, a0 = evaluate(args, agent, model.z, model, reward_fns[task])
-        rows += [{"variant": variant, "task": task, "train_episodes": episodes, "seed": i,
+        rows += [{"variant": variant, "task": task, "train_episodes": ep, "seed": seed,
                   "return": returns[i], "shift": shift[i], "gain": gain[i], "a0_frac": a0[i]}
-                 for i in range(len(returns))]
-        print(f"{variant} {task} after {episodes} episodes: test return {returns.mean():.1f}, "
+                 for i, seed in enumerate(eval_seeds(args))]
+        print(f"{variant} {task} after {ep} episodes: test return {returns.mean():.1f}, "
               f"shift {np.mean(shift):.2f}, gain {np.mean(gain):.2f}, a0 {np.mean(a0):.2f} "
               f"({time.time() - start:.0f} s)", flush=True)
     write_csv(Path(args.out_dir) / "eval.csv", EVAL_FIELDS, rows)
