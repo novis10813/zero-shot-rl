@@ -1,0 +1,10 @@
+config,none,star,old_fb_aa,new_transform,old_minus_none,new_minus_none
+baseline,434.0,434.0,415.6,427.4,-18.4,-6.6
+friction_mild,382.1,382.1,,348.4,,-33.7
+friction_strong,305.9,305.9,,308.2,,2.2
+actuator_mild,346.0,347.2,321.1,324.5,-24.9,-21.5
+actuator_strong,255.9,266.5,233.2,229.8,-22.7,-26.1
+friction_high_mild,364.8,364.8,,416.2,,51.5
+friction_high_strong,378.6,378.6,,366.3,,-12.3
+actuator_high_mild,488.7,438.8,458.4,465.7,-30.3,-23.0
+actuator_high_strong,525.2,432.7,463.5,456.8,-61.6,-68.4
