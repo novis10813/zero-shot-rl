@@ -170,7 +170,13 @@ def main():
         )
         obs_z, rew_z = buf.sample_task_inference_transitions(inference_steps=10000)
         with torch.no_grad():
-            z_of = {t: agent.infer_z(obs_z, rew_z[t]).squeeze(0) for t in args.tasks}
+            z_of = {
+                t: torch.as_tensor(
+                    agent.infer_z(obs_z.to(device), rew_z[t].to(device)),
+                    dtype=torch.float32, device=device,
+                ).reshape(-1)
+                for t in args.tasks
+            }
         data_hash = {"dataset_sha256": sha256(args.dataset)}
 
     def make_episodes(first_seed, per_task, dyn):
