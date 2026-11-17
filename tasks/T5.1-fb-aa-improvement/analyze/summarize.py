@@ -62,30 +62,33 @@ def build_table() -> pd.DataFrame:
     old_f_configs = list(old_f_archs[0]["configs"])
     old_f_tasks = old_f_archs[0]["task"]
 
+    baseline_idx = configs.index("baseline")
+    clean_iqm = table6_iqm(new_rets[:, baseline_idx, 0, :], tasks)
+
     rows = []
     for ci, cfg in enumerate(configs):
         none_iqm = table6_iqm(new_rets[:, ci, 0, :], tasks)
-        star_iqm = table6_iqm(new_rets[:, ci, 1, :], tasks)
+        star_iqm = np.nan if cfg.startswith("friction_") else table6_iqm(new_rets[:, ci, 1, :], tasks)
         new_iqm = table6_iqm(new_rets[:, ci, 2, :], tasks)
         if cfg in old_configs:
             oi = old_configs.index(cfg)
             old_iqm = old_table6_iqm(old_ret[oi, 2, :], old_seed, old_task)
-            old_diff = old_iqm - none_iqm
+            old_diff = old_iqm - clean_iqm
         elif cfg in old_f_configs:
             oi = old_f_configs.index(cfg)
             old_iqm = table6_iqm(old_f_rets[:, oi, 2, :], old_f_tasks)
-            old_diff = old_iqm - none_iqm
+            old_diff = old_iqm - clean_iqm
         else:
             old_iqm = np.nan
             old_diff = np.nan
         rows.append({
             "config": cfg,
             "none": round(none_iqm, 1),
-            "star": round(star_iqm, 1),
+            "star": round(star_iqm, 1) if not np.isnan(star_iqm) else np.nan,
             "old_fb_aa": round(old_iqm, 1) if not np.isnan(old_iqm) else np.nan,
             "new_transform": round(new_iqm, 1),
-            "old_minus_none": round(old_diff, 1) if not np.isnan(old_diff) else np.nan,
-            "new_minus_none": round(new_iqm - none_iqm, 1),
+            "old_minus_clean": round(old_diff, 1) if not np.isnan(old_diff) else np.nan,
+            "new_minus_clean": round(new_iqm - clean_iqm, 1),
         })
     return pd.DataFrame(rows)
 

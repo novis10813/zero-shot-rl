@@ -12,23 +12,25 @@ $$\theta^* = \arg\min_\theta \mathbb{E}_{s,a}\left[\lVert g_1(s, T_\theta(s, a))
 
 ## Table-6 全任務 IQM 比較
 
-| 環境 | `none` | `star` ($a^*$) | 舊版 FB-AA | 新版 $T_\theta$ | 舊版 − `none` | 新版 − `none` |
+以 clean 環境（`baseline none = 434.0`）作為對齊目標，最後兩欄越接近 `0` 代表越貼近 clean Frozen FB 的表現：
+
+| 環境 | `none` | `star` ($a^*$) | 舊版 FB-AA | 新版 $T_\theta$ | 舊版 − 434.0 | 新版 − 434.0 |
 |---|---|---|---|---|---|---|
 | `baseline` | 434.0 | 434.0 | 415.6 | **427.4** | −18.4 | −6.6 |
-| `actuator_mild` | 346.0 | 347.2 | 321.1 | **324.5** | −24.9 | −21.5 |
-| `actuator_strong` | 255.9 | 266.5 | 233.2 | **229.8** | −22.7 | −26.1 |
-| `actuator_high_mild` | 488.7 | 438.8 | 458.4 | **465.7** | −30.3 | −23.0 |
-| `actuator_high_strong` | 525.2 | 432.7 | 463.5 | **456.8** | −61.6 | −68.4 |
-| `friction_mild` | 382.1 | 382.1 | 348.6 | **348.4** | −33.6 | −33.7 |
-| `friction_strong` | 305.9 | 305.9 | 262.3 | **308.2** | −43.6 | +2.2 |
-| `friction_high_mild` | 364.8 | 364.8 | 407.8 | **416.2** | +43.1 | +51.5 |
-| `friction_high_strong` | 378.6 | 378.6 | 354.9 | **366.3** | −23.7 | −12.3 |
+| `actuator_mild` | 346.0 | 347.2 | 321.1 | **324.5** | −112.8 | −109.4 |
+| `actuator_strong` | 255.9 | 266.5 | 233.2 | **229.8** | −200.8 | −204.2 |
+| `actuator_high_mild` | 488.7 | 438.8 | 458.4 | **465.7** | +24.5 | +31.7 |
+| `actuator_high_strong` | 525.2 | 432.7 | 463.5 | **456.8** | +29.6 | +22.8 |
+| `friction_mild` | 382.1 | — | 348.6 | **348.4** | −85.4 | −85.6 |
+| `friction_strong` | 305.9 | — | 262.3 | **308.2** | −171.6 | −125.8 |
+| `friction_high_mild` | 364.8 | — | 407.8 | **416.2** | −26.1 | −17.7 |
+| `friction_high_strong` | 378.6 | — | 354.9 | **366.3** | −79.1 | −67.7 |
 
-註：`actuator_high_mild` 與 `actuator_high_strong` 因馬達變強，`none` 分數高於原環境（434.0），因此 `star` 與目標一致的修正相對於 `none` 為負值，代表將動力學拉回原環境水準。
+註：`star` ($a^* = \mathrm{clip}(a/m, -1, 1)$) 僅定義於 gear 偏移，故 `friction_*` 欄位留空。
 
 ## 觀察
 
-1. **無偏移環境（`baseline`）副作用減小**：新版 $T_\theta$ 在 Table-6 IQM 與 `none` 相差 −6.6（舊版為 −18.4）。
-2. **強摩擦偏移（`friction_strong`）與高摩擦環境優於舊版**：舊版在 `friction_strong` 掉到 262.3（−43.6），新版維持在 308.2（+2.2）；`friction_high_mild` 與 `friction_high_strong` 也高於舊版（416.2 vs 407.8；366.3 vs 354.9）。
-3. **馬達變強（`actuator_high_mild/strong`）與舊版趨勢一致**：兩版皆能將高於原環境的 return 往 `star` 方向拉回一部分（`actuator_high_strong` 新版拉回 −68.4，目標 `star` 為 −92.5）。
-4. **馬達變弱與輕度低摩擦尚未改善**：`actuator_mild/strong` 受限於原 policy 動作飽和在 $\pm 1$；`friction_mild`（−33.7）仍低於 `none`。
+1. **無偏移環境（`baseline`）副作用減小**：新版 $T_\theta$ 與目標 434.0 只差 −6.6（舊版為 −18.4）。
+2. **強摩擦偏移（`friction_strong`）與高摩擦環境優於舊版**：舊版在 `friction_strong` 距離目標 −171.6，新版縮小至 −125.8；`friction_high_mild`（−17.7 vs −26.1）與 `friction_high_strong`（−67.7 vs −79.1）也更接近目標 434.0。
+3. **馬達變強（`actuator_high_mild/strong`）成功往目標拉回**：`none` 因馬達變強高於目標 +54.7 與 +91.2；新版拉回至 +31.7 與 +22.8（舊版為 +24.5 與 +29.6），`star` 為 +4.8 與 −1.3。
+4. **馬達變弱與輕度低摩擦尚未改善**：`actuator_mild/strong` 受限於原 policy 動作飽和在 $\pm 1$；`friction_mild`（−85.6）仍低於 `none`（−51.9）。
