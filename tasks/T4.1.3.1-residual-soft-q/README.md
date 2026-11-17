@@ -46,6 +46,16 @@ PYTHONPATH=.:tasks/T4.1.3.1-residual-soft-q uv run python -m analyze.tables
 PYTHONPATH=.:tasks/T4.1.3.1-residual-soft-q uv run python -m analyze.tables --check
 ```
 
+## 4. 10 個 finetune seed
+
+```bash
+lab sweep tasks/T4.1.3.1-residual-soft-q/configs/finetune_seeds_{clean,mild,strong}.yaml   # 各 40 個 job
+PYTHONPATH=.:tasks/T4.1.3.1-residual-soft-q uv run python -m analyze.finetune_seeds
+PYTHONPATH=.:tasks/T4.1.3.1-residual-soft-q uv run python -m analyze.finetune_seeds --check
+```
+
+`out/ft.<環境>_<任務>_s<seed>/eval.csv` 複製為 `data/inputs/finetune/ft.<環境>_<任務>_s<seed>.csv`，輸出是 `data/finetune_tables.md`。
+
 ## 程式變更
 
 - `agents/workspaces.py`：`OfflineRLWorkspace.train` 每次評估都存 `<step>.pt`，不再只留最佳與最後的 checkpoint。
