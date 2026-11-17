@@ -102,16 +102,18 @@ def rollout_eval(agent, envs, z, reward_fns, method, gear, transformer=None):
 def main():
     parser = ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoint", type=Path, required=True)
-    parser.add_argument("--latents", type=Path, required=True)
+    parser.add_argument("--latents", type=Path, default=None)
+    parser.add_argument("--dataset", type=Path, default=None,
+                        help="Infer z_r from dataset.npz when --latents is omitted")
     parser.add_argument("--g0", type=Path, required=True)
     parser.add_argument("--dynamics", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--configs", nargs="+", default=None, help="names of --dynamics (default all)")
     parser.add_argument("--tasks", nargs="+", default=TASKS)
-    parser.add_argument("--episodes", type=int, default=5, help="eval episodes per task")
-    parser.add_argument("--first-env-seed", type=int, default=300000)
-    parser.add_argument("--finetune-episodes", type=int, default=5, help="finetune episodes per task")
-    parser.add_argument("--finetune-seed", type=int, default=320000)
+    parser.add_argument("--episodes", type=int, default=20, help="eval episodes per task (shared seeds)")
+    parser.add_argument("--first-env-seed", type=int, default=5)
+    parser.add_argument("--finetune-episodes", type=int, default=10, help="finetune episodes per task")
+    parser.add_argument("--finetune-seed", type=int, default=1000)
     parser.add_argument("--explore-std", type=float, default=0.0)
     parser.add_argument("--g1-steps", type=int, default=2000)
     parser.add_argument("--g1-lr", type=float, default=1e-4)
@@ -126,9 +128,11 @@ def main():
     args = parser.parse_args()
     if args.out.exists():
         raise FileExistsError(f"Refusing to overwrite {args.out}")
+    if args.latents is None and args.dataset is None:
+        parser.error("Provide --latents or --dataset")
 
-    eval_seeds = set(range(args.first_env_seed, args.first_env_seed + len(args.tasks) * args.episodes))
-    ft_seeds = set(range(args.finetune_seed, args.finetune_seed + len(args.tasks) * args.finetune_episodes))
+    eval_seeds = set(range(args.first_env_seed, args.first_env_seed + args.episodes))
+    ft_seeds = set(range(args.finetune_seed, args.finetune_seed + args.finetune_episodes))
     if eval_seeds & ft_seeds:
         raise ValueError("finetune seeds must not overlap evaluation seeds")
 
@@ -147,15 +151,30 @@ def main():
     g0, _ = load_feature_predictor(args.g0, device=device)
     g0.requires_grad_(False)
     reward = RewardFunctionConstructor(domain_name="walker", task_names=TASKS, seed=42,
-                                       device=torch.device("cpu")).reward_functions
-    with np.load(args.latents, allow_pickle=False) as archive:
-        data = dict(archive)
-    z_of = {t: torch.as_tensor(data["z"][matched_rows(data, [t], ["z_r"], None)[0]],
-                               dtype=torch.float32, device=device)
-            for t in args.tasks}
+                                       device=device if args.latents is None else torch.device("cpu")).reward_functions
+    if args.latents is not None:
+        with np.load(args.latents, allow_pickle=False) as archive:
+            data = dict(archive)
+        z_of = {t: torch.as_tensor(data["z"][matched_rows(data, [t], ["z_r"], None)[0]],
+                                   dtype=torch.float32, device=device)
+                for t in args.tasks}
+        data_hash = {"latents_sha256": sha256(args.latents)}
+    else:
+        from agents.fb.replay_buffer import FBReplayBuffer
+        from zero_shot_rl.utils import set_seed_everywhere
+        set_seed_everywhere(42)
+        rc = RewardFunctionConstructor(domain_name="walker", task_names=TASKS, seed=42, device=device)
+        buf = FBReplayBuffer(
+            reward_constructor=rc, dataset_path=args.dataset, transitions=100000,
+            relabel=False, task=None, device=device, discount=0.98, action_condition=None,
+        )
+        obs_z, rew_z = buf.sample_task_inference_transitions(inference_steps=10000)
+        with torch.no_grad():
+            z_of = {t: agent.infer_z(obs_z, rew_z[t]).squeeze(0) for t in args.tasks}
+        data_hash = {"dataset_sha256": sha256(args.dataset)}
 
     def make_episodes(first_seed, per_task, dyn):
-        seeds = np.concatenate([first_seed + per_task * i + np.arange(per_task) for i in range(len(args.tasks))])
+        seeds = np.tile(first_seed + np.arange(per_task), len(args.tasks))
         tasks = np.repeat(args.tasks, per_task)
         z = torch.stack([z_of[t] for t in tasks])
         return [make_env(int(s), dyn) for s in seeds], z, [reward[t] for t in tasks], tasks, seeds
@@ -201,7 +220,7 @@ def main():
     meta = dict(
         args={k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()},
         checkpoint_sha256=sha256(args.checkpoint),
-        latents_sha256=sha256(args.latents),
+        **data_hash,
         g0_sha256=sha256(args.g0),
         train_metrics=train_metrics,
         git_commit=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),

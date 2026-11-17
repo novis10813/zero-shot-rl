@@ -20,6 +20,11 @@ NEW_INPUTS = [
     TASK_DIR / "data/inputs/eval_action_transform_stock_s2.npz",
 ]
 OLD_INPUT = REPO_ROOT / "tasks/T4.1.3.2-fb-aa/data/inputs/adapt_episode.npz"
+OLD_FRICTION_INPUTS = [
+    TASK_DIR / "data/inputs/old_friction_s0.npz",
+    TASK_DIR / "data/inputs/old_friction_s1.npz",
+    TASK_DIR / "data/inputs/old_friction_s2.npz",
+]
 OUT_CSV = TASK_DIR / "data/table6_iqm.csv"
 
 
@@ -52,6 +57,11 @@ def build_table() -> pd.DataFrame:
     old_seed = old["seed"]
     old_task = old["task"]
 
+    old_f_archs = [np.load(p) for p in OLD_FRICTION_INPUTS]
+    old_f_rets = np.stack([a["ret"] for a in old_f_archs], axis=0)  # [3, C_f, 3, 20]
+    old_f_configs = list(old_f_archs[0]["configs"])
+    old_f_tasks = old_f_archs[0]["task"]
+
     rows = []
     for ci, cfg in enumerate(configs):
         none_iqm = table6_iqm(new_rets[:, ci, 0, :], tasks)
@@ -60,6 +70,10 @@ def build_table() -> pd.DataFrame:
         if cfg in old_configs:
             oi = old_configs.index(cfg)
             old_iqm = old_table6_iqm(old_ret[oi, 2, :], old_seed, old_task)
+            old_diff = old_iqm - none_iqm
+        elif cfg in old_f_configs:
+            oi = old_f_configs.index(cfg)
+            old_iqm = table6_iqm(old_f_rets[:, oi, 2, :], old_f_tasks)
             old_diff = old_iqm - none_iqm
         else:
             old_iqm = np.nan

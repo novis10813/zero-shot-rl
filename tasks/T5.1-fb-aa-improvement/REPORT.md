@@ -18,18 +18,17 @@ $$\theta^* = \arg\min_\theta \mathbb{E}_{s,a}\left[\lVert g_1(s, T_\theta(s, a))
 | `actuator_mild` | 346.0 | 347.2 | 321.1 | **324.5** | −24.9 | −21.5 |
 | `actuator_strong` | 255.9 | 266.5 | 233.2 | **229.8** | −22.7 | −26.1 |
 | `actuator_high_mild` | 488.7 | 438.8 | 458.4 | **465.7** | −30.3 | −23.0 |
-| `actuator_high_strong` | 525.2 | 432.7 | 463.5 | **456.8** | −61.7 | −68.4 |
-| `friction_mild` | 382.1 | 382.1 | — | **348.4** | — | −33.7 |
-| `friction_strong` | 305.9 | 305.9 | — | **308.2** | — | +2.3 |
-| `friction_high_mild` | 364.8 | 364.8 | — | **416.2** | — | +51.4 |
-| `friction_high_strong` | 378.6 | 378.6 | — | **366.3** | — | −12.3 |
+| `actuator_high_strong` | 525.2 | 432.7 | 463.5 | **456.8** | −61.6 | −68.4 |
+| `friction_mild` | 382.1 | 382.1 | 348.6 | **348.4** | −33.6 | −33.7 |
+| `friction_strong` | 305.9 | 305.9 | 262.3 | **308.2** | −43.6 | +2.2 |
+| `friction_high_mild` | 364.8 | 364.8 | 407.8 | **416.2** | +43.1 | +51.5 |
+| `friction_high_strong` | 378.6 | 378.6 | 354.9 | **366.3** | −23.7 | −12.3 |
 
-註：
-- `actuator_high_mild` 與 `actuator_high_strong` 因馬達變強，`none` 分數高於原環境（434.0），因此 `star` 與目標一致的修正相對於 `none` 為負值，代表將動力學拉回原環境水準。
-- 舊版 FB-AA 在 T4.1.3.2 僅評估了 `baseline` 與四個 `actuator` 設定，未在 `friction` 設定進行完整 episode 評估。
+註：`actuator_high_mild` 與 `actuator_high_strong` 因馬達變強，`none` 分數高於原環境（434.0），因此 `star` 與目標一致的修正相對於 `none` 為負值，代表將動力學拉回原環境水準。
 
 ## 觀察
 
 1. **無偏移環境（`baseline`）副作用減小**：新版 $T_\theta$ 在 Table-6 IQM 與 `none` 相差 −6.6（舊版為 −18.4）。
-2. **馬達變強（`actuator_high_mild/strong`）與舊版趨勢一致**：兩版皆能將高於原環境的 return 往 `star` 方向拉回一部分（`actuator_high_strong` 新版拉回 −68.4，目標 `star` 為 −92.5）。
-3. **馬達變弱與低摩擦尚未改善**：`actuator_mild/strong` 受限於原 policy 動作飽和在 $\pm 1$；低摩擦（`friction_mild` −33.7、`friction_strong` +2.3）仍未能穩定高於 `none`。
+2. **強摩擦偏移（`friction_strong`）與高摩擦環境優於舊版**：舊版在 `friction_strong` 掉到 262.3（−43.6），新版維持在 308.2（+2.2）；`friction_high_mild` 與 `friction_high_strong` 也高於舊版（416.2 vs 407.8；366.3 vs 354.9）。
+3. **馬達變強（`actuator_high_mild/strong`）與舊版趨勢一致**：兩版皆能將高於原環境的 return 往 `star` 方向拉回一部分（`actuator_high_strong` 新版拉回 −68.4，目標 `star` 為 −92.5）。
+4. **馬達變弱與輕度低摩擦尚未改善**：`actuator_mild/strong` 受限於原 policy 動作飽和在 $\pm 1$；`friction_mild`（−33.7）仍低於 `none`。

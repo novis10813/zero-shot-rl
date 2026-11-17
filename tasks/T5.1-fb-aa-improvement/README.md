@@ -21,7 +21,15 @@ PYTHONPATH=. MUJOCO_GL=egl uv run python -m zero_shot_rl.eval.eval_action_transf
     --explore-std 0.2 --lam 0.1 --seed <0|1|2> --out <eval.npz>
 ```
 
-3. Regenerate and check `data/table6_iqm.csv`:
+3. Run the T4.1.3.2 FB-AA baseline on the friction configs (`zero_shot_rl.eval.adapt_episode` via `tasks/T4.1.3.2-fb-aa/run_adapt_episode.sh`):
+
+```bash
+CKPT_DIR=<ckpt_dir> MODEL_DIR=<context_model_dir> \
+bash tasks/T4.1.3.2-fb-aa/run_adapt_episode.sh \
+    --configs baseline friction_mild friction_strong friction_high_mild friction_high_strong
+```
+
+4. Regenerate and check `data/table6_iqm.csv`:
 
 ```bash
 PYTHONPATH=.:tasks/T5.1-fb-aa-improvement uv run python -m analyze.summarize
