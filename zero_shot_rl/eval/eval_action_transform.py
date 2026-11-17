@@ -119,7 +119,7 @@ def main():
     parser.add_argument("--t-lr", type=float, default=3e-4)
     parser.add_argument("--t-hidden", type=int, default=256)
     parser.add_argument("--t-layers", type=int, default=3)
-    parser.add_argument("--pretrain-steps", type=int, default=500)
+    parser.add_argument("--pretrain-steps", type=int, default=0)
     parser.add_argument("--lam", type=float, default=0.01)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--seed", type=int, default=0)

@@ -61,18 +61,21 @@ def load_feature_predictor(path, device=torch.device("cpu")):
 
 
 class ActionTransformer(torch.nn.Module):
-    """Parametric action transformation T_theta(s, a) = tanh(MLP(s, a)) in (-1, 1)^{d_a}."""
+    """Residual action transformation T_theta(s, a) = tanh(atanh(clip(a)) + delta(s, a)) in (-1, 1)."""
 
     def __init__(self, obs_dim, action_dim, hidden=256, layers=3):
         super().__init__()
         self.config = dict(obs_dim=obs_dim, action_dim=action_dim, hidden=hidden, layers=layers)
         self.net = mlp([obs_dim + action_dim] + [hidden] * layers, action_dim)
+        torch.nn.init.zeros_(self.net[-1].weight)
+        torch.nn.init.zeros_(self.net[-1].bias)
         self.register_buffer("x_mean", torch.zeros(obs_dim + action_dim))
         self.register_buffer("x_std", torch.ones(obs_dim + action_dim))
 
     def forward(self, s, a):
         x = (torch.cat([s, a], dim=-1) - self.x_mean) / self.x_std
-        return torch.tanh(self.net(x))
+        base = torch.atanh(a.clamp(-0.999, 0.999))
+        return torch.tanh(base + self.net(x))
 
     def save(self, path, **meta):
         torch.save({"config": self.config, "state_dict": self.state_dict(), "meta": meta}, path)
@@ -107,6 +110,34 @@ def load_exorl_transitions(dataset_path):
         a=np.concatenate(a),
         s2=np.concatenate(s2),
         episode_id=np.concatenate(ep_id),
+    )
+
+
+def load_stock_transitions(stock_paths, val_seed=40):
+    """Load (s, a, s') from T07 fb_trajectories_seed*.npz files.
+
+    Returns dict with float32 arrays s, a, s2 [N, d] and boolean val_mask [N].
+    """
+    s, a, s2, val = [], [], [], []
+    for path in stock_paths:
+        with np.load(path, allow_pickle=False) as f:
+            obs, act, episodes = f["observations"], f["actions"], f["episodes"]
+            for t in range(obs.shape[0]):
+                for e in range(obs.shape[1]):
+                    o = obs[t, e].astype(np.float32)
+                    ac = act[t, e].astype(np.float32)
+                    n = len(o) - 1
+                    if n < 1:
+                        continue
+                    s.append(o[:-1])
+                    a.append(ac[:n])
+                    s2.append(o[1:])
+                    val.append(np.full(n, int(episodes[e]) >= val_seed, dtype=bool))
+    return dict(
+        s=np.concatenate(s),
+        a=np.concatenate(a),
+        s2=np.concatenate(s2),
+        val_mask=np.concatenate(val),
     )
 
 
@@ -230,12 +261,17 @@ def pretrain_identity(transformer, s, a, steps=500, batch_size=256, lr=1e-3):
 
 
 def train_action_transformer(g0, g1, s, a, lam=0.01, steps=2000, batch_size=256, lr=3e-4,
-                             hidden=256, layers=3, pretrain_steps=500, seed=0):
+                             hidden=256, layers=3, pretrain_steps=0, seed=0):
     """Train T_theta(s, a) to minimize |g_1(s, T(s, a)) - g_0(s, a)|^2 + lam |T(s, a) - a|^2."""
     torch.manual_seed(seed)
     device = _model_device(g0)
     obs_dim, action_dim = s.shape[1], a.shape[1]
     transformer = ActionTransformer(obs_dim, action_dim, hidden=hidden, layers=layers).to(device)
+    s_t = torch.as_tensor(s, dtype=torch.float32, device=device)
+    a_t = torch.as_tensor(a, dtype=torch.float32, device=device)
+    x_t = torch.cat([s_t, a_t], dim=-1)
+    transformer.x_mean.copy_(x_t.mean(0))
+    transformer.x_std.copy_(x_t.std(0).clamp_min(1e-6))
     if pretrain_steps > 0:
         pretrain_identity(transformer, s, a, steps=pretrain_steps, batch_size=batch_size, lr=1e-3)
 
@@ -244,8 +280,6 @@ def train_action_transformer(g0, g1, s, a, lam=0.01, steps=2000, batch_size=256,
     g0_frozen.requires_grad_(False)
     g1_frozen.requires_grad_(False)
 
-    s_t = torch.as_tensor(s, dtype=torch.float32, device=device)
-    a_t = torch.as_tensor(a, dtype=torch.float32, device=device)
     with torch.no_grad():
         target_b = g0_frozen(s_t, a_t)
 
@@ -273,7 +307,9 @@ def train_action_transformer(g0, g1, s, a, lam=0.01, steps=2000, batch_size=256,
 
 def main():
     parser = ArgumentParser(description=__doc__)
-    parser.add_argument("--dataset", type=Path, required=True, help="ExORL dataset.npz")
+    parser.add_argument("--dataset", type=Path, default=None, help="ExORL dataset.npz")
+    parser.add_argument("--stock", type=Path, nargs="+", default=None,
+                        help="T07 fb_trajectories_seed*.npz files")
     parser.add_argument("--checkpoint", type=Path, required=True, help="Pretrained FB checkpoint")
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--hidden", type=int, default=512)
@@ -284,32 +320,54 @@ def main():
     parser.add_argument("--val-frac", type=float, default=0.1)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
+    if args.dataset is None and args.stock is None:
+        parser.error("Provide --stock and/or --dataset")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     start_time = time.monotonic()
 
-    data = load_exorl_transitions(args.dataset)
-    agent = load_agent(args.checkpoint, device)
-    agent.eval()
-    b_next = compute_backward_features(agent, data["s2"], device).cpu().numpy()
+    s_parts, a_parts, s2_parts, val_parts, data_hashes = [], [], [], [], {}
+    if args.stock is not None:
+        stock_data = load_stock_transitions(args.stock)
+        s_parts.append(stock_data["s"])
+        a_parts.append(stock_data["a"])
+        s2_parts.append(stock_data["s2"])
+        val_parts.append(stock_data["val_mask"])
+        for p in args.stock:
+            data_hashes[str(p)] = sha256(p)
+    if args.dataset is not None:
+        ex_data = load_exorl_transitions(args.dataset)
+        n_eps = int(ex_data["episode_id"].max()) + 1
+        rng = np.random.default_rng(args.seed)
+        val_eps = set(rng.choice(n_eps, size=max(1, int(n_eps * args.val_frac)), replace=False).tolist())
+        val_parts.append(np.isin(ex_data["episode_id"], list(val_eps)))
+        s_parts.append(ex_data["s"])
+        a_parts.append(ex_data["a"])
+        s2_parts.append(ex_data["s2"])
+        data_hashes[str(args.dataset)] = sha256(args.dataset)
 
-    n_eps = int(data["episode_id"].max()) + 1
-    rng = np.random.default_rng(args.seed)
-    val_eps = set(rng.choice(n_eps, size=max(1, int(n_eps * args.val_frac)), replace=False).tolist())
-    val_mask = np.isin(data["episode_id"], list(val_eps))
+    s = np.concatenate(s_parts)
+    a = np.concatenate(a_parts)
+    s2 = np.concatenate(s2_parts)
+    val_mask = np.concatenate(val_parts)
     train_mask = ~val_mask
 
+    agent = load_agent(args.checkpoint, device)
+    agent.eval()
+    b_next = compute_backward_features(agent, s2, device).cpu().numpy()
+
     best_model, final_model, history = train_g0_model(
-        data["s"], data["a"], b_next, train_mask, val_mask,
+        s, a, b_next, train_mask, val_mask,
         hidden=args.hidden, layers=args.layers, steps=args.steps,
         batch_size=args.batch_size, lr=args.lr, seed=args.seed, device=device,
     )
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     meta = dict(
-        args={k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()},
+        args={k: [str(x) for x in v] if isinstance(v, list) else (str(v) if isinstance(v, Path) else v)
+              for k, v in vars(args).items()},
         checkpoint_sha256=sha256(args.checkpoint),
-        dataset_sha256=sha256(args.dataset),
+        data_sha256=data_hashes,
         n_train=int(train_mask.sum()),
         n_val=int(val_mask.sum()),
         history=history,

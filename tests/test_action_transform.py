@@ -14,7 +14,7 @@ from zero_shot_rl.latent.action_transform import (
     load_action_transformer,
     load_exorl_transitions,
     load_feature_predictor,
-    pretrain_identity,
+    load_stock_transitions,
     train_action_transformer,
     train_g0_model,
 )
@@ -46,16 +46,27 @@ class ActionTransformTest(unittest.TestCase):
             self.assertEqual(meta["tag"], "test")
             torch.testing.assert_close(loaded(s, a), expected)
 
-    def test_action_transformer_bounds_and_identity_pretrain(self):
+    def test_action_transformer_bounds_and_zero_init_identity(self):
         torch.manual_seed(0)
         s = torch.randn(128, 4)
-        a = torch.rand(128, 2) * 1.6 - 0.8
+        a = torch.rand(128, 2) * 1.9 - 0.95
         t_net = ActionTransformer(obs_dim=4, action_dim=2, hidden=32, layers=2)
-        pretrain_identity(t_net, s, a, steps=300, batch_size=64, lr=3e-3)
         with torch.no_grad():
             out = t_net(s, a)
         self.assertTrue((out > -1.0).all() and (out < 1.0).all())
-        torch.testing.assert_close(out, a, atol=0.1, rtol=0.0)
+        torch.testing.assert_close(out, a, atol=1e-4, rtol=0.0)
+
+    def test_load_stock_transitions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "fb_trajectories.npz"
+            obs = np.arange(2 * 2 * 4 * 3, dtype=np.float32).reshape(2, 2, 4, 3)
+            act = np.ones((2, 2, 3, 2), dtype=np.float32)
+            episodes = np.array([0, 40])
+            np.savez(path, observations=obs, actions=act, episodes=episodes)
+            data = load_stock_transitions([path], val_seed=40)
+            self.assertEqual(data["s"].shape, (12, 3))
+            self.assertEqual(data["a"].shape, (12, 2))
+            self.assertEqual(data["val_mask"].sum(), 6)
 
     def test_action_transformer_recovers_inverse_shift(self):
         torch.manual_seed(0)
