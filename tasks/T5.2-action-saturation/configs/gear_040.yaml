@@ -1,0 +1,9 @@
+# Actuator gear at 40% of the XML (hip 40.0, knee 20.0, ankle 8.0).
+base:
+  actuator_gear:
+    right_hip: 40.0
+    right_knee: 20.0
+    right_ankle: 8.0
+    left_hip: 40.0
+    left_knee: 20.0
+    left_ankle: 8.0
