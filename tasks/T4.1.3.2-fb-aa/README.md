@@ -17,9 +17,9 @@
 | `analyze/diagnose.py` | 差異累積、多步預測的 AUC、$B_0$ 的保留倍率與單步移動距離 → `data/horizon.csv`、`multistep.csv`、`b0.csv` |
 | `configs/multi_dynamics.yaml` | 訓練用的 300 組隨機動力學（`zero_shot_rl.data.multi_dynamics`） |
 | `run_multi_dynamics.sh` | 在遠端產生訓練用的閉迴路 episode：3 個 FB seed 平行，CPU |
-| `run_context.sh` | 訓練 context encoder 與預測器（`zero_shot_rl.latent.context_encoder`）：3 個 FB seed × Transformer、mean，一張 GPU 上平行 |
+| `run_context.sh` | 訓練 context encoder 與預測器（`zero_shot_rl.train.context_encoder`）：3 個 FB seed × Transformer、mean，一張 GPU 上平行 |
 | `configs/test_dynamics.yaml` | baseline 與 8 個測試設定，各 240 個 episode |
-| `run_context_eval.sh` | 產生測試 episode，再用 6 個模型的最佳 checkpoint 評分（`zero_shot_rl.latent.context_score`） |
+| `run_context_eval.sh` | 產生測試 episode，再用 6 個模型的最佳 checkpoint 評分（`zero_shot_rl.eval.context_score`） |
 | `analyze/pack_context.py` | 把訓練的驗證紀錄與評分結果壓成 `data/inputs/context.npz` |
 | `analyze/context.py` | 驗證準確率、偵測 AUC（全部片段、按起點）、$g$ 的誤差 → `data/context_val.csv`、`context_auc.csv`、`context_start.csv`、`context_err.csv` |
 | `zero_shot_rl/latent/action_adapt.py` | 對預測器優化動作 `adapt()`，以及 gear 偏移下動作範圍內的最佳動作 `gear_inverse()` |

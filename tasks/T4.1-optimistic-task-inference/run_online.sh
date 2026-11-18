@@ -1,5 +1,5 @@
 #!/bin/bash
-# Online task inference (zero_shot_rl.eval.online_inference) on one T04 FB seed.
+# Online task inference (zero_shot_rl.finetune.online_inference) on one T04 FB seed.
 #
 #     tasks/T4.1-optimistic-task-inference/run_online.sh <seed 0|1|2> <name> [online_inference args]
 #
@@ -16,7 +16,7 @@ DATASET=${DATASET:-$HOME/zsrl-datasets/walker/rnd/dataset.npz}
 CHECKPOINTS=(zsrl-32/800000.pt zsrl-41/680000.pt zsrl-42/200000.pt)
 
 export MUJOCO_GL=egl PYTHONPATH=.
-uv run python -m zero_shot_rl.eval.online_inference \
+uv run python -m zero_shot_rl.finetune.online_inference \
   --checkpoint "$ARTIFACTS/T04-mcfb-pessimism/${CHECKPOINTS[$SEED]}" --dataset_path "$DATASET" \
   --out "out/${NAME}_s${SEED}.csv" --z_dir "out/${NAME}_s${SEED}_z" \
   --predictions_dir "out/${NAME}_s${SEED}_pred" "$@"

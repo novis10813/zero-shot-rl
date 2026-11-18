@@ -7,6 +7,8 @@ Usage (repo root):
         --dataset_path <dataset.npz> --eval_tasks stand walk run flip
 """
 
+import csv
+import json
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -17,6 +19,8 @@ from agents.base import load_agent
 from agents.fb.replay_buffer import FBReplayBuffer
 from agents.workspaces import OfflineRLWorkspace
 from rewards import RewardFunctionConstructor
+from zero_shot_rl.env.dynamics import load_dynamics, make_shifted_env
+from zero_shot_rl.provenance import no_clobber
 from zero_shot_rl.utils import set_seed_everywhere
 
 parser = ArgumentParser()
@@ -30,10 +34,16 @@ parser.add_argument("--dataset_transitions", type=int, default=100000)
 parser.add_argument("--z_inference_steps", type=int, default=10000)
 parser.add_argument("--eval_rollouts", type=int, default=10)
 parser.add_argument("--std_dev_eval", type=float, default=0.05)
+parser.add_argument("--dynamics", type=str, default=None,
+                    help="Optional dynamics YAML (walker only)")
+parser.add_argument("--out", type=str, default=None,
+                    help="Optional path (.json or .csv) to write evaluation metrics")
 args = parser.parse_args()
 
 if args.domain_name == "point_mass_maze":
     raise NotImplementedError("Goal-state z inference is not supported here.")
+if args.dynamics is not None and args.domain_name != "walker":
+    raise ValueError("--dynamics is only supported for domain_name='walker'")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 set_seed_everywhere(args.seed)
@@ -70,6 +80,9 @@ workspace = OfflineRLWorkspace(
     wandb_logging=False,
     device=device,
 )
+if args.dynamics is not None:
+    workspace.env = make_shifted_env(args.seed, load_dynamics(args.dynamics))
+
 (
     workspace.observations_z,
     workspace.rewards_z,
@@ -82,3 +95,26 @@ logger.info(
     f"Checkpoint {args.checkpoint}: "
     + ", ".join(f"{k}={v:.3f}" for k, v in metrics.items())
 )
+
+if args.out is not None:
+    out_path = Path(args.out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    if out_path.suffix == ".json":
+        payload = {
+            "checkpoint": args.checkpoint,
+            "domain": args.domain_name,
+            "dynamics": args.dynamics,
+            "seed": args.seed,
+            "eval_rollouts": args.eval_rollouts,
+            "metrics": {k: float(v) for k, v in metrics.items()},
+        }
+        with no_clobber(out_path) as tmp:
+            Path(tmp).write_text(json.dumps(payload, indent=2))
+    elif out_path.suffix == ".csv":
+        with no_clobber(out_path) as tmp, open(tmp, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=["metric", "value"])
+            writer.writeheader()
+            for k, v in metrics.items():
+                writer.writerow({"metric": k, "value": f"{float(v):.6g}"})
+    else:
+        raise ValueError(f"Unsupported --out extension {out_path.suffix!r}; use .json or .csv")

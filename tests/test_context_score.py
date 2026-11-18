@@ -1,12 +1,12 @@
-"""Windows of zero_shot_rl.latent.context_score."""
+"""Windows of zero_shot_rl.eval.context_score."""
 
 import unittest
 
 import numpy as np
 import torch
 
-from zero_shot_rl.latent.context_encoder import ContextModel
-from zero_shot_rl.latent.context_score import contexts
+from zero_shot_rl.eval.context_score import contexts
+from zero_shot_rl.train.context_encoder import ContextModel
 
 
 class ContextScoreTest(unittest.TestCase):

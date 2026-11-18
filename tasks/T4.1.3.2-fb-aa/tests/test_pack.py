@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from analyze.pack import model_errors
-from zero_shot_rl.latent.dynamics_model import DynamicsModel
+from zero_shot_rl.train.dynamics_model import DynamicsModel
 
 
 class PackTest(unittest.TestCase):

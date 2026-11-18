@@ -1,4 +1,4 @@
-"""Action adaptation through the context-conditioned B_0 predictor of zero_shot_rl.latent.context_encoder.
+"""Action adaptation through the context-conditioned B_0 predictor of zero_shot_rl.train.context_encoder.
 
 For an action a of the policy at state s, adapt() looks for the action a' whose predicted next
 feature under the current dynamics (context c1) matches the one of a under the stock dynamics

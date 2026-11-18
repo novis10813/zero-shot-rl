@@ -99,7 +99,7 @@ lab sweep $T/configs/ranking.yaml       # 32 個固定候選 latent 的預測與
 單一設定也可以直接執行，例如：
 
 ```bash
-PYTHONPATH=. MUJOCO_GL=egl uv run python -m zero_shot_rl.eval.online_inference \
+PYTHONPATH=. MUJOCO_GL=egl uv run python -m zero_shot_rl.finetune.online_inference \
   --checkpoint artifacts/T04-mcfb-pessimism/zsrl-32/800000.pt \
   --dataset_path datasets/walker/rnd/dataset.npz \
   --methods fb ucb:0.001 ts:0.1 --out out/runs.csv --z_dir out/z

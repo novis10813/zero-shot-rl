@@ -52,12 +52,12 @@ train_and_score() {
   NAME=beta$BETA
   EXTRA=()
   if [ "$BETA" = learn_sigma ]; then BETA=1; NAME=learn_sigma; EXTRA=(--learn_sigma); fi
-  uv run python -m zero_shot_rl.latent.cvae_model \
+  uv run python -m zero_shot_rl.train.cvae_model \
     --rollouts out/train_rollouts_s0.npz out/train_rollouts_s1.npz out/train_rollouts_s2.npz \
     --stats_dataset "$DATASET" --val_episodes 4 --members "$MEMBERS" --latent "$LATENT" --beta "$BETA" "${EXTRA[@]}" \
     --hidden "$HIDDEN" --layers "$LAYERS" --target "$TARGET" --epochs 1000 --seed 0 --out "out/cvae_$NAME.pt" \
     > "out/cvae_$NAME.log" 2>&1
-  uv run python -m zero_shot_rl.latent.cvae_score --model "out/cvae_$NAME.pt" \
+  uv run python -m zero_shot_rl.eval.cvae_score --model "out/cvae_$NAME.pt" \
     --paired out/paired_raw_s0.npz out/paired_raw_s1.npz out/paired_raw_s2.npz --out "out/cvae_scored_$NAME.npz" \
     >> "out/cvae_$NAME.log" 2>&1
 }

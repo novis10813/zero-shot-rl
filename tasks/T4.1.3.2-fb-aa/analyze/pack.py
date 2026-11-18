@@ -1,7 +1,7 @@
 """Pack the K-step replay and the backward features of the paired data into data/inputs.
 
 horizon: from the horizon_s{0,1,2}.npz of run_horizon.sh (zero_shot_rl.eval.paired_horizon) and
-the dynamics model of T4.1.2.1 (zero_shot_rl.latent.dynamics_model, target Delta s), writes
+the dynamics model of T4.1.2.1 (zero_shot_rl.train.dynamics_model, target Delta s), writes
 data/inputs/horizon.npz with, for the trajectories of the three files stacked on the first axis
 (episodes x starts) and the steps k in `ks` on the second:
 
@@ -40,7 +40,7 @@ import numpy as np
 import torch
 
 from agents.base import load_agent
-from zero_shot_rl.latent.dynamics_model import load_dynamics_model
+from zero_shot_rl.train.dynamics_model import load_dynamics_model
 
 TASK = Path(__file__).resolve().parents[1]
 CONFIGS = [

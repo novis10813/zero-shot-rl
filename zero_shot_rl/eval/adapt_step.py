@@ -47,7 +47,7 @@ from zero_shot_rl.data.multi_dynamics import dynamics_config, sample_sets
 from zero_shot_rl.env.walker import make_env, run_episodes, set_physics
 from zero_shot_rl.latent.action_adapt import adapt
 from zero_shot_rl.latent.archive import matched_rows
-from zero_shot_rl.latent.context_encoder import load_context_model
+from zero_shot_rl.train.context_encoder import load_context_model
 from zero_shot_rl.provenance import no_clobber, sha256
 
 G = {}  # per-process state, filled before the pool forks

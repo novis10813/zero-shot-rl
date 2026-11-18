@@ -1,4 +1,4 @@
-"""CVAE ensemble, ICP threshold and scoring of zero_shot_rl.latent.cvae_model and cvae_score."""
+"""CVAE ensemble, ICP threshold and scoring of zero_shot_rl.train.cvae_model and eval.cvae_score."""
 
 import tempfile
 import unittest
@@ -8,9 +8,9 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from zero_shot_rl.latent.cvae_model import CVAEEnsemble, fit, icp_threshold, is_ood, load_cvae_ensemble
-from zero_shot_rl.latent.cvae_score import score_file
-from zero_shot_rl.latent.dynamics_model import flatten, split_episodes
+from zero_shot_rl.eval.cvae_score import score_file
+from zero_shot_rl.train.cvae_model import CVAEEnsemble, fit, icp_threshold, is_ood, load_cvae_ensemble
+from zero_shot_rl.train.dynamics_model import flatten, split_episodes
 
 A = np.array([[0.1, 0.0, 0.0], [0.0, -0.2, 0.0], [0.0, 0.0, 0.3]])
 B = np.array([[1.0, 0.0], [0.0, 1.0], [0.5, -0.5]])

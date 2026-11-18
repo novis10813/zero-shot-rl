@@ -8,13 +8,18 @@ code, one report per task.
 ```
 agents/ rewards/ custom_dmc_tasks/       upstream code
 download.sh                              upstream dataset download, called by exorl_reformatter
+scripts/                                 top-level launch scripts (train.sh, finetune.sh, evaluate.sh)
 zero_shot_rl/                            shared code: upstream root modules and ours
-  train/                                 training entries (main_exorl, main_d4rl are upstream)
+  cli.py                                 subcommand dispatcher for train / finetune / eval
+  train/                                 offline pre-training (main_exorl, main_d4rl are upstream;
+                                         ensemble, g0, context_encoder, dynamics_model, cvae_model)
+  finetune/                              test-time adaptation (value_correction, action_transform,
+                                         online_inference)
   data/                                  dataset preparation (exorl_reformatter is upstream)
   env/                                   environments and the actors that act in them
-  latent/                                FB latents from stored data, single simulator steps
-                                         from stored physics, no rollouts
-  eval/                                  rollouts in the simulator
+  latent/                                FB latents, shared model definitions and geometry
+  eval/                                  pure evaluation, scoring and rollouts in the simulator
+  online/                                online belief, FB wrappers and value-correction models
   utils.py                               seeding and BASE_DIR (upstream)
   provenance.py                          file hashes and no-clobber publication
 analysis/                                analysis tools used by two or more tasks

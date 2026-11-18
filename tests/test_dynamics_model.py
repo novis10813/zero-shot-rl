@@ -1,4 +1,4 @@
-"""Episode split, error, Mahalanobis score and save/load of zero_shot_rl.latent.dynamics_model."""
+"""Episode split, error, Mahalanobis score and save/load of zero_shot_rl.train.dynamics_model."""
 
 import tempfile
 import unittest
@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from zero_shot_rl.latent.dynamics_model import (
+from zero_shot_rl.train.dynamics_model import (
     DynamicsModel, exorl_statistics, fit, flatten, load_dynamics_model, split_episodes,
 )
 

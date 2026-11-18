@@ -6,10 +6,10 @@ Action Transformation ($g_0, g_1, T_\theta$) without updating the FB backbone.
 
 ### 1. 主實驗：`660000.pt`（10 finetune seeds × 20 共用環境 `5..24`）
 
-1. Train $g_0(s, a) \to B_0(s')$ on stock FB trajectories (`zero_shot_rl.latent.action_transform`):
+1. Train $g_0(s, a) \to B_0(s')$ on stock FB trajectories (`zero_shot_rl.train.g0`):
 
 ```bash
-PYTHONPATH=. uv run python -m zero_shot_rl.latent.action_transform \
+PYTHONPATH=. uv run python -m zero_shot_rl.train.g0 \
     --stock <fb_trajectories_seed0.npz> <fb_trajectories_seed1.npz> <fb_trajectories_seed2.npz> \
     --checkpoint <660000.pt> --seed 0 --out-dir out/g0_660k
 ```
@@ -25,7 +25,7 @@ lab sweep tasks/T5.1-fb-aa-improvement/configs/sweep_660k.yaml
 1. Train $g_0$ per seed and run `eval_action_transform` with `--episodes 5 --first-env-seed 300000 --finetune-episodes 5 --finetune-seed 320000`:
 
 ```bash
-PYTHONPATH=. uv run python -m zero_shot_rl.latent.action_transform \
+PYTHONPATH=. uv run python -m zero_shot_rl.train.g0 \
     --stock <fb_trajectories_seed0.npz> <fb_trajectories_seed1.npz> <fb_trajectories_seed2.npz> \
     --checkpoint <fb.pt> --seed <0|1|2> --out-dir <g0_dir>
 

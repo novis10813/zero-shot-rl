@@ -3,7 +3,7 @@
 Rupf et al. (arXiv 2510.20264) section 5.2: the least-squares task vector of eq. 4 from the
 first n transitions a source collected, evaluated as a fixed latent. Sources:
 
-    --z LABEL npz   a file of zero_shot_rl.eval.online_inference --z_dir, one task vector
+    --z LABEL npz   a file of zero_shot_rl.finetune.online_inference --z_dir, one task vector
                     per run and n
     --rnd LABEL     --trials draws of whole episodes from the dataset (the RND data the
                     checkpoint was pre-trained on), each draw the first n transitions of

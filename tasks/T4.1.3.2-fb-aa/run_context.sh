@@ -1,5 +1,5 @@
 #!/bin/bash
-# Context encoder and B_0 predictor of T4.1.3.2 (zero_shot_rl.latent.context_encoder): one model
+# Context encoder and B_0 predictor of T4.1.3.2 (zero_shot_rl.train.context_encoder): one model
 # per FB training seed (its own B_0 as target) and encoder (transformer, mean), all six in
 # parallel on one GPU.
 #
@@ -22,7 +22,7 @@ mkdir -p out
 sha256sum "$DATA_DIR"/multi_dynamics_seed*.npz "$STOCK_DIR"/fb_trajectories_seed*.npz
 train() {
   SEED=$1 ENCODER=$2
-  uv run python -m zero_shot_rl.latent.context_encoder \
+  uv run python -m zero_shot_rl.train.context_encoder \
     --data "$DATA_DIR"/multi_dynamics_seed{0,1,2}.npz --stock "$STOCK_DIR"/fb_trajectories_seed{0,1,2}.npz \
     --checkpoint "$CKPT_DIR/${CKPTS[$SEED]}.pt" --encoder "$ENCODER" --steps "$STEPS" \
     --out-dir out --name "context_s${SEED}_${ENCODER}" > "out/context_s${SEED}_${ENCODER}.log" 2>&1

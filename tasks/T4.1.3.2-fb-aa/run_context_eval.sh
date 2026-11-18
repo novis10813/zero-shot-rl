@@ -1,7 +1,7 @@
 #!/bin/bash
 # Evaluation of the context models of run_context.sh: test episodes in the stock and the eight
 # shifted dynamics (configs/test_dynamics.yaml, 240 episodes per dynamics: 20 per FB seed and task),
-# then every model scores them with zero_shot_rl.latent.context_score.
+# then every model scores them with zero_shot_rl.eval.context_score.
 #
 # Usage (repo root):
 #     CKPT_DIR=<dir with zsrl-32.pt zsrl-41.pt zsrl-42.pt> MODEL_DIR=<dir with context_s*_*_best.pt> \
@@ -33,7 +33,7 @@ sha256sum out/test/multi_dynamics_seed*.npz
 
 score() {
   SEED=$1 ENCODER=$2
-  uv run python -m zero_shot_rl.latent.context_score \
+  uv run python -m zero_shot_rl.eval.context_score \
     --model "$MODEL_DIR/context_s${SEED}_${ENCODER}_best.pt" --checkpoint "$CKPT_DIR/${CKPTS[$SEED]}.pt" \
     --test out/test/multi_dynamics_seed{0,1,2}.npz --stock "$STOCK_DIR"/fb_trajectories_seed{0,1,2}.npz \
     --out "out/score_s${SEED}_${ENCODER}.npz" > "out/score_s${SEED}_${ENCODER}.log" 2>&1

@@ -5,7 +5,7 @@ import unittest
 import torch
 
 from zero_shot_rl.eval.latent_ranking import candidates
-from zero_shot_rl.eval.online_inference import parse_rule
+from zero_shot_rl.finetune.online_inference import parse_rule
 from zero_shot_rl.online.belief import Belief
 from zero_shot_rl.online.fb import FBModel
 from zero_shot_rl.online.selectors import TS, UCB

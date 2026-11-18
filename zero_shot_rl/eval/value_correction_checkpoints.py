@@ -1,13 +1,13 @@
-"""Tests the critics saved by zero_shot_rl.eval.value_correction --save_every.
+"""Tests the critics saved by zero_shot_rl.finetune.value_correction.
 
-For each q/<variant>_<task>_ep<n>.pt of --q_dir (optionally only the counts n of --at) the
-greedy rule of the saved QAdapt runs one episode in each of the --eval_episodes environments
-seeded 0..eval_episodes-1, with the same candidate noise at every count, as in
-zero_shot_rl.eval.value_correction. With --frozen the frozen FB actor is tested too, at the z
-of each task. Tests of different counts are independent, so they can be split over jobs and
-hosts with --at.
+For each q/<variant>_<task>_ep<n>.pt of --q_dir (optionally only the counts n of --at, or final
+q/<variant>_<task>.pt checkpoints when --final is passed) the greedy rule of the saved QAdapt
+runs one episode in each of the --eval_episodes environments seeded 0..eval_episodes-1, with the
+same candidate noise at every count, as in zero_shot_rl.finetune.value_correction. With --frozen
+the frozen FB actor is tested too, at the z of each task. Tests of different counts are
+independent, so they can be split over jobs and hosts with --at.
 
---out_dir gets eval.csv with the columns of zero_shot_rl.eval.value_correction (variant `fb`
+--out_dir gets eval.csv with the columns of zero_shot_rl.finetune.value_correction (variant `fb`
 has train_episodes 0).
 
 Usage (repo root):
@@ -27,11 +27,12 @@ from agents.base import load_agent
 from agents.fb.agent import FB
 from zero_shot_rl.env.dynamics import load_dynamics
 from zero_shot_rl.env.walker import make_env
-from zero_shot_rl.eval.value_correction import EVAL_FIELDS, evaluate, frozen_rows, write_csv
+from zero_shot_rl.finetune.value_correction import EVAL_FIELDS, evaluate, frozen_rows, write_csv
 from zero_shot_rl.latent import task_z
 from zero_shot_rl.online.value_correction import QAdapt
 
 NAME = re.compile(r"(?P<variant>[a-z]+)_(?P<task>[a-z]+)_ep(?P<episodes>\d+)\.pt")
+FINAL_NAME = re.compile(r"(?P<variant>[a-z]+)_(?P<task>[a-z]+)\.pt")
 
 
 def find(q_dir, at=None):
@@ -45,6 +46,18 @@ def find(q_dir, at=None):
     return sorted(found, key=lambda f: (f[0], f[1], f[2]))
 
 
+def find_final(q_dir):
+    """[(variant, task, 'final', path)] for final <variant>_<task>.pt checkpoints."""
+    found = []
+    for path in Path(q_dir).glob("*.pt"):
+        if "_ep" in path.name:
+            continue
+        match = FINAL_NAME.fullmatch(path.name)
+        if match:
+            found.append((match["variant"], match["task"], "final", path))
+    return sorted(found, key=lambda f: (f[0], f[1]))
+
+
 def main():
     parser = ArgumentParser()
     parser.add_argument("--checkpoint", type=str, required=True, help="the FB checkpoint")
@@ -53,6 +66,8 @@ def main():
     parser.add_argument("--dynamics", type=str, default=None)
     parser.add_argument("--at", nargs="+", type=int, default=None,
                         help="only these episode counts; default all")
+    parser.add_argument("--final", action="store_true",
+                        help="evaluate final <variant>_<task>.pt checkpoints instead of _ep*.pt")
     parser.add_argument("--frozen", action="store_true", help="also test the frozen FB actor")
     parser.add_argument("--eval_episodes", type=int, default=5)
     parser.add_argument("--seed", type=int, default=42)
@@ -72,7 +87,8 @@ def main():
     probe.close()
 
     rows, frozen_done = [], set()
-    for variant, task, episodes, path in find(args.q_dir, args.at):
+    targets = find_final(args.q_dir) if args.final else find(args.q_dir, args.at)
+    for variant, task, episodes, path in targets:
         start = time.time()
         model = QAdapt.load(path, agent, observation_length, action_length)
         if args.frozen and task not in frozen_done:

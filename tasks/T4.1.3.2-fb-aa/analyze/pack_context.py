@@ -1,7 +1,7 @@
 """Pack the context encoder's validation history and test scores into data/inputs/context.npz.
 
 From the context_s{0,1,2}_{transformer,mean}_history.json of run_context.sh and the
-score_s{0,1,2}_{transformer,mean}.npz of run_context_eval.sh (zero_shot_rl.latent.context_score),
+score_s{0,1,2}_{transformer,mean}.npz of run_context_eval.sh (zero_shot_rl.eval.context_score),
 writes, for every model <enc>_s<seed>:
 
     hist_step, hist_<enc>_s<seed>_<key>   [V]  validation every 5,000 steps; key val_acc_h<H>,

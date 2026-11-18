@@ -1,4 +1,4 @@
-"""Episode loading, sampling and model shapes of zero_shot_rl.latent.context_encoder."""
+"""Episode loading, sampling and model shapes of zero_shot_rl.train.context_encoder."""
 
 import tempfile
 import unittest
@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from zero_shot_rl.latent.context_encoder import ContextModel, Sampler, load_episodes, losses
+from zero_shot_rl.train.context_encoder import ContextModel, Sampler, load_episodes, losses
 
 
 def write_inputs(directory):

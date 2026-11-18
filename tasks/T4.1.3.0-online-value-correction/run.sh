@@ -1,5 +1,5 @@
 #!/bin/bash
-# Online value correction (zero_shot_rl.eval.value_correction) on one T04 FB seed.
+# Online value correction (zero_shot_rl.finetune.value_correction) on one T04 FB seed.
 #
 #     tasks/T4.1.3.0-online-value-correction/run.sh <seed 0|1|2> <name> [value_correction args]
 #
@@ -16,6 +16,6 @@ DATASET=${DATASET:-$HOME/zsrl-datasets/walker/rnd/dataset.npz}
 CHECKPOINTS=(zsrl-32/800000.pt zsrl-41/680000.pt zsrl-42/200000.pt)
 
 export MUJOCO_GL=egl PYTHONPATH=. OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
-uv run python -m zero_shot_rl.eval.value_correction \
+uv run python -m zero_shot_rl.finetune.value_correction \
   --checkpoint "$ARTIFACTS/T04-mcfb-pessimism/${CHECKPOINTS[$SEED]}" --dataset_path "$DATASET" \
   --out_dir "out/${NAME}_s${SEED}" "$@"

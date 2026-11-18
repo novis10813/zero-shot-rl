@@ -88,6 +88,28 @@ To train a standard Value-Conservative Forward Backward Representation with the 
 python -m zero_shot_rl.train.main_exorl vcfb walker rnd --eval_task stand run walk flip
 ```
 
+## Unified Experiment Entrypoints
+
+Training, test-time finetuning, and evaluation are separated at both the shell and Python levels:
+
+- **Training** (`scripts/train.sh` / `python -m zero_shot_rl.train <cmd>`):
+  Dedicated FB pre-training launcher (`scripts/train.sh`) and auxiliary offline model trainers (`ensemble`, `g0`, `context_encoder`, `dynamics_model`, `cvae_model`).
+  ```bash
+  bash scripts/train.sh --algo fb --domain walker --exploration rnd --seed 0 --dataset datasets/walker/rnd/dataset.npz
+  ```
+- **Finetuning** (`scripts/finetune.sh` / `python -m zero_shot_rl.finetune <cmd>`):
+  Test-time adaptation methods (`value-correction`, `action-transform`, `online-inference`) that adapt a frozen FB checkpoint and save adapted weights/outputs without mixing in evaluation.
+  ```bash
+  bash scripts/finetune.sh value-correction --checkpoint <fb.pt> --dataset_path datasets/walker/rnd/dataset.npz --dynamics <shift.yaml> --out_dir out/vc
+  bash scripts/finetune.sh action-transform --checkpoint <fb.pt> --dataset datasets/walker/rnd/dataset.npz --g0 <g0_best.pt> --dynamics <dyn.yaml> --out-dir out/ft_aa
+  ```
+- **Evaluation** (`scripts/evaluate.sh` / `python -m zero_shot_rl.eval <cmd>`):
+  Pure evaluation and scoring (`checkpoint`, `dynamics`, `value-correction`, `action-transform`, `context-score`, `dynamics-score`, `cvae-score`, etc.).
+  ```bash
+  bash scripts/evaluate.sh checkpoint <fb.pt> walker --dataset_path datasets/walker/rnd/dataset.npz --eval_tasks stand walk run flip
+  bash scripts/evaluate.sh action-transform --checkpoint <fb.pt> --dataset datasets/walker/rnd/dataset.npz --ft-dir out/ft_aa --dynamics <dyn.yaml> --out out/eval_aa.npz
+  ```
+
 ### D4RL
 In the paper we report results on:
 

@@ -2,7 +2,7 @@
 
 Reads data/inputs/cvae_<run>.npz, shift_gap.npz and fit_info.json of analyze.pack, one run per
 setting of the KL weight beta (`beta<value>`) and `learn_sigma` (learned decoder std, beta 1).
-For each run, with r_i the reconstruction MSE of member i of zero_shot_rl.latent.cvae_model
+For each run, with r_i the reconstruction MSE of member i of zero_shot_rl.train.cvae_model
 (`mean` is its mean over members, `min` its minimum), it writes
 
     data/detect.csv    run, score (mean, min), config, auroc, lo, hi: P(score_config > score_stock) over
@@ -29,7 +29,7 @@ from pathlib import Path
 import numpy as np
 
 from analysis.detection import auroc
-from zero_shot_rl.latent.cvae_model import icp_threshold
+from zero_shot_rl.train.cvae_model import icp_threshold
 
 TASK = Path(__file__).resolve().parents[1]
 MLP_TASK = TASK.parent / "T4.1.2.1-action-conditioned-detection"

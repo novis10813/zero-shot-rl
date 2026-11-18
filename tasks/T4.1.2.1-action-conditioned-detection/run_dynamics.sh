@@ -38,8 +38,8 @@ for SEED in 0 1 2; do
     --dynamics "$CFG/baseline.yaml" --episodes 20 --first_episode 100 --out "out/train_rollouts_s$SEED.npz"
 done
 
-uv run python -m zero_shot_rl.latent.dynamics_model \
+uv run python -m zero_shot_rl.train.dynamics_model \
   --rollouts out/train_rollouts_s0.npz out/train_rollouts_s1.npz out/train_rollouts_s2.npz \
   --stats_dataset "$DATASET" --val_episodes 4 --hidden "$HIDDEN" --layers "$LAYERS" --target "$TARGET" --epochs 1000 --seed 0 --out out/dynamics.pt
-uv run python -m zero_shot_rl.latent.dynamics_score --model out/dynamics.pt \
+uv run python -m zero_shot_rl.eval.dynamics_score --model out/dynamics.pt \
   --paired out/paired_raw_s0.npz out/paired_raw_s1.npz out/paired_raw_s2.npz --out out/dynamics_scored.npz

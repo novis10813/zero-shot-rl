@@ -14,7 +14,7 @@ compares three things for every candidate:
                    error of psi (and of the dynamics it was trained on), not of task
                    inference
     LABEL@epE      the same with c the belief mean of run i at the end of episode E of a
-                   zero_shot_rl.eval.online_inference --predictions_dir run, so its
+                   zero_shot_rl.finetune.online_inference --predictions_dir run, so its
                    error adds the error of the online coefficient
 
 Candidates of a task (the same for every run): the latent of offline task inference

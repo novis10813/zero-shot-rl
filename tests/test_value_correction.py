@@ -10,7 +10,7 @@ from unittest import mock
 import torch
 
 from zero_shot_rl.env.walker import policy
-from zero_shot_rl.eval import value_correction as entry
+from zero_shot_rl.finetune import value_correction as entry
 from zero_shot_rl.eval import value_correction_checkpoints as checkpoints
 from zero_shot_rl.online.value_correction import Buffer, QAdapt, reward_scale
 

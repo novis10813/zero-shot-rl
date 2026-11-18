@@ -1,6 +1,6 @@
 """Tables and figures of REPORT.md from the runs in data/inputs/.
 
-    data/inputs/main/       zero_shot_rl.eval.online_inference, stock Walker, 10 episodes
+    data/inputs/main/       zero_shot_rl.finetune.online_inference, stock Walker, 10 episodes
     data/inputs/episodic/   the same with the -EP rules, 50 episodes
     data/inputs/dynamics/   the same in the four shifted Walkers of T3.2, <shift>.<part>_s<seed>.csv
     data/inputs/fixed_z/    zero_shot_rl.eval.fixed_z_returns

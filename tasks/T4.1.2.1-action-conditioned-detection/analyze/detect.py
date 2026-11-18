@@ -1,6 +1,6 @@
 """Detection of dynamics shifts by the action-conditioned dynamics model.
 
-Reads data/inputs/dynamics_scored_<run>.npz of zero_shot_rl.latent.dynamics_score (run: `delta`,
+Reads data/inputs/dynamics_scored_<run>.npz of zero_shot_rl.eval.dynamics_score (run: `delta`,
 the model regressing Delta s, or `next_state`, the one regressing s') and writes
 data/detect_<run>.csv, one row per (score, config), where score is `norm` (|e|_2) or `maha` (D_dyn):
 
