@@ -1,4 +1,5 @@
-"""Summarize 3-seed Table-6 IQM of Action Transformation vs. T4.1.3.2 FB-AA.
+"""Summarize Table-6 IQM of Action Transformation (T5.1) for both 660000.pt (10 finetune seeds,
+20 shared eval envs 5..24) and T05 3-seed comparison vs. T4.1.3.2 FB-AA.
 
 Usage (repo root):
     PYTHONPATH=.:tasks/T5.1-fb-aa-improvement uv run python -m analyze.summarize [--check]
@@ -14,6 +15,28 @@ from analysis.table6_aggregate import TASKS, iqm
 
 TASK_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = TASK_DIR.parent.parent
+
+SWEEP_DIR = TASK_DIR / "data/inputs/sweep_660k"
+SWEEP_FT_SEEDS = list(range(1000, 1100, 10))
+SWEEP_GROUPS = {
+    "baseline": ["baseline"],
+    "actuator_mild": ["actuator_mild", "actuator_strong"],
+    "actuator_high_mild": ["actuator_high_mild", "actuator_high_strong"],
+    "friction_mild": ["friction_mild", "friction_strong", "friction_high_mild", "friction_high_strong"],
+}
+ALL_CONFIGS = [
+    "baseline",
+    "actuator_mild",
+    "actuator_strong",
+    "actuator_high_mild",
+    "actuator_high_strong",
+    "friction_mild",
+    "friction_strong",
+    "friction_high_mild",
+    "friction_high_strong",
+]
+OUT_660K_CSV = TASK_DIR / "data/table6_iqm_660k.csv"
+
 NEW_INPUTS = [
     TASK_DIR / "data/inputs/eval_action_transform_stock_s0.npz",
     TASK_DIR / "data/inputs/eval_action_transform_stock_s1.npz",
@@ -28,11 +51,12 @@ OLD_FRICTION_INPUTS = [
 OUT_CSV = TASK_DIR / "data/table6_iqm.csv"
 
 
-def table6_iqm(ret_3_20: np.ndarray, task_arr: np.ndarray) -> float:
-    t_iqm = np.zeros((3, len(TASKS)))
-    for s in range(3):
+def table6_iqm(ret_n_ep: np.ndarray, task_arr: np.ndarray) -> float:
+    n_seeds = ret_n_ep.shape[0]
+    t_iqm = np.zeros((n_seeds, len(TASKS)))
+    for s in range(n_seeds):
         for ti, task in enumerate(TASKS):
-            t_iqm[s, ti] = iqm(ret_3_20[s, task_arr == task])
+            t_iqm[s, ti] = iqm(ret_n_ep[s, task_arr == task])
     return iqm(t_iqm.mean(axis=0))
 
 
@@ -43,6 +67,38 @@ def old_table6_iqm(ret_60: np.ndarray, old_seed: np.ndarray, old_task: np.ndarra
         for ti, task in enumerate(TASKS):
             t_iqm[si, ti] = iqm(ret_60[(old_seed == s) & (old_task == task)])
     return iqm(t_iqm.mean(axis=0))
+
+
+def build_660k_table() -> pd.DataFrame:
+    by_cfg = {c: [] for c in ALL_CONFIGS}
+    da_by_cfg = {c: [] for c in ALL_CONFIGS}
+    tasks = None
+    for fs in SWEEP_FT_SEEDS:
+        for tag in SWEEP_GROUPS:
+            with np.load(SWEEP_DIR / f"{tag}_ft{fs}.npz") as d:
+                if tasks is None:
+                    tasks = d["task"]
+                for ci, cfg in enumerate(d["configs"]):
+                    by_cfg[cfg].append(d["ret"][ci])
+                    da_by_cfg[cfg].append(float(d["da"][ci, 2].mean()))
+
+    clean_iqm = table6_iqm(np.stack(by_cfg["baseline"])[:, 0, :], tasks)
+    rows = []
+    for cfg in ALL_CONFIGS:
+        arr = np.stack(by_cfg[cfg])  # [10, 3, 80]
+        none_iqm = table6_iqm(arr[:, 0, :], tasks)
+        star_iqm = np.nan if cfg.startswith("friction_") else table6_iqm(arr[:, 1, :], tasks)
+        trans_iqm = table6_iqm(arr[:, 2, :], tasks)
+        rows.append({
+            "config": cfg,
+            "none": round(none_iqm, 1),
+            "star": round(star_iqm, 1) if not np.isnan(star_iqm) else np.nan,
+            "new_transform": round(trans_iqm, 1),
+            "none_minus_clean": round(none_iqm - clean_iqm, 1),
+            "transform_minus_clean": round(trans_iqm - clean_iqm, 1),
+            "mean_da": round(float(np.mean(da_by_cfg[cfg])), 3),
+        })
+    return pd.DataFrame(rows)
 
 
 def build_table() -> pd.DataFrame:
@@ -95,20 +151,23 @@ def build_table() -> pd.DataFrame:
 
 def main() -> None:
     parser = ArgumentParser(description=__doc__)
-    parser.add_argument("--check", action="store_true", help="Verify stored CSV matches byte-for-byte")
+    parser.add_argument("--check", action="store_true", help="Verify stored CSVs match byte-for-byte")
     args = parser.parse_args()
 
-    df = build_table()
-    csv_text = df.to_csv(index=False)
+    outputs = [
+        (OUT_660K_CSV, build_660k_table().to_csv(index=False)),
+        (OUT_CSV, build_table().to_csv(index=False)),
+    ]
     if args.check:
-        stored = OUT_CSV.read_text()
-        if stored != csv_text:
-            raise AssertionError(f"{OUT_CSV} does not match regenerated output")
-        print(f"OK: {OUT_CSV} matches")
+        for path, text in outputs:
+            if path.read_text() != text:
+                raise AssertionError(f"{path} does not match regenerated output")
+            print(f"OK: {path} matches")
         return
 
-    OUT_CSV.write_text(csv_text)
-    print(f"Wrote {OUT_CSV}")
+    for path, text in outputs:
+        path.write_text(text)
+        print(f"Wrote {path}")
 
 
 if __name__ == "__main__":

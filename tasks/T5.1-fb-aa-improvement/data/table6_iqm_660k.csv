@@ -1,0 +1,10 @@
+config,none,star,new_transform,none_minus_clean,transform_minus_clean,mean_da
+baseline,396.9,396.9,396.0,0.0,-0.9,0.16
+actuator_mild,178.5,171.4,251.8,-218.4,-145.1,0.215
+actuator_strong,92.9,106.1,104.8,-304.0,-292.1,0.33
+actuator_high_mild,452.5,352.7,449.6,55.6,52.7,0.257
+actuator_high_strong,562.6,359.0,489.5,165.7,92.7,0.387
+friction_mild,194.6,,242.3,-202.3,-154.6,0.257
+friction_strong,138.3,,161.3,-258.6,-235.6,0.282
+friction_high_mild,255.7,,343.4,-141.2,-53.5,0.179
+friction_high_strong,157.3,,218.6,-239.6,-178.2,0.232
