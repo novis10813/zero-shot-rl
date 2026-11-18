@@ -1,0 +1,10 @@
+on: idlab
+vram: 6G
+command: OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. MUJOCO_GL=egl uv run python -m zero_shot_rl.eval.eval_action_transform --checkpoint /home/sam/zsrl-artifacts/T4.1.3.1-residual-soft-q/zero-shot-rl-297/660000.pt --dataset /home/sam/zsrl-datasets/walker/rnd/dataset.npz --g0 /home/sam/zsrl-artifacts/T5.1-fb-aa-improvement/g0_660k_best.pt --dynamics tasks/T4.1.3.2-fb-aa/configs/test_dynamics.yaml --configs {configs} --episodes 20 --first-env-seed 5 --finetune-episodes 10 --finetune-seed {ft_seed} --explore-std 0.2 --lam 0.1 --seed {ft_seed} --out out/eval_660k_ft{ft_seed}.npz
+grid:
+  ft_seed: [1000, 1010, 1020, 1030, 1040, 1050, 1060, 1070, 1080, 1090]
+  configs:
+    - "baseline"
+    - "actuator_mild actuator_strong"
+    - "actuator_high_mild actuator_high_strong"
+    - "friction_mild friction_strong friction_high_mild friction_high_strong"
