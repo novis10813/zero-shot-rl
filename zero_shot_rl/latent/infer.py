@@ -90,6 +90,7 @@ def main():
     parser.add_argument("--n_random", type=int, default=3)
     parser.add_argument("--n_subsets", type=int, default=5)
     parser.add_argument("--tasks", nargs="+", default=TASKS)
+    parser.add_argument("--z_r_only", action="store_true", help="write only the z_r rows, skip the solver families and controls")
     args = parser.parse_args()
 
     sim = Simulator(args.workers)  # spawned before CUDA is initialised
@@ -116,6 +117,8 @@ def main():
         z_hat_r = iz.z_hat_r(task)
         iz.set_task(z_hat_r)
         add(task, "z_r", z_hat_r, z_hat_r)
+        if args.z_r_only:
+            continue
         # zero strength reproduces z_r exactly
         for family in Z_FAMILIES + ("E2E",):
             z0, _, _ = iz.solve(family, 0.0, z_hat_r)
