@@ -26,6 +26,7 @@ from zero_shot_rl.finetune.anfis_z import (
     write_table6_csv,
 )
 from zero_shot_rl.latent.anfis import ANFIS, weighted_z
+from zero_shot_rl.provenance import no_clobber, sha256
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -114,8 +115,11 @@ class ANFISZTest(unittest.TestCase):
         iqm_s1 = {t: {0: 410.0 + i * 20, 10: 470.0 + i * 20} for i, t in enumerate(TABLE6_TASKS)}
         with tempfile.TemporaryDirectory() as tmp:
             p0, p1 = Path(tmp) / "s0.csv", Path(tmp) / "s1.csv"
-            write_table6_csv(p0, TABLE6_TASKS, iqm_s0)
-            write_table6_csv(p1, TABLE6_TASKS, iqm_s1)
+            with no_clobber(p0) as tmp0:
+                write_table6_csv(tmp0, TABLE6_TASKS, iqm_s0)
+            with no_clobber(p1) as tmp1:
+                write_table6_csv(tmp1, TABLE6_TASKS, iqm_s1)
+            self.assertEqual(len(sha256(p0)), 64)
             runs = [pd.read_csv(p).set_index("step") for p in (p0, p1)]
             scores = np.stack([run[TABLE6_TASKS].to_numpy() for run in runs])
             agg = table6_aggregate(scores)

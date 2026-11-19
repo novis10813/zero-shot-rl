@@ -539,7 +539,9 @@ def main():
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    table6_path = no_clobber(out_dir / "table6.csv")
+    table6_path = out_dir / "table6.csv"
+    if table6_path.exists():
+        raise FileExistsError(f"Refusing to overwrite: {table6_path}")
 
     device = torch.device(args.device if args.device else ("cuda" if torch.cuda.is_available() else "cpu"))
     tasks = list(cfg["eval"]["tasks"])
@@ -575,7 +577,7 @@ def main():
     resolved = copy.deepcopy(cfg)
     resolved["provenance"] = {
         "checkpoint": str(args.checkpoint),
-        "checkpoint_sha256": sha256(args.checkpoint),
+        "checkpoint_sha256": sha256(Path(args.checkpoint)),
         "dataset_path": str(args.dataset_path),
         "dynamics": args.dynamics,
     }
@@ -605,7 +607,8 @@ def main():
         all_train_rows.extend(res["train_rows"])
         all_eval_rows.extend(res["eval_rows"])
 
-    write_table6_csv(table6_path, tasks, iqm_per_task)
+    with no_clobber(table6_path) as tmp:
+        write_table6_csv(tmp, tasks, iqm_per_task)
     write_table6_csv(out_dir / "baseline_table6.csv", tasks, baseline_per_task)
 
     with open(out_dir / "train.csv", "w", newline="") as f:
