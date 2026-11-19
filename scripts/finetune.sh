@@ -20,6 +20,7 @@ Modes:
   value-correction (vc)   Online Q_adapt / residual soft-Q finetuning (saves q/*.pt, adds --train_only by default; pass --with-eval to also run inline eval)
   action-transform (aa)   FB-AA test-time g_1 + T_theta finetuning (saves <out-dir>/<config>/transformer.pt)
   online-inference (opti) OpTI-BFM online task-vector adaptation (UCB / TS / Random / FB)
+  anfis-z (anfis)         REINFORCE optimization of YAML-composed ANFIS -> FB latent z
 
 Evaluate saved finetuned models separately with:
   bash scripts/evaluate.sh value-correction ...
@@ -61,6 +62,10 @@ case "$MODE" in
   online-inference|online_inference|opti)
     echo "[FINETUNE] mode=online-inference"
     exec uv run python -m zero_shot_rl.finetune.online_inference "$@"
+    ;;
+  anfis-z|anfis_z|anfis)
+    echo "[FINETUNE] mode=anfis-z"
+    exec uv run python -m zero_shot_rl.finetune.anfis_z "$@"
     ;;
   *)
     echo "Unknown finetune mode: $MODE" >&2

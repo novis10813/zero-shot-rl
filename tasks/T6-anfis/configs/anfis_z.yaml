@@ -1,0 +1,73 @@
+# Composable ANFIS -> FB latent z (REINFORCE) configuration for T6-anfis.
+# Swap membership, t_norm, consequent, output_activation, or features freely below.
+
+anfis:
+  # Walker physics features used by DMC reward functions (any subset/order, or "observations" for 24-dim obs)
+  features:
+    - torso_height
+    - torso_upright
+    - horizontal_velocity
+    - angmomentum
+
+  num_rules: 8
+  normalize_inputs: true
+  temperature: null          # null -> sqrt(in_dim) for product, 1.0 for min; or set an explicit float
+
+  # Layer 1: membership function
+  #   type: gaussian -> min_sigma, init_sigma
+  #   type: bell     -> min_scale, init_scale, init_slope
+  membership:
+    type: gaussian
+    min_sigma: 0.001
+    init_sigma: 1.0
+
+  # Layer 2: fuzzy AND operator in log-space
+  #   product | min
+  t_norm: product
+
+  # Layer 4: rule consequent
+  #   type: zero_order  -> constant c_k per rule
+  #   type: first_order -> Takagi-Sugeno linear W_k x + b_k per rule
+  #   type: mlp         -> hidden, layers, activation (relu | silu | tanh)
+  consequent:
+    type: first_order
+
+  # Layer 5: output activation on r_tilde(s)
+  #   identity | softplus | sigmoid | tanh
+  output_activation: identity
+
+  init_from_data: true
+
+reference:
+  dataset_transitions: 100000
+  z_inference_steps: 10000
+  seed: 42
+  discount: 0.98
+
+warmstart:
+  enabled: true
+  steps: 500
+  lr: 0.01
+  weight_decay: 0.0
+
+reinforce:
+  iters: 50
+  pop_size: 16               # K sampled z per step (must be even when antithetic: true)
+  antithetic: true           # paired +eps / -eps perturbations around mu_z
+  sigma: 0.5                 # exploration std before projecting onto sqrt(d_z)-sphere
+  lr: 0.01
+  weight_decay: 0.0
+  grad_clip: 1.0
+  train_episodes_per_z: 1    # paired same env seed(s) across all K candidates per iter
+  train_seed_offset: 10000   # disjoint from eval seeds
+  seed: 0
+
+eval:
+  tasks:
+    - stand
+    - walk
+    - run
+    - flip
+  eval_every: 10             # writes step 0, 10, 20, ..., iters to table6.csv
+  eval_episodes: 10          # 10 rollouts -> IQM per task, matching analysis/table6_aggregate.py
+  eval_seed_start: 0
