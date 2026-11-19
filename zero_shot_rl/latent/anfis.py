@@ -266,9 +266,11 @@ class ANFIS(torch.nn.Module):
         consequent: "first_order", "zero_order", "mlp", a config dict `{"type": ..., ...}`, or
             an `nn.Module` mapping `[..., D] -> [..., R, O]`.
         t_norm: "product" (sum of log-memberships) or "min" (minimum log-membership across dims).
+        normalize_firing: If True (default), normalise rule strengths via softmax (standard ANFIS).
+            If False, use unnormalised strengths psi_k(x) = exp(log w_k(x)) in (0, 1].
         output_activation: "identity", "softplus", "sigmoid", or "tanh" applied after aggregation.
-        temperature: Divisor on aggregated log-memberships before softmax. Defaults to sqrt(in_dim)
-            for "product" (prevents softmax collapse at high D) and 1.0 for "min".
+        temperature: Divisor on aggregated log-memberships. Defaults to sqrt(in_dim) for "product"
+            and 1.0 for "min".
         min_sigma: Default lower bound on membership scale parameters when not specified in `membership`.
         normalize_inputs: If True, standardise inputs with stored `x_mean` and `x_std` buffers.
         eps: Floor on `x_std` during input standardisation.
@@ -282,6 +284,7 @@ class ANFIS(torch.nn.Module):
         membership: Union[str, Dict[str, Any], torch.nn.Module] = "gaussian",
         consequent: Union[str, Dict[str, Any], torch.nn.Module] = "first_order",
         t_norm: str = "product",
+        normalize_firing: bool = True,
         output_activation: str = "identity",
         temperature: Optional[float] = None,
         min_sigma: float = 1e-3,
@@ -304,6 +307,7 @@ class ANFIS(torch.nn.Module):
         self.out_dim = int(out_dim)
         self.num_rules = int(num_rules)
         self.t_norm = t_norm
+        self.normalize_firing = bool(normalize_firing)
         self.output_activation = output_activation
         self._out_act = _activation_fn(output_activation)
         self.temperature = resolved_temp
@@ -325,6 +329,7 @@ class ANFIS(torch.nn.Module):
                 membership=mem_cfg,
                 consequent=cons_cfg,
                 t_norm=self.t_norm,
+                normalize_firing=self.normalize_firing,
                 output_activation=self.output_activation,
                 temperature=self.temperature,
                 min_sigma=self.min_sigma,
@@ -349,6 +354,7 @@ class ANFIS(torch.nn.Module):
             membership=cfg.get("membership", "gaussian"),
             consequent=cfg.get("consequent", "first_order"),
             t_norm=cfg.get("t_norm", "product"),
+            normalize_firing=bool(cfg.get("normalize_firing", True)),
             output_activation=cfg.get("output_activation", "identity"),
             temperature=cfg.get("temperature", None),
             min_sigma=float(cfg.get("min_sigma", 1e-3)),
@@ -399,14 +405,20 @@ class ANFIS(torch.nn.Module):
             agg = log_mu.min(dim=-1).values
         return agg / self.temperature
 
+    def _weights_from_normalised(self, xn: torch.Tensor) -> torch.Tensor:
+        log_w = self.log_firing_strengths(xn)
+        if self.normalize_firing:
+            return F.softmax(log_w, dim=-1)
+        return torch.exp(log_w)
+
     def firing_weights(self, x: torch.Tensor) -> torch.Tensor:
-        """Normalised rule firing weights w_bar [..., num_rules], summing to 1."""
-        return F.softmax(self.log_firing_strengths(self.normalize(x)), dim=-1)
+        """Rule firing weights [..., num_rules]: softmax-normalised if normalize_firing else exp(log_w) in (0, 1]."""
+        return self._weights_from_normalised(self.normalize(x))
 
     def forward(self, x: torch.Tensor, return_weights: bool = False):
-        """Evaluate ANFIS on `x` [..., in_dim] -> [..., out_dim] (or (y, w_bar) if return_weights)."""
+        """Evaluate ANFIS on `x` [..., in_dim] -> [..., out_dim] (or (y, weights) if return_weights)."""
         xn = self.normalize(x)
-        weights = F.softmax(self.log_firing_strengths(xn), dim=-1)
+        weights = self._weights_from_normalised(xn)
         rule_outputs = self.consequent(xn)
         out = self._out_act(torch.einsum("...r,...ro->...o", weights, rule_outputs))
         if return_weights:

@@ -21,9 +21,11 @@ anfis:
     min_sigma: 0.001
     init_sigma: 1.0
 
-  # Layer 2: fuzzy AND operator in log-space
-  #   product | min
+  # Layer 2-3: fuzzy AND operator and rule firing normalisation
+  #   t_norm: product | min
+  #   normalize_firing: true (softmax, standard ANFIS) | false (unnormalised exp(log_w) in (0, 1])
   t_norm: product
+  normalize_firing: true
 
   # Layer 4: rule consequent
   #   type: zero_order  -> constant c_k per rule

@@ -183,6 +183,35 @@ class ANFISTest(unittest.TestCase):
                 with torch.no_grad():
                     torch.testing.assert_close(loaded(x), model(x), atol=1e-6, rtol=0)
 
+    def test_unnormalised_firing_mode_and_roundtrip(self):
+        torch.manual_seed(8)
+        x = torch.randn(16, 4)
+        model = ANFIS(
+            in_dim=4, out_dim=1, num_rules=6, membership="gaussian",
+            consequent="zero_order", normalize_firing=False, temperature=1.0,
+        )
+        y, psi = model(x, return_weights=True)
+        self.assertEqual(y.shape, (16, 1))
+        self.assertEqual(psi.shape, (16, 6))
+        # Unnormalised firing strengths lie in (0, 1] and need not sum to 1.
+        self.assertTrue(torch.all((psi > 0) & (psi <= 1.0)))
+        self.assertFalse(torch.allclose(psi.sum(dim=-1), torch.ones(16), atol=1e-2))
+        # Exact linear combination r_w(x) = psi(x) @ w for zero-order consequent.
+        expected = psi @ model.consequent.bias
+        torch.testing.assert_close(y, expected, atol=1e-6, rtol=0)
+        # Gradients flow to both membership and consequent.
+        (y ** 2).mean().backward()
+        self.assertGreater(model.membership.centers.grad.abs().sum().item(), 0.0)
+        self.assertGreater(model.consequent.bias.grad.abs().sum().item(), 0.0)
+        # Roundtrip preserves normalize_firing=False.
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "unnorm.pt"
+            model.save(path)
+            loaded, _ = load_anfis(path)
+        self.assertFalse(loaded.normalize_firing)
+        with torch.no_grad():
+            torch.testing.assert_close(loaded(x), model(x), atol=1e-6, rtol=0)
+
 
 if __name__ == "__main__":
     unittest.main()

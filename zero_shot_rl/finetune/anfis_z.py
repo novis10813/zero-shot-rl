@@ -66,6 +66,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "normalize_inputs": True,
         "temperature": None,
         "t_norm": "product",
+        "normalize_firing": True,
         "output_activation": "identity",
         "membership": {
             "type": "gaussian",

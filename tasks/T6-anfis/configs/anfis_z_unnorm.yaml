@@ -1,0 +1,61 @@
+# Unnormalised ANFIS -> FB latent z (REINFORCE) configuration for T6-anfis.
+# Identical to anfis_z.yaml except normalize_firing: false (psi_k(x) = exp(log w_k(x)) in (0, 1]).
+
+anfis:
+  features:
+    - torso_height
+    - torso_upright
+    - horizontal_velocity
+    - angmomentum
+
+  num_rules: 8
+  normalize_inputs: true
+  temperature: null
+
+  membership:
+    type: gaussian
+    min_sigma: 0.001
+    init_sigma: 1.0
+
+  t_norm: product
+  normalize_firing: false
+
+  consequent:
+    type: first_order
+
+  output_activation: identity
+  init_from_data: true
+
+reference:
+  dataset_transitions: 100000
+  z_inference_steps: 10000
+  seed: 42
+  discount: 0.98
+
+warmstart:
+  enabled: true
+  steps: 500
+  lr: 0.01
+  weight_decay: 0.0
+
+reinforce:
+  iters: 50
+  pop_size: 16
+  antithetic: true
+  sigma: 0.5
+  lr: 0.01
+  weight_decay: 0.0
+  grad_clip: 1.0
+  train_episodes_per_z: 1
+  train_seed_offset: 10000
+  seed: 0
+
+eval:
+  tasks:
+    - stand
+    - walk
+    - run
+    - flip
+  eval_every: 10
+  eval_episodes: 10
+  eval_seed_start: 0
