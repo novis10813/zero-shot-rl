@@ -62,3 +62,14 @@ PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.summarize
 PYTHONPATH=. uv run python -m analysis.table6_aggregate tasks/T5.1-ood-fuzzy/data/inputs/clean/baseline/ft*/table6.csv
 PYTHONPATH=. uv run python -m analysis.table6_aggregate tasks/T5.1-ood-fuzzy/data/inputs/frozen_fb/clean/frozen_fb_clean/table6.csv
 ```
+
+## 學到的 reward 權重圖（step 50）
+
+以 4 sensors ANFIS、finetune seed 1000 的 step 50 模型（`<task>_final.pt`），沿用 `tasks/T6-anfis/analyze/compare.py` 的繪圖函式，畫出學到的權重 $\tilde{r}_\theta(s)$ 與原始 $r(s)$ 的比較，原環境與 4 個 OOD 環境各一組，圖在 `figures/step50/<環境>/`。
+
+```bash
+# 從 artifacts 中的模型重新萃取（需要模型）
+PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.reward_figs --extract clean=<models_dir> friction_mild=<models_dir> ...
+# 從 data/inputs/reward_grid/ 重新畫圖
+PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.reward_figs
+```

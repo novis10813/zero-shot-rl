@@ -31,10 +31,26 @@ def _load_steps(csv_path: Path) -> pd.DataFrame:
     return pd.read_csv(csv_path).set_index("step")[TABLE6_TASKS]
 
 
+def _load_finetune_run(inputs_dir: Path, cond: str, dyn: str, seed_dir: Path) -> pd.DataFrame:
+    """Per-step scores of one finetune seed: steps 0..50 plus the continued run (steps 60..) if present.
+
+    The continued run re-evaluates step 50 from the restored model, which must reproduce the original.
+    """
+    base = _load_steps(seed_dir / "table6.csv")
+    cont_csv = inputs_dir / f"{cond}_cont" / dyn / seed_dir.name / "table6.csv"
+    if not cont_csv.exists():
+        return base
+    cont = _load_steps(cont_csv)
+    resume_step = int(cont.index.min())
+    np.testing.assert_allclose(cont.loc[resume_step].to_numpy(), base.loc[resume_step].to_numpy(), atol=1e-3)
+    return pd.concat([base.loc[:resume_step], cont.loc[cont.index > resume_step]])
+
+
 def summarize(inputs_dir: Path) -> pd.DataFrame:
     """Finetune conditions report the step with the highest all-task IQM (as analysis.table6_aggregate).
 
-    `final_iqm` is the all-task IQM at the last step, without selection.
+    Finetune runs continued beyond step 50 (`<condition>_cont/`) are joined to the original steps.
+    `iqm_step50` is the all-task IQM at step 50 and `final_iqm` at the last step, both without selection.
     """
     rows: List[Dict[str, object]] = []
     for dyn in DYNAMICS_ORDER:
@@ -52,14 +68,14 @@ def summarize(inputs_dir: Path) -> pd.DataFrame:
         if zr_scores:
             arr = np.stack(zr_scores)
             t6 = float(table6_aggregate(arr[:, None, :])[0])
-            row: Dict[str, object] = {"dynamics": dyn, "condition": "clean_fb_zr", "n_seeds": len(zr_scores), "step": 0, "table6_iqm": t6, "final_iqm": t6}
+            row: Dict[str, object] = {"dynamics": dyn, "condition": "clean_fb_zr", "n_seeds": len(zr_scores), "step": 0, "table6_iqm": t6, "iqm_step50": t6, "final_iqm": t6}
             for i, t in enumerate(TABLE6_TASKS):
                 row[t] = float(arr[:, i].mean())
             rows.append(row)
 
         for cond in CONDITIONS:
             seed_dirs = sorted((inputs_dir / cond / dyn).glob("ft*"))
-            runs = [_load_steps(d / "table6.csv") for d in seed_dirs if (d / "table6.csv").exists()]
+            runs = [_load_finetune_run(inputs_dir, cond, dyn, d) for d in seed_dirs if (d / "table6.csv").exists()]
             if not runs:
                 continue
             steps = runs[0].index
@@ -73,6 +89,7 @@ def summarize(inputs_dir: Path) -> pd.DataFrame:
                 "n_seeds": len(runs),
                 "step": int(steps[best]),
                 "table6_iqm": float(per_step[best]),
+                "iqm_step50": float(per_step[list(steps).index(50)]) if 50 in steps else float(per_step[best]),
                 "final_iqm": float(per_step[-1]),
             }
             for i, t in enumerate(TABLE6_TASKS):
@@ -85,7 +102,7 @@ def summarize(inputs_dir: Path) -> pd.DataFrame:
     zr = df[df["condition"] == "clean_fb_zr"].set_index("dynamics")["table6_iqm"]
     df["delta_vs_zr"] = df["table6_iqm"] - df["dynamics"].map(zr)
     mean_rows = (
-        df.groupby("condition", sort=False)[["table6_iqm", "final_iqm", *TABLE6_TASKS, "delta_vs_zr"]]
+        df.groupby("condition", sort=False)[["table6_iqm", "iqm_step50", "final_iqm", *TABLE6_TASKS, "delta_vs_zr"]]
         .mean()
         .reset_index()
     )
@@ -103,15 +120,16 @@ def to_markdown(df: pd.DataFrame) -> str:
         "ood_custom": "OOD finetune，客製 sensors",
     }
     lines = [
-        "| OOD 環境 | 方法 | 選定 step | stand | walk | run | flip | All-task IQM | 相對 $z_r$ | 第 50 步 IQM |",
-        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| OOD 環境 | 方法 | 選定 step | stand | walk | run | flip | All-task IQM | 相對 $z_r$ | 第 50 步 | 最後一步 |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for _, r in df.iterrows():
         dyn = "四環境平均" if r["dynamics"] == "mean_of_4_dynamics" else r["dynamics"]
         step = "-" if pd.isna(r["step"]) or r["condition"] in ("clean_fb_zr", "clean_anfis_transfer") else f"{int(r['step'])}"
         lines.append(
             f"| {dyn} | {names[r['condition']]} | {step} | {r['stand']:.1f} | {r['walk']:.1f} | {r['run']:.1f} | "
-            f"{r['flip']:.1f} | {r['table6_iqm']:.1f} | {r['delta_vs_zr']:+.1f} | {r['final_iqm']:.1f} |"
+            f"{r['flip']:.1f} | {r['table6_iqm']:.1f} | {r['delta_vs_zr']:+.1f} | "
+            f"{r['iqm_step50']:.1f} | {r['final_iqm']:.1f} |"
         )
     return "\n".join(lines) + "\n"
 
