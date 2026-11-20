@@ -4,7 +4,9 @@
 
 | 路徑 | 內容 |
 |---|---|
-| `configs/anfis_z.yaml` | 可自由組合 ANFIS 元件（features、membership、t_norm、consequent、output_activation）與 REINFORCE 設定 |
+| `configs/anfis/<domain>.yaml`（全域） | ANFIS 模型架構與 sensor 定義（`walker`、`quadruped`、`point_mass_maze`、`jaco`） |
+| `configs/reinforce.yaml` | T6 實驗流程設定（`reference`、`warmstart`、`reinforce`、`eval`） |
+| `configs/walker_unnorm.yaml` | `normalize_firing: false` 消融設定（覆寫全域 `walker.yaml`） |
 | `run_anfis_z.sh` | 單一 FB checkpoint 四任務訓練與 Table-6 評估啟動腳本 |
 | `data/inputs/` | `table6.csv`、`baseline_table6.csv`、`eval_episodes.csv`、`train.csv`、`reward_grid.npz` |
 | `data/scores.csv` | 原始 $z_r$ 與 ANFIS-z 分數對照表 |

@@ -1,0 +1,108 @@
+# Global ANFIS architecture & sensor configuration for DMC Walker.
+#
+# Classical Cartesian-grid ANFIS:
+#   - Enable any subset of Walker sensors below (`enabled: true` / `false`, or omit unused ones).
+#   - Set each enabled sensor's linguistic term count (`num_terms`) and `membership` function.
+#   - Total fuzzy rules R = prod(num_terms) over all enabled sensors (guarded by `max_rules`).
+#
+# Supported membership functions:
+#   gaussian    -> min_sigma, init_sigma
+#   bell        -> min_scale, init_scale, init_slope
+#   triangular  -> min_width, init_width, eps
+#   trapezoidal -> min_width, init_slope_width, init_top_width, eps
+#   sigmoid     -> init_slope
+#   psig        -> min_width, init_width, init_slope
+
+anfis:
+  domain: walker
+  normalize_inputs: true
+  temperature: null          # null -> sqrt(D) for product, 1.0 for min; or set explicit float (e.g. 1.0)
+  t_norm: product            # product | min
+  normalize_firing: true     # true (softmax, standard ANFIS) | false (unnormalised exp(log_w) in (0, 1])
+  max_rules: 256             # safety cap on prod(num_terms)
+
+  # Default membership inherited by enabled sensors that omit `membership` (or share the same `type`)
+  default_membership:
+    type: gaussian
+    min_sigma: 0.001
+    init_sigma: 1.0
+
+  # All DMC Walker scalar sensors (37 total). Default enables the 4 reward physics signals (3*2*3*2 = 36 rules).
+  sensors:
+    # --- CoM / Reward physics (5) ---
+    torso_height:
+      enabled: true
+      num_terms: 3
+      membership:
+        type: gaussian
+        min_sigma: 0.001
+        init_sigma: 1.0
+
+    torso_upright:
+      enabled: true
+      num_terms: 2
+      membership:
+        type: gaussian
+
+    horizontal_velocity:     # sensordata["torso_subtreelinvel"][0]
+      enabled: true
+      num_terms: 3
+      membership:
+        type: gaussian
+
+    angmomentum:             # subtree_angmom["torso"][1]
+      enabled: true
+      num_terms: 2
+      membership:
+        type: gaussian
+
+    com_vz:                  # sensordata["torso_subtreelinvel"][2]
+      enabled: false
+      num_terms: 2
+      membership: { type: gaussian }
+
+    # --- Joint velocities qvel (9) ---
+    qvel_rootz:       { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_rootx:       { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_rooty:       { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_right_hip:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_right_knee:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_right_ankle: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_left_hip:    { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_left_knee:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_left_ankle:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+
+    # --- Joint positions qpos (9) ---
+    qpos_rootz:       { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_rootx:       { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_rooty:       { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_right_hip:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_right_knee:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_right_ankle: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_left_hip:    { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_left_knee:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_left_ankle:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+
+    # --- Body orientations xmat xx/xz (14) ---
+    orient_torso_xx:       { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    orient_torso_xz:       { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    orient_right_thigh_xx: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    orient_right_thigh_xz: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    orient_right_leg_xx:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    orient_right_leg_xz:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    orient_right_foot_xx:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    orient_right_foot_xz:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    orient_left_thigh_xx:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    orient_left_thigh_xz:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    orient_left_leg_xx:    { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    orient_left_leg_xz:    { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    orient_left_foot_xx:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    orient_left_foot_xz:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+
+  # Layer 4: rule consequent (zero_order | first_order | mlp)
+  consequent:
+    type: first_order
+
+  # Layer 5: output activation (identity | softplus | sigmoid | tanh)
+  output_activation: identity
+  init_from_data: true

@@ -1,23 +1,23 @@
-"""Optimize an ANFIS state-weighting function to infer better FB latents z via REINFORCE.
+"""Optimize a Cartesian-grid ANFIS state-weighting function to infer better FB latents z via REINFORCE.
 
-Given a frozen FB checkpoint and a YAML config that composes an ANFIS architecture
-(zero_shot_rl.latent.anfis), each task runs:
+Given a frozen FB checkpoint and a YAML config (e.g. `configs/anfis/walker.yaml`) specifying the
+DMC domain, enabled sensors, per-sensor membership functions, and per-sensor linguistic term counts:
 
-    1. Reference pool: sample N transitions from the offline ExORL dataset, extract the
-       configured Walker physics features Phi [N, D] (default: torso_height, torso_upright,
-       horizontal_velocity, angmomentum), frozen backward representations B [N, d_z], and true
-       task rewards r [N, 1].
+    1. Reference pool: sample N transitions from the offline ExORL dataset, extract the enabled
+       scalar sensors Phi [N, D], frozen backward representations B [N, d_z], and true task
+       rewards r [N, 1].
     2. Optional warm-start: regress r from Phi so the initial ANFIS latent mu_z matches z_r.
     3. Episodic REINFORCE: perturb mu_z = weighted_z(ANFIS(Phi), B) with (antithetic) Gaussian
        noise projected onto the sqrt(d_z)-sphere, evaluate each z_k with the frozen FB policy in
        the simulator, and update ANFIS parameters from the normalised episode-return advantages.
     4. Periodic Table-6 evaluation: evaluate deterministic mu_z on fixed test seeds and write
-       `<out_dir>/table6.csv` (step, stand, walk, run, flip; each cell is the IQM over
-       `eval_episodes` rollouts), directly consumable by `analysis/table6_aggregate.py`.
+       `<out_dir>/table6.csv` (step, <tasks...>; each cell is the IQM over `eval_episodes`
+       rollouts), directly consumable by `analysis/table6_aggregate.py`.
 
 Usage (repo root):
     PYTHONPATH=. MUJOCO_GL=egl uv run python -m zero_shot_rl.finetune.anfis_z \\
-        --config configs/anfis_z.yaml \\
+        --anfis_config configs/anfis/walker.yaml \\
+        --config tasks/T6-anfis/configs/reinforce.yaml \\
         --checkpoint artifacts/T4.1.3.1-residual-soft-q/zero-shot-rl-296/local-run-Y-11-12-09-01-22/660000.pt \\
         --dataset_path datasets/walker/rnd/dataset.npz \\
         --out_dir out/anfis_z_s0
@@ -29,7 +29,7 @@ import math
 import time
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
@@ -42,40 +42,43 @@ from agents.fb.agent import FB
 from agents.fb.replay_buffer import FBReplayBuffer
 from rewards import RewardFunctionConstructor
 from zero_shot_rl.env.dynamics import load_dynamics
-from zero_shot_rl.env.walker import STEPS, make_env, policy
-from zero_shot_rl.latent.anfis import ANFIS, weighted_z
+from zero_shot_rl.env.sensors import (
+    DOMAIN_TASKS,
+    extract_sensors,
+    make_domain_env,
+    validate_sensors,
+)
+from zero_shot_rl.env.walker import policy
+from zero_shot_rl.latent.anfis import ANFIS, parse_sensor_specs, weighted_z
 from zero_shot_rl.provenance import no_clobber, sha256
-from zero_shot_rl.utils import set_seed_everywhere
+from zero_shot_rl.utils import BASE_DIR, set_seed_everywhere
 
-ALL_TASKS = ["stand", "walk", "run", "flip"]
-
-FEATURE_EXTRACTORS = {
-    "torso_height": lambda physics: float(physics.torso_height()),
-    "torso_upright": lambda physics: float(physics.torso_upright()),
-    "horizontal_velocity": lambda physics: float(physics.horizontal_velocity()),
-    "com_vx": lambda physics: float(physics.horizontal_velocity()),
-    "CoM_vx": lambda physics: float(physics.horizontal_velocity()),
-    "angmomentum": lambda physics: float(physics.angmomentum()),
-    "angmom_y": lambda physics: float(physics.angmomentum()),
-}
+# Keys whose nested dicts should be replaced atomically rather than merged with defaults.
+_REPLACE_KEYS = frozenset({"sensors", "default_membership", "consequent"})
 
 DEFAULT_CONFIG: Dict[str, Any] = {
     "anfis": {
-        "features": ["torso_height", "torso_upright", "horizontal_velocity", "angmomentum"],
-        "num_rules": 8,
+        "domain": "walker",
         "normalize_inputs": True,
         "temperature": None,
         "t_norm": "product",
         "normalize_firing": True,
-        "output_activation": "identity",
-        "membership": {
+        "max_rules": 256,
+        "default_membership": {
             "type": "gaussian",
             "min_sigma": 1e-3,
             "init_sigma": 1.0,
         },
+        "sensors": {
+            "torso_height": {"enabled": True, "num_terms": 3},
+            "torso_upright": {"enabled": True, "num_terms": 2},
+            "horizontal_velocity": {"enabled": True, "num_terms": 3},
+            "angmomentum": {"enabled": True, "num_terms": 2},
+        },
         "consequent": {
             "type": "first_order",
         },
+        "output_activation": "identity",
         "init_from_data": True,
     },
     "reference": {
@@ -103,7 +106,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "seed": 0,
     },
     "eval": {
-        "tasks": list(ALL_TASKS),
+        "tasks": None,
         "eval_every": 10,
         "eval_episodes": 10,
         "eval_seed_start": 0,
@@ -114,51 +117,78 @@ DEFAULT_CONFIG: Dict[str, Any] = {
 def deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
     out = copy.deepcopy(base)
     for k, v in (override or {}).items():
-        if isinstance(v, dict) and isinstance(out.get(k), dict):
+        if k not in _REPLACE_KEYS and isinstance(v, dict) and isinstance(out.get(k), dict):
             out[k] = deep_merge(out[k], v)
         else:
             out[k] = copy.deepcopy(v)
     return out
 
 
-def load_config(path: Optional[str]) -> Dict[str, Any]:
-    if path is None:
-        return copy.deepcopy(DEFAULT_CONFIG)
+def _resolve_config_path(raw_path: Union[str, Path], relative_to: Optional[Path] = None) -> Path:
+    p = Path(raw_path)
+    if p.exists():
+        return p
+    if not p.is_absolute():
+        if relative_to is not None and (relative_to / p).exists():
+            return relative_to / p
+        repo_candidate = Path(BASE_DIR) / p
+        if repo_candidate.exists():
+            return repo_candidate
+    return p
+
+
+def load_anfis_config(path: Union[str, Path]) -> Dict[str, Any]:
+    """Load a standalone ANFIS architecture/sensor YAML (`configs/anfis/<domain>.yaml`)."""
     with open(path) as f:
-        user_cfg = yaml.safe_load(f) or {}
-    return deep_merge(DEFAULT_CONFIG, user_cfg)
+        raw = yaml.safe_load(f) or {}
+    if not isinstance(raw, dict):
+        raise ValueError(f"ANFIS config {path} must be a YAML mapping")
+    if "anfis" in raw:
+        anfis_block = raw["anfis"]
+        if not isinstance(anfis_block, dict):
+            raise ValueError(f"'anfis' section in {path} must be a mapping")
+        return copy.deepcopy(anfis_block)
+    return copy.deepcopy(raw)
 
 
-def feature_dim(feature_names: Sequence[str], obs_dim: int = 24) -> int:
-    dim = 0
-    for name in feature_names:
-        if name == "observations":
-            dim += obs_dim
-        elif name in FEATURE_EXTRACTORS:
-            dim += 1
-        else:
-            known = sorted([*FEATURE_EXTRACTORS, "observations"])
-            raise ValueError(f"unknown feature {name!r}; choose from {known}")
-    if dim == 0:
-        raise ValueError("anfis.features must be non-empty")
-    return dim
+def load_config(path: Optional[str] = None, anfis_config: Optional[str] = None) -> Dict[str, Any]:
+    """Load and merge experiment config (`--config`) with ANFIS config (`--anfis_config`).
+
+    Resolution order (later overrides earlier):
+      1. DEFAULT_CONFIG
+      2. External ANFIS YAML (`anfis_config` argument, else `anfis_config:` key in `path`)
+      3. Experiment YAML (`path`, including optional partial `anfis:` overrides)
+    """
+    cfg = copy.deepcopy(DEFAULT_CONFIG)
+    user_cfg: Dict[str, Any] = {}
+    config_parent: Optional[Path] = None
+    if path is not None:
+        cfg_path = _resolve_config_path(path)
+        config_parent = cfg_path.parent
+        with open(cfg_path) as f:
+            user_cfg = yaml.safe_load(f) or {}
+
+    ext_anfis_raw = anfis_config if anfis_config is not None else user_cfg.get("anfis_config")
+    if ext_anfis_raw is not None:
+        ext_path = _resolve_config_path(ext_anfis_raw, relative_to=config_parent)
+        cfg["anfis"] = deep_merge(cfg["anfis"], load_anfis_config(ext_path))
+
+    user_overrides = {k: v for k, v in user_cfg.items() if k != "anfis_config"}
+    cfg = deep_merge(cfg, user_overrides)
+
+    domain = cfg["anfis"].get("domain", "walker")
+    if cfg["eval"].get("tasks") is None:
+        if domain in DOMAIN_TASKS:
+            cfg["eval"]["tasks"] = list(DOMAIN_TASKS[domain])
+    return cfg
 
 
-def extract_physics_features(
-    physics, feature_names: Sequence[str], observation: Optional[np.ndarray] = None
-) -> np.ndarray:
-    """Extract the configured feature vector from a MuJoCo Walker `physics` instance."""
-    parts = []
-    for name in feature_names:
-        if name == "observations":
-            if observation is None:
-                raise ValueError("observation array is required when 'observations' is in features")
-            parts.append(np.asarray(observation, dtype=np.float32).ravel())
-        elif name in FEATURE_EXTRACTORS:
-            parts.append(np.array([FEATURE_EXTRACTORS[name](physics)], dtype=np.float32))
-        else:
-            raise ValueError(f"unknown feature {name!r}")
-    return np.concatenate(parts, axis=0)
+def resolve_anfis_sensors(anfis_cfg: Dict[str, Any]) -> Tuple[str, List[Dict[str, Any]], List[str]]:
+    """Validate and resolve `(domain, enabled_sensor_specs, enabled_sensor_names)` from `anfis:` config."""
+    domain = str(anfis_cfg.get("domain", "walker"))
+    sensor_specs = parse_sensor_specs(anfis_cfg)
+    sensor_names = validate_sensors(domain, [s["name"] for s in sensor_specs])
+    return domain, sensor_specs, sensor_names
 
 
 def iqm(values: Sequence[float]) -> float:
@@ -173,7 +203,8 @@ def eval_points(iters: int, every: int) -> List[int]:
 
 def collect_reference_set(
     dataset_path: Path,
-    feature_names: Sequence[str],
+    domain: str,
+    sensor_names: Sequence[str],
     tasks: Sequence[str],
     dataset_transitions: int,
     z_inference_steps: int,
@@ -181,9 +212,10 @@ def collect_reference_set(
     discount: float,
     device: torch.device,
 ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, torch.Tensor], Dict[str, Any]]:
-    """Sample reference transitions from ExORL dataset and extract obs, physics features, and task rewards."""
+    """Sample reference transitions from an ExORL dataset and extract obs, sensor values, and task rewards."""
+    validate_sensors(domain, sensor_names)
     set_seed_everywhere(seed)
-    rc = RewardFunctionConstructor(domain_name="walker", task_names=list(tasks), seed=seed, device=device)
+    rc = RewardFunctionConstructor(domain_name=domain, task_names=list(tasks), seed=seed, device=device)
     buffer = FBReplayBuffer(
         reward_constructor=rc,
         dataset_path=dataset_path,
@@ -208,9 +240,8 @@ def collect_reference_set(
     for phys, act in zip(batch_physics, batch_actions):
         env.physics.set_state(phys)
         ts = env.step(act)
-        obs = ts.observation["observations"]
-        obs_list.append(obs)
-        feat_list.append(extract_physics_features(env.physics, feature_names, obs))
+        obs_list.append(ts.observation["observations"])
+        feat_list.append(extract_sensors(env.physics, domain, sensor_names))
         rew_list.append(rc(env.physics))
 
     observations = torch.as_tensor(np.asarray(obs_list), dtype=torch.float32, device=device)
@@ -273,27 +304,39 @@ def evaluate_zs(
     zs: torch.Tensor,
     env_seeds: Sequence[int],
     reward_fn,
+    domain: str = "walker",
     dynamics=None,
-    steps: int = STEPS,
+    steps: Optional[int] = None,
 ) -> np.ndarray:
     """Evaluate M latents `zs` [M, d_z] across `env_seeds` in lockstep with one batched actor call per step.
 
-    Returns episode returns of shape [M, len(env_seeds)].
+    Runs each episode until `ts.last()` (or `steps` if explicitly capped). Returns shape `[M, len(env_seeds)]`.
     """
     m, e = zs.shape[0], len(env_seeds)
     total = m * e
     z_batch = zs.repeat_interleave(e, dim=0)
-    envs = [make_env(int(seed), dynamics) for _ in range(m) for seed in env_seeds]
+    envs = [make_domain_env(domain, int(seed), dynamics=dynamics) for _ in range(m) for seed in env_seeds]
     try:
-        obs = np.stack([env.reset().observation["observations"] for env in envs])
+        timesteps = [env.reset() for env in envs]
+        obs = np.stack([ts.observation["observations"] for ts in timesteps])
+        done = np.zeros(total, dtype=bool)
         returns = np.zeros(total, dtype=np.float64)
-        for _ in range(steps):
+        step = 0
+        while not done.all():
+            if steps is not None and step >= steps:
+                break
             s = torch.as_tensor(obs, dtype=torch.float32, device=z_batch.device)
             with torch.no_grad():
                 actions = policy(agent, s, z_batch).cpu().numpy()
             for i, env in enumerate(envs):
-                obs[i] = env.step(actions[i]).observation["observations"]
-                returns[i] += reward_fn(env.physics)
+                if done[i]:
+                    continue
+                ts = env.step(actions[i])
+                obs[i] = ts.observation["observations"]
+                returns[i] += float(reward_fn(env.physics))
+                if ts.last():
+                    done[i] = True
+            step += 1
         return returns.reshape(m, e)
     finally:
         for env in envs:
@@ -347,6 +390,7 @@ def reinforce_step(
 def train_task(
     task: str,
     task_index: int,
+    domain: str,
     agent: FB,
     features: torch.Tensor,
     backward_repr: torch.Tensor,
@@ -370,11 +414,11 @@ def train_task(
     z_r = weighted_z(target_rewards, backward_repr).detach()
     eval_seeds = [int(ev_cfg["eval_seed_start"]) + i for i in range(int(ev_cfg["eval_episodes"]))]
 
-    baseline_returns = evaluate_zs(agent, z_r.unsqueeze(0), eval_seeds, reward_fn, dynamics)[0]
+    baseline_returns = evaluate_zs(agent, z_r.unsqueeze(0), eval_seeds, reward_fn, domain=domain, dynamics=dynamics)[0]
     baseline_iqm = iqm(baseline_returns)
     print(f"[{task}] baseline z_r  eval IQM={baseline_iqm:.1f}  mean={baseline_returns.mean():.1f}", flush=True)
 
-    model = ANFIS.from_config(anfis_cfg, in_dim=features.shape[1], out_dim=1).to(device)
+    model = ANFIS.from_config(anfis_cfg, out_dim=1).to(device)
     if anfis_cfg.get("init_from_data", True):
         model.init_from_data(features, seed=seed)
 
@@ -424,7 +468,7 @@ def train_task(
         with torch.no_grad():
             mu_z = weighted_z(model(features), backward_repr)
             cos = float(F.cosine_similarity(mu_z.unsqueeze(0), z_r.unsqueeze(0)).item())
-        rets = evaluate_zs(agent, mu_z.unsqueeze(0), eval_seeds, reward_fn, dynamics)[0]
+        rets = evaluate_zs(agent, mu_z.unsqueeze(0), eval_seeds, reward_fn, domain=domain, dynamics=dynamics)[0]
         score = iqm(rets)
         iqm_by_step[step] = score
         for s_id, r in zip(eval_seeds, rets):
@@ -449,7 +493,9 @@ def train_task(
             mu_z = weighted_z(model(features), backward_repr)
         z_tilde, z_sphere = sample_perturbations(mu_z, pop_size, sigma, antithetic, gen)
         train_seeds = [train_offset + (step - 1) * train_eps + j for j in range(train_eps)]
-        cand_returns = evaluate_zs(agent, z_sphere, train_seeds, reward_fn, dynamics).mean(axis=1)
+        cand_returns = evaluate_zs(
+            agent, z_sphere, train_seeds, reward_fn, domain=domain, dynamics=dynamics
+        ).mean(axis=1)
         stats_step = reinforce_step(
             model, optimizer, features, backward_repr, z_tilde, cand_returns, sigma, grad_clip
         )
@@ -477,20 +523,26 @@ def train_task(
         final_z = weighted_z(model(features), backward_repr).detach().cpu()
     model.save(
         models_dir / f"{task}_final.pt",
+        domain=domain,
         task=task,
-        features=list(anfis_cfg["features"]),
+        sensors=list(model.sensor_names),
+        term_counts=list(model.term_counts),
+        num_rules=model.num_rules,
         z=final_z,
         z_r=z_r.detach().cpu(),
         baseline_iqm=baseline_iqm,
         warmstart=ws_info,
     )
     if best_state is not None:
-        best_model = ANFIS.from_config(anfis_cfg, in_dim=features.shape[1], out_dim=1)
+        best_model = ANFIS.from_config(anfis_cfg, out_dim=1)
         best_model.load_state_dict(best_state)
         best_model.save(
             models_dir / f"{task}_best.pt",
+            domain=domain,
             task=task,
-            features=list(anfis_cfg["features"]),
+            sensors=list(best_model.sensor_names),
+            term_counts=list(best_model.term_counts),
+            num_rules=best_model.num_rules,
             z=best_z,
             z_r=z_r.detach().cpu(),
             best_iqm=best_iqm,
@@ -521,22 +573,39 @@ def write_table6_csv(path: Path, tasks: Sequence[str], iqm_per_task: Dict[str, D
 
 
 def main():
-    parser = ArgumentParser(description="REINFORCE optimization of composable ANFIS -> FB latent z")
-    parser.add_argument("--config", type=str, default=None, help="YAML config specifying ANFIS and REINFORCE setup")
+    parser = ArgumentParser(description="REINFORCE optimization of Cartesian-grid ANFIS -> FB latent z")
+    parser.add_argument(
+        "--anfis_config",
+        type=str,
+        default=None,
+        help="Standalone ANFIS architecture/sensor YAML (e.g. configs/anfis/walker.yaml)",
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        help="Experiment/finetune/eval YAML (e.g. tasks/T6-anfis/configs/reinforce.yaml)",
+    )
     parser.add_argument("--checkpoint", type=str, required=True, help="Frozen FB checkpoint (.pt)")
-    parser.add_argument("--dataset_path", type=str, required=True, help="Offline ExORL Walker dataset (.npz)")
+    parser.add_argument("--dataset_path", type=str, required=True, help="Offline ExORL dataset (.npz)")
     parser.add_argument("--out_dir", type=str, required=True, help="Output directory (refuses to overwrite existing table6.csv)")
-    parser.add_argument("--dynamics", type=str, default=None, help="Optional shifted dynamics YAML (default: clean Walker)")
+    parser.add_argument("--dynamics", type=str, default=None, help="Optional shifted dynamics YAML (Walker only)")
     parser.add_argument("--tasks", nargs="+", default=None, help="Override eval.tasks from config")
     parser.add_argument("--seed", type=int, default=None, help="Override reinforce.seed from config")
     parser.add_argument("--device", type=str, default=None, help="torch device (default: cuda if available else cpu)")
     args = parser.parse_args()
 
-    cfg = load_config(args.config)
+    cfg = load_config(args.config, anfis_config=args.anfis_config)
     if args.tasks is not None:
         cfg["eval"]["tasks"] = list(args.tasks)
     if args.seed is not None:
         cfg["reinforce"]["seed"] = int(args.seed)
+
+    # Validate domain, sensors, and ANFIS architecture before loading checkpoints or datasets.
+    domain, _, sensor_names = resolve_anfis_sensors(cfg["anfis"])
+    dry_model = ANFIS.from_config(cfg["anfis"], out_dim=1)
+    if args.dynamics and domain != "walker":
+        raise ValueError(f"--dynamics is only supported for domain 'walker', got {domain!r}")
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -546,10 +615,13 @@ def main():
 
     device = torch.device(args.device if args.device else ("cuda" if torch.cuda.is_available() else "cpu"))
     tasks = list(cfg["eval"]["tasks"])
-    feature_names = list(cfg["anfis"]["features"])
-    feature_dim(feature_names)  # validate early
     dynamics = load_dynamics(args.dynamics) if args.dynamics else None
 
+    print(
+        f"Domain={domain}  sensors={sensor_names}  terms={list(dry_model.term_counts)}  "
+        f"rules={dry_model.num_rules}",
+        flush=True,
+    )
     print(f"Loading FB checkpoint {args.checkpoint} on {device}", flush=True)
     agent = load_agent(Path(args.checkpoint), device)
     if not isinstance(agent, FB):
@@ -558,13 +630,13 @@ def main():
 
     ref_cfg = cfg["reference"]
     print(
-        f"Collecting {ref_cfg['z_inference_steps']} reference transitions from {args.dataset_path} "
-        f"(features={feature_names})",
+        f"Collecting {ref_cfg['z_inference_steps']} reference transitions from {args.dataset_path}",
         flush=True,
     )
     observations, features, rewards, reward_fns = collect_reference_set(
         dataset_path=Path(args.dataset_path),
-        feature_names=feature_names,
+        domain=domain,
+        sensor_names=sensor_names,
         tasks=tasks,
         dataset_transitions=int(ref_cfg["dataset_transitions"]),
         z_inference_steps=int(ref_cfg["z_inference_steps"]),
@@ -577,6 +649,8 @@ def main():
 
     resolved = copy.deepcopy(cfg)
     resolved["provenance"] = {
+        "anfis_config": args.anfis_config,
+        "config": args.config,
         "checkpoint": str(args.checkpoint),
         "checkpoint_sha256": sha256(Path(args.checkpoint)),
         "dataset_path": str(args.dataset_path),
@@ -593,6 +667,7 @@ def main():
         res = train_task(
             task=task,
             task_index=idx,
+            domain=domain,
             agent=agent,
             features=features,
             backward_repr=backward_repr,

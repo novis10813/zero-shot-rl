@@ -1,0 +1,97 @@
+# Global ANFIS architecture & sensor configuration for DMC Jaco.
+#
+# Classical Cartesian-grid ANFIS:
+#   - Enable any subset of Jaco sensors below (`enabled: true` / `false`, or omit unused ones).
+#   - Set each enabled sensor's linguistic term count (`num_terms`) and `membership` function.
+#   - Total fuzzy rules R = prod(num_terms) over all enabled sensors (guarded by `max_rules`).
+#
+# Supported membership functions:
+#   gaussian    -> min_sigma, init_sigma
+#   bell        -> min_scale, init_scale, init_slope
+#   triangular  -> min_width, init_width, eps
+#   trapezoidal -> min_width, init_slope_width, init_top_width, eps
+#   sigmoid     -> init_slope
+#   psig        -> min_width, init_width, init_slope
+
+anfis:
+  domain: jaco
+  normalize_inputs: true
+  temperature: null
+  t_norm: product
+  normalize_firing: true
+  max_rules: 256
+
+  default_membership:
+    type: gaussian
+    min_sigma: 0.001
+    init_sigma: 1.0
+
+  # All DMC Jaco scalar sensors (39 total). Default enables 3D end-effector pinch position (3*3*3 = 27 rules).
+  sensors:
+    # --- End-effector (pinch site) position (3) ---
+    pinch_pos_x:
+      enabled: true
+      num_terms: 3
+      membership:
+        type: gaussian
+
+    pinch_pos_y:
+      enabled: true
+      num_terms: 3
+      membership:
+        type: gaussian
+
+    pinch_pos_z:
+      enabled: true
+      num_terms: 3
+      membership:
+        type: gaussian
+
+    # --- Arm joint positions qpos (6) ---
+    qpos_joint_1: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_joint_2: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_joint_3: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_joint_4: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_joint_5: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_joint_6: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+
+    # --- Arm joint velocities qvel (6) ---
+    qvel_joint_1: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_joint_2: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_joint_3: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_joint_4: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_joint_5: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_joint_6: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+
+    # --- Hand finger positions & velocities (6) ---
+    qpos_finger_1: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_finger_2: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_finger_3: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_finger_1: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_finger_2: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_finger_3: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+
+    # --- Arm joint torque sensors (18) ---
+    torque_joint_1_x: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_1_y: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_1_z: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_2_x: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_2_y: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_2_z: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_3_x: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_3_y: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_3_z: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_4_x: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_4_y: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_4_z: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_5_x: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_5_y: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_5_z: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_6_x: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_6_y: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_joint_6_z: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+
+  consequent:
+    type: first_order
+  output_activation: identity
+  init_from_data: true

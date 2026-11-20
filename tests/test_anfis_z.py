@@ -1,4 +1,4 @@
-"""Component tests for zero_shot_rl.finetune.anfis_z."""
+"""Component tests for zero_shot_rl.finetune.anfis_z and zero_shot_rl.env.sensors."""
 
 import math
 import subprocess
@@ -11,16 +11,23 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
+import yaml
 
 from analysis.table6_aggregate import TASKS as TABLE6_TASKS
 from analysis.table6_aggregate import aggregate as table6_aggregate
-from zero_shot_rl.env.walker import make_env
+from zero_shot_rl.env.sensors import (
+    DOMAIN_TASKS,
+    SUPPORTED_DOMAINS,
+    extract_sensors,
+    list_sensors,
+    make_domain_env,
+    validate_sensors,
+)
 from zero_shot_rl.finetune.anfis_z import (
-    ALL_TASKS,
-    extract_physics_features,
-    feature_dim,
+    load_anfis_config,
     load_config,
     reinforce_step,
+    resolve_anfis_sensors,
     sample_perturbations,
     warmstart_anfis,
     write_table6_csv,
@@ -32,42 +39,91 @@ REPO = Path(__file__).resolve().parents[1]
 
 
 class ANFISZTest(unittest.TestCase):
-    def test_yaml_config_loads_and_builds_anfis(self):
-        cfg_path = REPO / "tasks/T6-anfis/configs/anfis_z.yaml"
+    def test_all_global_domain_configs_are_anfis_only_and_pair_with_reinforce_config(self):
+        expected_rules = {
+            "walker": 36,
+            "quadruped": 36,
+            "point_mass_maze": 36,
+            "jaco": 27,
+        }
+        exp_cfg_path = REPO / "tasks/T6-anfis/configs/reinforce.yaml"
+        for domain in SUPPORTED_DOMAINS:
+            anfis_path = REPO / f"configs/anfis/{domain}.yaml"
+            self.assertTrue(anfis_path.exists(), f"missing global config {anfis_path}")
+
+            # Global ANFIS YAML must contain ONLY the `anfis:` block (no finetune/eval parameters).
+            raw = yaml.safe_load(anfis_path.read_text())
+            self.assertEqual(set(raw.keys()), {"anfis"}, f"{anfis_path} should only contain 'anfis'")
+
+            # Standalone load_anfis_config covers every registered sensor for this domain.
+            anfis_only = load_anfis_config(anfis_path)
+            self.assertEqual(
+                set(anfis_only["sensors"].keys()),
+                set(list_sensors(domain)),
+                f"{anfis_path} sensor keys mismatch SENSOR_REGISTRY[{domain!r}]",
+            )
+
+            # Pairing global ANFIS config with T6 experiment config resolves domain tasks & sensors.
+            cfg = load_config(str(exp_cfg_path), anfis_config=str(anfis_path))
+            self.assertEqual(cfg["anfis"]["domain"], domain)
+            self.assertEqual(cfg["eval"]["tasks"], list(DOMAIN_TASKS[domain]))
+
+            resolved_domain, specs, names = resolve_anfis_sensors(cfg["anfis"])
+            self.assertEqual(resolved_domain, domain)
+            self.assertEqual(len(specs), len(names))
+            model = ANFIS.from_config(cfg["anfis"], out_dim=1)
+            self.assertEqual(model.num_rules, expected_rules[domain])
+            self.assertEqual(list(model.sensor_names), names)
+            y = model(torch.randn(8, len(names)))
+            self.assertEqual(y.shape, (8, 1))
+
+    def test_t6_unnorm_config_inherits_global_walker_anfis_and_overrides_firing(self):
+        cfg_path = REPO / "tasks/T6-anfis/configs/walker_unnorm.yaml"
         cfg = load_config(str(cfg_path))
-        self.assertEqual(cfg["eval"]["tasks"], ALL_TASKS)
-        dim = feature_dim(cfg["anfis"]["features"])
-        self.assertEqual(dim, 4)
-        model = ANFIS.from_config(cfg["anfis"], in_dim=dim, out_dim=1)
-        y = model(torch.randn(8, dim))
-        self.assertEqual(y.shape, (8, 1))
+        domain, _, names = resolve_anfis_sensors(cfg["anfis"])
+        self.assertEqual(domain, "walker")
+        self.assertEqual(names, ["torso_height", "torso_upright", "horizontal_velocity", "angmomentum"])
+        self.assertEqual(cfg["eval"]["tasks"], list(DOMAIN_TASKS["walker"]))
+        model = ANFIS.from_config(cfg["anfis"], out_dim=1)
+        self.assertFalse(model.normalize_firing)
+        self.assertEqual(model.num_rules, 36)
 
-    def test_extract_physics_features_matches_walker_physics(self):
-        env = make_env(0)
-        try:
-            ts = env.reset()
-            ts = env.step(np.zeros(6, dtype=np.float32))
-            obs = ts.observation["observations"]
-            names = ["torso_height", "torso_upright", "horizontal_velocity", "angmomentum"]
-            feats = extract_physics_features(env.physics, names, obs)
-            expected = np.array([
-                env.physics.torso_height(),
-                env.physics.torso_upright(),
-                env.physics.horizontal_velocity(),
-                env.physics.angmomentum(),
-            ], dtype=np.float32)
-            np.testing.assert_allclose(feats, expected, atol=1e-6)
+    def test_sensor_validation_rejects_cross_domain_sensors(self):
+        with self.assertRaises(ValueError):
+            validate_sensors("quadruped", ["torso_height"])
+        with self.assertRaises(ValueError):
+            validate_sensors("walker", ["pinch_pos_x"])
+        with self.assertRaises(ValueError):
+            validate_sensors("unknown_domain", ["x"])
 
-            with_obs = extract_physics_features(env.physics, ["torso_height", "observations"], obs)
-            self.assertEqual(with_obs.shape, (25,))
-            self.assertEqual(feature_dim(["torso_height", "observations"]), 25)
-        finally:
-            env.close()
+    def test_extract_sensors_all_domains_and_walker_values(self):
+        for domain in SUPPORTED_DOMAINS:
+            env = make_domain_env(domain, seed=0)
+            try:
+                env.reset()
+                env.step(np.zeros(env.action_spec().shape, dtype=np.float32))
+                all_names = list_sensors(domain)
+                vals = extract_sensors(env.physics, domain, all_names)
+                self.assertEqual(vals.shape, (len(all_names),))
+                self.assertEqual(vals.dtype, np.float32)
+                self.assertTrue(np.isfinite(vals).all())
+
+                if domain == "walker":
+                    reward_names = ["torso_height", "torso_upright", "horizontal_velocity", "angmomentum"]
+                    feats = extract_sensors(env.physics, "walker", reward_names)
+                    expected = np.array([
+                        env.physics.torso_height(),
+                        env.physics.torso_upright(),
+                        env.physics.horizontal_velocity(),
+                        env.physics.angmomentum(),
+                    ], dtype=np.float32)
+                    np.testing.assert_allclose(feats, expected, atol=1e-6)
+            finally:
+                env.close()
 
     def test_warmstart_aligns_mu_z_with_z_r(self):
         torch.manual_seed(0)
         feats = torch.randn(256, 4)
-        # Smooth Walker-like tolerance product reward
         target = (
             torch.exp(-0.5 * ((feats[:, 0] - 1.0) / 0.8) ** 2)
             * torch.sigmoid(feats[:, 1])
@@ -76,7 +132,13 @@ class ANFISZTest(unittest.TestCase):
         B = torch.randn(256, 50)
         z_r = weighted_z(target, B).detach()
 
-        model = ANFIS(in_dim=4, out_dim=1, num_rules=8, normalize_inputs=True)
+        sensors = [
+            {"name": "h", "num_terms": 3, "membership": "gaussian"},
+            {"name": "u", "num_terms": 2, "membership": "sigmoid"},
+            {"name": "vx", "num_terms": 3, "membership": "bell"},
+            {"name": "ang", "num_terms": 2, "membership": "gaussian"},
+        ]
+        model = ANFIS(sensors=sensors, out_dim=1, normalize_inputs=True)
         model.init_from_data(feats, seed=0)
         info = warmstart_anfis(model, feats, target, B, z_r, steps=300, lr=2e-2)
         self.assertLess(info["warmstart_mse"], 5e-3)
@@ -86,11 +148,14 @@ class ANFISZTest(unittest.TestCase):
         torch.manual_seed(1)
         feats = torch.randn(128, 4)
         B = torch.randn(128, 50)
-        model = ANFIS(in_dim=4, out_dim=1, num_rules=8, normalize_inputs=True)
+        sensors = [
+            {"name": f"s{i}", "num_terms": m, "membership": "gaussian"}
+            for i, m in enumerate((3, 2, 2, 2))
+        ]
+        model = ANFIS(sensors=sensors, out_dim=1, normalize_inputs=True)
         model.init_from_data(feats, seed=1)
         opt = torch.optim.Adam(model.parameters(), lr=5e-2)
 
-        # Synthetic linear reward landscape on the z-sphere: R(z) = z^T v_star
         v_star = F.normalize(torch.randn(50), dim=0)
         gen = torch.Generator().manual_seed(1)
 
