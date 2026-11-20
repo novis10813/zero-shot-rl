@@ -16,7 +16,7 @@ warmstart:
   weight_decay: 0.0
 
 reinforce:
-  iters: 50
+  iters: 200
   pop_size: 16               # K sampled z per step (paired +eps / -eps)
   antithetic: true
   sigma: 0.5
