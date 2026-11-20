@@ -50,10 +50,22 @@ lab sweep tasks/T5.1-ood-fuzzy/configs/sweep_ood_actuator.yaml
 
 實際執行時依序跑完每個環境的 10 個 `ft_seed`（每個 job `--vram 16G`，單 job 峰值約 8.4 GiB），參數與上列 sweep 相同，輸出的 `table6.csv`、`baseline_table6.csv`、`eval_episodes.csv`、`train.csv`、`config_resolved.yaml` 存入 `data/inputs/<condition>/<dynamics>/ft<seed>/`（`clean/baseline/ft<seed>/` 為原環境訓練，`frozen_fb/clean/` 為原環境的 Frozen FB $z_r$ 評估，由 `run_frozen_fb_ood.sh` 的 `--eval_zr_only` 產生）。
 
+## 接續訓練到 200 步
+
+第一段 finetune（step 1 到 50）完成後，每個 finetune 條件從各自儲存的 `<task>_final.pt` 接續到 step 200，參數與 `reinforce.yaml` 相同，只有 `iters` 改為 200（`configs/reinforce_resume.yaml`）。每個 job 的指令為第一段的指令加上：
+
+```bash
+--config tasks/T5.1-ood-fuzzy/configs/reinforce_resume.yaml \
+--resume_models_dir <第一段 job 的 out/run/models> --resume_step 50
+```
+
+接續時不做 warm-start，Adam 狀態從零開始，並對 step 50 重新評估。結果存入 `data/inputs/<condition>_cont/<dynamics>/ft<seed>/`，`analyze/summarize.py` 與 `analyze/curves.py` 會把它接在第一段之後，並檢查 step 50 的重新評估與第一段一致。
+
 ## 彙整結果與重現
 
 ```bash
 PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.summarize
+PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.curves   # data/curves.csv 與 figures/curves.png
 ```
 
 產生 `data/summary.csv` 與 `REPORT.md` 的表格（`data/summary.md`），finetune 方法依 Table 6 取各自最佳 step。原環境參考值：
@@ -74,3 +86,5 @@ PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.reward_figs --extract
 # 從 data/inputs/reward_grid/ 重新畫圖
 PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.reward_figs
 ```
+
+接續訓練後的 step 200 模型加上 `--step 200`，資料在 `data/inputs/reward_grid_step200/`，圖在 `figures/step200/`。

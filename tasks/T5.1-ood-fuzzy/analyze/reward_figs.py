@@ -30,8 +30,8 @@ from zero_shot_rl.latent.anfis import load_anfis  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[3]
 TASK_DIR = Path(__file__).resolve().parents[1]
-GRID_DIR = TASK_DIR / "data" / "inputs" / "reward_grid"
-FIG_DIR = TASK_DIR / "figures" / "step50"
+GRID_DIR = TASK_DIR / "data" / "inputs" / "reward_grid"  # step 50; `reward_grid_step<N>` otherwise
+FIG_DIR = TASK_DIR / "figures" / "step50"  # `figures/step<N>` otherwise
 
 _spec = importlib.util.spec_from_file_location("t6_compare", REPO / "tasks/T6-anfis/analyze/compare.py")
 t6_compare = importlib.util.module_from_spec(_spec)
@@ -157,7 +157,18 @@ def main() -> None:
         default=None,
         help="Models with extra sensors beyond the 4 reward features (the custom-sensor ANFIS)",
     )
+    parser.add_argument(
+        "--step",
+        type=int,
+        default=50,
+        help="Step of the saved `<task>_final.pt` models (50 for the first run, 200 after continuing)",
+    )
     args = parser.parse_args()
+
+    global GRID_DIR, FIG_DIR
+    if args.step != 50:
+        GRID_DIR = TASK_DIR / "data" / "inputs" / f"reward_grid_step{args.step}"
+        FIG_DIR = TASK_DIR / "figures" / f"step{args.step}"
 
     if args.extract or args.extract_extended:
         for item in args.extract or []:
