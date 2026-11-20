@@ -611,6 +611,11 @@ def main():
         choices=["final", "best"],
         help="Which saved ANFIS checkpoint tag to evaluate with --eval_models_dir",
     )
+    parser.add_argument(
+        "--eval_zr_only",
+        action="store_true",
+        help="Evaluate frozen FB baseline z_r only (no ANFIS warmstart or REINFORCE)",
+    )
     parser.add_argument("--device", type=str, default=None, help="torch device (default: cuda if available else cpu)")
     args = parser.parse_args()
 
@@ -726,25 +731,40 @@ def main():
         with torch.no_grad():
             backward_repr = agent.FB.backward_representation(observations).detach()
 
-        for idx, task in enumerate(tasks):
-            res = train_task(
-                task=task,
-                task_index=idx,
-                domain=domain,
-                agent=agent,
-                features=features,
-                backward_repr=backward_repr,
-                target_rewards=rewards[task],
-                reward_fn=reward_fns[task],
-                cfg=cfg,
-                dynamics=dynamics,
-                out_dir=out_dir,
-                device=device,
-            )
-            iqm_per_task[task] = res["iqm_by_step"]
-            baseline_per_task[task] = {0: res["baseline_iqm"]}
-            all_train_rows.extend(res["train_rows"])
-            all_eval_rows.extend(res["eval_rows"])
+        if args.eval_zr_only:
+            ev_cfg = cfg["eval"]
+            eval_seeds = [int(ev_cfg["eval_seed_start"]) + i for i in range(int(ev_cfg["eval_episodes"]))]
+            for task in tasks:
+                z_r = weighted_z(rewards[task], backward_repr).detach()
+                rets = evaluate_zs(
+                    agent, z_r.unsqueeze(0), eval_seeds, reward_fns[task], domain=domain, dynamics=dynamics
+                )[0]
+                score = iqm(rets)
+                iqm_per_task[task] = {0: score}
+                baseline_per_task[task] = {0: score}
+                for s_id, r in zip(eval_seeds, rets):
+                    all_eval_rows.append({"task": task, "step": 0, "episode_seed": s_id, "return": float(r)})
+                print(f"[{task}] frozen FB z_r  eval IQM={score:6.1f}  mean={rets.mean():.1f}", flush=True)
+        else:
+            for idx, task in enumerate(tasks):
+                res = train_task(
+                    task=task,
+                    task_index=idx,
+                    domain=domain,
+                    agent=agent,
+                    features=features,
+                    backward_repr=backward_repr,
+                    target_rewards=rewards[task],
+                    reward_fn=reward_fns[task],
+                    cfg=cfg,
+                    dynamics=dynamics,
+                    out_dir=out_dir,
+                    device=device,
+                )
+                iqm_per_task[task] = res["iqm_by_step"]
+                baseline_per_task[task] = {0: res["baseline_iqm"]}
+                all_train_rows.extend(res["train_rows"])
+                all_eval_rows.extend(res["eval_rows"])
 
     with no_clobber(table6_path) as tmp:
         write_table6_csv(tmp, tasks, iqm_per_task)
