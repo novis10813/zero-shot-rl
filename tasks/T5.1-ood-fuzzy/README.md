@@ -56,7 +56,7 @@ lab sweep tasks/T5.1-ood-fuzzy/configs/sweep_ood_actuator.yaml
 PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.summarize
 ```
 
-產生 `data/summary.csv` 與 `REPORT.md` 的表格（`data/summary.md`）。原環境參考值：
+產生 `data/summary.csv` 與 `REPORT.md` 的表格（`data/summary.md`），finetune 方法依 Table 6 取各自最佳 step。原環境參考值：
 
 ```bash
 PYTHONPATH=. uv run python -m analysis.table6_aggregate tasks/T5.1-ood-fuzzy/data/inputs/clean/baseline/ft*/table6.csv

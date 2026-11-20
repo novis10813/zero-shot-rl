@@ -27,14 +27,15 @@ DYNAMICS_ORDER = ("friction_mild", "friction_high_mild", "actuator_mild", "actua
 CONDITIONS = ("clean_anfis_transfer", "ood_4sensor", "ood_custom")
 
 
-def _load_step_row(csv_path: Path, step: int) -> np.ndarray:
-    df = pd.read_csv(csv_path).set_index("step")
-    if step not in df.index:
-        step = int(df.index.max())
-    return df.loc[step, TABLE6_TASKS].to_numpy(dtype=np.float64)
+def _load_steps(csv_path: Path) -> pd.DataFrame:
+    return pd.read_csv(csv_path).set_index("step")[TABLE6_TASKS]
 
 
-def summarize(inputs_dir: Path, step: int = 50) -> pd.DataFrame:
+def summarize(inputs_dir: Path) -> pd.DataFrame:
+    """Finetune conditions report the step with the highest all-task IQM (as analysis.table6_aggregate).
+
+    `final_iqm` is the all-task IQM at the last step, without selection.
+    """
     rows: List[Dict[str, object]] = []
     for dyn in DYNAMICS_ORDER:
         # Clean FB (z_r) baseline from any available condition's baseline_table6.csv
@@ -45,31 +46,37 @@ def summarize(inputs_dir: Path, step: int = 50) -> pd.DataFrame:
                 for d in cand_dirs:
                     base_csv = d / "baseline_table6.csv"
                     if base_csv.exists():
-                        zr_scores.append(_load_step_row(base_csv, 0))
+                        zr_scores.append(_load_steps(base_csv).loc[0].to_numpy(dtype=np.float64))
                 if zr_scores:
                     break
         if zr_scores:
             arr = np.stack(zr_scores)
             t6 = float(table6_aggregate(arr[:, None, :])[0])
-            row: Dict[str, object] = {"dynamics": dyn, "condition": "clean_fb_zr", "n_seeds": len(zr_scores), "table6_iqm": t6}
+            row: Dict[str, object] = {"dynamics": dyn, "condition": "clean_fb_zr", "n_seeds": len(zr_scores), "step": 0, "table6_iqm": t6, "final_iqm": t6}
             for i, t in enumerate(TABLE6_TASKS):
                 row[t] = float(arr[:, i].mean())
             rows.append(row)
 
         for cond in CONDITIONS:
             seed_dirs = sorted((inputs_dir / cond / dyn).glob("ft*"))
-            scores: List[np.ndarray] = []
-            for d in seed_dirs:
-                t6_csv = d / "table6.csv"
-                if t6_csv.exists():
-                    scores.append(_load_step_row(t6_csv, 0 if cond == "clean_anfis_transfer" else step))
-            if not scores:
+            runs = [_load_steps(d / "table6.csv") for d in seed_dirs if (d / "table6.csv").exists()]
+            if not runs:
                 continue
-            arr = np.stack(scores)
-            t6 = float(table6_aggregate(arr[:, None, :])[0])
-            row = {"dynamics": dyn, "condition": cond, "n_seeds": len(scores), "table6_iqm": t6}
+            steps = runs[0].index
+            assert all(r.index.equals(steps) for r in runs), "runs must share eval steps"
+            arr = np.stack([r.to_numpy(dtype=np.float64) for r in runs])  # [seeds, steps, tasks]
+            per_step = table6_aggregate(arr)
+            best = int(np.argmax(per_step))
+            row = {
+                "dynamics": dyn,
+                "condition": cond,
+                "n_seeds": len(runs),
+                "step": int(steps[best]),
+                "table6_iqm": float(per_step[best]),
+                "final_iqm": float(per_step[-1]),
+            }
             for i, t in enumerate(TABLE6_TASKS):
-                row[t] = float(arr[:, i].mean())
+                row[t] = float(arr[:, best, i].mean())
             rows.append(row)
 
     df = pd.DataFrame(rows)
@@ -78,10 +85,13 @@ def summarize(inputs_dir: Path, step: int = 50) -> pd.DataFrame:
     zr = df[df["condition"] == "clean_fb_zr"].set_index("dynamics")["table6_iqm"]
     df["delta_vs_zr"] = df["table6_iqm"] - df["dynamics"].map(zr)
     mean_rows = (
-        df.groupby("condition", sort=False)[["table6_iqm", *TABLE6_TASKS, "delta_vs_zr"]].mean().reset_index()
+        df.groupby("condition", sort=False)[["table6_iqm", "final_iqm", *TABLE6_TASKS, "delta_vs_zr"]]
+        .mean()
+        .reset_index()
     )
     mean_rows.insert(0, "dynamics", "mean_of_4_dynamics")
     mean_rows.insert(2, "n_seeds", int(df["n_seeds"].min()))
+    mean_rows.insert(3, "step", np.nan)
     return pd.concat([df, mean_rows], ignore_index=True)
 
 
@@ -93,14 +103,15 @@ def to_markdown(df: pd.DataFrame) -> str:
         "ood_custom": "OOD finetune，客製 sensors",
     }
     lines = [
-        "| OOD 環境 | 方法 | stand | walk | run | flip | All-task IQM | 相對 $z_r$ |",
-        "|---|---|---:|---:|---:|---:|---:|---:|",
+        "| OOD 環境 | 方法 | 選定 step | stand | walk | run | flip | All-task IQM | 相對 $z_r$ | 第 50 步 IQM |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for _, r in df.iterrows():
         dyn = "四環境平均" if r["dynamics"] == "mean_of_4_dynamics" else r["dynamics"]
+        step = "-" if pd.isna(r["step"]) or r["condition"] in ("clean_fb_zr", "clean_anfis_transfer") else f"{int(r['step'])}"
         lines.append(
-            f"| {dyn} | {names[r['condition']]} | {r['stand']:.1f} | {r['walk']:.1f} | {r['run']:.1f} | "
-            f"{r['flip']:.1f} | {r['table6_iqm']:.1f} | {r['delta_vs_zr']:+.1f} |"
+            f"| {dyn} | {names[r['condition']]} | {step} | {r['stand']:.1f} | {r['walk']:.1f} | {r['run']:.1f} | "
+            f"{r['flip']:.1f} | {r['table6_iqm']:.1f} | {r['delta_vs_zr']:+.1f} | {r['final_iqm']:.1f} |"
         )
     return "\n".join(lines) + "\n"
 
@@ -109,10 +120,9 @@ def main() -> None:
     parser = ArgumentParser(description=__doc__)
     parser.add_argument("--inputs_dir", type=Path, default=Path("tasks/T5.1-ood-fuzzy/data/inputs"))
     parser.add_argument("--out_csv", type=Path, default=Path("tasks/T5.1-ood-fuzzy/data/summary.csv"))
-    parser.add_argument("--step", type=int, default=50)
     args = parser.parse_args()
 
-    df = summarize(args.inputs_dir, step=args.step)
+    df = summarize(args.inputs_dir)
     if df.empty:
         print(f"No results found under {args.inputs_dir}")
         return
