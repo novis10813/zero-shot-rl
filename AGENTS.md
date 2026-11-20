@@ -7,6 +7,7 @@ code, one report per task.
 
 ```
 agents/ rewards/ custom_dmc_tasks/       upstream code
+configs/                                 shared model/domain configs (e.g. configs/anfis/<domain>.yaml)
 download.sh                              upstream dataset download, called by exorl_reformatter
 scripts/                                 top-level launch scripts (train.sh, finetune.sh, evaluate.sh)
 zero_shot_rl/                            shared code: upstream root modules and ours

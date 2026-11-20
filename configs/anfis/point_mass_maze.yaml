@@ -1,0 +1,64 @@
+# Global ANFIS architecture & sensor configuration for DMC Point Mass Maze.
+#
+# Classical Cartesian-grid ANFIS:
+#   - Enable any subset of Point Mass Maze sensors below (`enabled: true` / `false`).
+#   - Set each enabled sensor's linguistic term count (`num_terms`) and `membership` function.
+#   - Total fuzzy rules R = prod(num_terms) over all enabled sensors (guarded by `max_rules`).
+#
+# Supported membership functions:
+#   gaussian    -> min_sigma, init_sigma
+#   bell        -> min_scale, init_scale, init_slope
+#   triangular  -> min_width, init_width, eps
+#   trapezoidal -> min_width, init_slope_width, init_top_width, eps
+#   sigmoid     -> init_slope
+#   psig        -> min_width, init_width, init_slope
+
+anfis:
+  domain: point_mass_maze
+  normalize_inputs: true
+  temperature: null
+  t_norm: product
+  normalize_firing: true
+  max_rules: 256
+
+  default_membership:
+    type: gaussian
+    min_sigma: 0.001
+    init_sigma: 1.0
+
+  # All DMC Point Mass Maze scalar sensors (6 total). Default enables position + velocity (3*3*2*2 = 36 rules).
+  sensors:
+    # --- Position (2) ---
+    pos_x:
+      enabled: true
+      num_terms: 3
+      membership:
+        type: gaussian
+
+    pos_y:
+      enabled: true
+      num_terms: 3
+      membership:
+        type: gaussian
+
+    # --- Velocity (2) ---
+    vel_x:
+      enabled: true
+      num_terms: 2
+      membership:
+        type: gaussian
+
+    vel_y:
+      enabled: true
+      num_terms: 2
+      membership:
+        type: gaussian
+
+    # --- Derived scalars (2) ---
+    speed:       { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    origin_dist: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+
+  consequent:
+    type: first_order
+  output_activation: identity
+  init_from_data: true

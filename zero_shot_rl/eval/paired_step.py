@@ -9,11 +9,16 @@ rollout, so its output is the check of the replay. Yamls with `events` are not s
 the replay resets the episode step counter.
 
 Writes <out> (NPZ) with
-    observations      [episodes, 999, d_s]   s_t
-    actions           [episodes, 999, d_a]   a_t
-    next_rollout      [episodes, 999, d_s]   s_{t+1} of the stock rollout
-    next_<yaml stem>  [episodes, 999, d_s]   s' after the replayed step, one per yaml
-    episode           environment seeds
+    observations         [episodes, 999, d_s]   s_t
+    actions              [episodes, 999, d_a]   a_t
+    physics              [episodes, 999, d_p]   physics_t before a_t
+    next_rollout         [episodes, 999, d_s]   s_{t+1} of the stock rollout
+    physics_rollout      [episodes, 999, d_p]   physics_{t+1} of the stock rollout
+    rewards_rollout      [episodes, 999]        r_t of --task in the stock rollout
+    next_<yaml stem>     [episodes, 999, d_s]   s' after the replayed step, one per yaml
+    physics_<yaml stem>  [episodes, 999, d_p]   physics' after the replayed step, one per yaml
+    rewards_<yaml stem>  [episodes, 999]        r' of --task after the replayed step, one per yaml
+    episode              [episodes]             environment seeds
 
 Usage (repo root):
     PYTHONPATH=. MUJOCO_GL=egl uv run python -m zero_shot_rl.eval.paired_step \
@@ -29,6 +34,7 @@ import torch
 
 from agents.base import load_agent
 from agents.fb.agent import FB
+from rewards import RewardFunctionConstructor
 from zero_shot_rl.env.dynamics import load_dynamics
 from zero_shot_rl.env.walker import make_env, run_episodes, set_physics
 
@@ -36,16 +42,20 @@ G = {}  # per-process state, filled before the pool forks
 
 
 def replay(path):
-    """s' of every recorded (physics, action) in the dynamics of the yaml `path`."""
+    """s', physics' and task reward of every recorded (physics, action) in `path`."""
     torch.set_num_threads(1)
-    physics, actions = G["physics"], G["actions"]
+    physics, actions, reward_fn = G["physics"], G["actions"], G["reward_fn"]
     env = make_env(0, load_dynamics(path))
-    out = np.zeros_like(G["next_rollout"])
+    out_obs = np.zeros_like(G["next_rollout"])
+    out_physics = np.zeros_like(physics)
+    out_rewards = np.zeros(physics.shape[:2], dtype=np.float64)
     for i in range(physics.shape[0]):
         for t in range(physics.shape[1]):
             set_physics(env, physics[i, t])
-            out[i, t] = env.step(actions[i, t]).observation["observations"]
-    return Path(path).stem, out
+            out_obs[i, t] = env.step(actions[i, t]).observation["observations"]
+            out_physics[i, t] = env.physics.get_state().copy()
+            out_rewards[i, t] = reward_fn(env.physics)
+    return Path(path).stem, out_obs, out_physics, out_rewards
 
 
 def main():
@@ -71,17 +81,40 @@ def main():
         raise ValueError(f"expected one z_r row for {args.task}, found {len(rows)}")
     z = torch.as_tensor(zs["z"][rows[0]], dtype=torch.float32)
 
+    reward_constructor = RewardFunctionConstructor(
+        domain_name="walker",
+        task_names=[args.task],
+        seed=0,
+        device=torch.device("cpu"),
+    )
+    reward_fn = reward_constructor.reward_functions[args.task]
+
     envs = [make_env(args.first_episode + e) for e in range(args.episodes)]
-    run = run_episodes(agent, z, envs, stride=1, physics=True)
+    run = run_episodes(agent, z, envs, reward_fn=reward_fn, stride=1, physics=True)
     obs = run["observations"]
-    G.update(physics=run["physics"][:, :-1], actions=run["actions"][:, :-1], next_rollout=obs[:, 1:])
-    arrays = {"observations": obs[:, :-1], "actions": G["actions"], "next_rollout": obs[:, 1:],
-              "episode": args.first_episode + np.arange(args.episodes)}
+    phys = run["physics"]
+    G.update(
+        physics=phys[:, :-1],
+        actions=run["actions"][:, :-1],
+        next_rollout=obs[:, 1:],
+        reward_fn=reward_fn,
+    )
+    arrays = {
+        "observations": obs[:, :-1],
+        "actions": G["actions"],
+        "physics": phys[:, :-1],
+        "next_rollout": obs[:, 1:],
+        "physics_rollout": phys[:, 1:],
+        "rewards_rollout": run["rewards"][:, :-1],
+        "episode": args.first_episode + np.arange(args.episodes),
+    }
 
     with mp.get_context("fork").Pool(args.workers) as pool:
-        for name, nxt in pool.imap_unordered(replay, args.dynamics):
-            arrays[f"next_{name}"] = nxt
-            gap = np.abs(nxt - arrays["next_rollout"]).max(-1)
+        for name, nxt_obs, nxt_phys, nxt_rew in pool.imap_unordered(replay, args.dynamics):
+            arrays[f"next_{name}"] = nxt_obs
+            arrays[f"physics_{name}"] = nxt_phys
+            arrays[f"rewards_{name}"] = nxt_rew
+            gap = np.abs(nxt_obs - arrays["next_rollout"]).max(-1)
             print(f"{name:24s} |s' - s'_rollout|  median {np.median(gap):.4g}  max {gap.max():.4g}", flush=True)
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     np.savez(args.out, **arrays)

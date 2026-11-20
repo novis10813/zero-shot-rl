@@ -1,0 +1,136 @@
+# Global ANFIS architecture & sensor configuration for DMC Quadruped.
+#
+# Classical Cartesian-grid ANFIS:
+#   - Enable any subset of Quadruped sensors below (`enabled: true` / `false`, or omit unused ones).
+#   - Set each enabled sensor's linguistic term count (`num_terms`) and `membership` function.
+#   - Total fuzzy rules R = prod(num_terms) over all enabled sensors (guarded by `max_rules`).
+#
+# Supported membership functions:
+#   gaussian    -> min_sigma, init_sigma
+#   bell        -> min_scale, init_scale, init_slope
+#   triangular  -> min_width, init_width, eps
+#   trapezoidal -> min_width, init_slope_width, init_top_width, eps
+#   sigmoid     -> init_slope
+#   psig        -> min_width, init_width, init_slope
+
+anfis:
+  domain: quadruped
+  normalize_inputs: true
+  temperature: null
+  t_norm: product
+  normalize_firing: true
+  max_rules: 256
+
+  default_membership:
+    type: gaussian
+    min_sigma: 0.001
+    init_sigma: 1.0
+
+  # All DMC Quadruped scalar sensors (70 total). Default enables the 4 reward physics signals (2*3*3*2 = 36 rules).
+  sensors:
+    # --- CoM / Torso physics (8) ---
+    torso_upright:
+      enabled: true
+      num_terms: 2
+      membership:
+        type: gaussian
+
+    com_height:              # sensordata["center_of_mass"][2]
+      enabled: true
+      num_terms: 3
+      membership:
+        type: gaussian
+
+    torso_vel_x:             # sensordata["velocimeter"][0]
+      enabled: true
+      num_terms: 3
+      membership:
+        type: gaussian
+
+    torso_speed:             # ||physics.torso_velocity()||_2
+      enabled: true
+      num_terms: 2
+      membership:
+        type: gaussian
+
+    com_x:       { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    com_y:       { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torso_vel_y: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torso_vel_z: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+
+    # --- IMU sensors (6) ---
+    imu_accel_x: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    imu_accel_y: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    imu_accel_z: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    imu_gyro_x:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    imu_gyro_y:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    imu_gyro_z:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+
+    # --- Toe force sensors, arcsinh-scaled (12) ---
+    force_toe_front_left_x:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    force_toe_front_left_y:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    force_toe_front_left_z:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    force_toe_front_right_x: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    force_toe_front_right_y: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    force_toe_front_right_z: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    force_toe_back_right_x:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    force_toe_back_right_y:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    force_toe_back_right_z:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    force_toe_back_left_x:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    force_toe_back_left_y:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    force_toe_back_left_z:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+
+    # --- Toe torque sensors, arcsinh-scaled (12) ---
+    torque_toe_front_left_x:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_toe_front_left_y:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_toe_front_left_z:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_toe_front_right_x: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_toe_front_right_y: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_toe_front_right_z: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_toe_back_right_x:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_toe_back_right_y:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_toe_back_right_z:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_toe_back_left_x:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_toe_back_left_y:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    torque_toe_back_left_z:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+
+    # --- Hinge joint positions qpos (16) ---
+    qpos_yaw_front_left:    { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_pitch_front_left:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_knee_front_left:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_ankle_front_left:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_yaw_front_right:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_pitch_front_right: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_knee_front_right:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_ankle_front_right: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_yaw_back_right:    { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_pitch_back_right:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_knee_back_right:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_ankle_back_right:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_yaw_back_left:     { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_pitch_back_left:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_knee_back_left:    { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qpos_ankle_back_left:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+
+    # --- Hinge joint velocities qvel (16) ---
+    qvel_yaw_front_left:    { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_pitch_front_left:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_knee_front_left:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_ankle_front_left:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_yaw_front_right:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_pitch_front_right: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_knee_front_right:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_ankle_front_right: { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_yaw_back_right:    { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_pitch_back_right:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_knee_back_right:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_ankle_back_right:  { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_yaw_back_left:     { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_pitch_back_left:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_knee_back_left:    { enabled: false, num_terms: 2, membership: { type: gaussian } }
+    qvel_ankle_back_left:   { enabled: false, num_terms: 2, membership: { type: gaussian } }
+
+  consequent:
+    type: first_order
+  output_activation: identity
+  init_from_data: true

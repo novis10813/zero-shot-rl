@@ -1,0 +1,34 @@
+# Experiment / finetuning / evaluation protocol for T6-anfis REINFORCE -> FB latent z.
+# Model architecture & sensor selection live in `anfis_config` (override via CLI `--anfis_config`).
+
+anfis_config: configs/anfis/walker.yaml
+
+reference:
+  dataset_transitions: 100000
+  z_inference_steps: 10000
+  seed: 42
+  discount: 0.98
+
+warmstart:
+  enabled: true
+  steps: 500
+  lr: 0.01
+  weight_decay: 0.0
+
+reinforce:
+  iters: 50
+  pop_size: 16               # K sampled z per step (must be even when antithetic: true)
+  antithetic: true           # paired +eps / -eps perturbations around mu_z
+  sigma: 0.5                 # exploration std before projecting onto sqrt(d_z)-sphere
+  lr: 0.01
+  weight_decay: 0.0
+  grad_clip: 1.0
+  train_episodes_per_z: 1    # paired same env seed(s) across all K candidates per iter
+  train_seed_offset: 10000   # disjoint from eval seeds
+  seed: 0
+
+eval:
+  tasks: null                # null -> default tasks for anfis.domain (e.g. stand/walk/run/flip for walker)
+  eval_every: 10             # writes step 0, 10, 20, ..., iters to table6.csv
+  eval_episodes: 10          # 10 rollouts -> IQM per task, matching analysis/table6_aggregate.py
+  eval_seed_start: 0
