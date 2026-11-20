@@ -10,7 +10,7 @@ Conditions:
     - ood_custom           : shift-specific expanded-sensor ANFIS-z finetuned in OOD env
 
 Usage (repo root):
-    PYTHONPATH=. uv run python -m tasks.T5.1-ood-fuzzy.analyze.summarize
+    PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.summarize
 """
 
 from argparse import ArgumentParser
@@ -50,7 +50,7 @@ def summarize(inputs_dir: Path, step: int = 50) -> pd.DataFrame:
                     break
         if zr_scores:
             arr = np.stack(zr_scores)
-            t6 = float(table6_aggregate(arr)[0])
+            t6 = float(table6_aggregate(arr[:, None, :])[0])
             row: Dict[str, object] = {"dynamics": dyn, "condition": "clean_fb_zr", "n_seeds": len(zr_scores), "table6_iqm": t6}
             for i, t in enumerate(TABLE6_TASKS):
                 row[t] = float(arr[:, i].mean())
@@ -66,13 +66,43 @@ def summarize(inputs_dir: Path, step: int = 50) -> pd.DataFrame:
             if not scores:
                 continue
             arr = np.stack(scores)
-            t6 = float(table6_aggregate(arr)[0])
+            t6 = float(table6_aggregate(arr[:, None, :])[0])
             row = {"dynamics": dyn, "condition": cond, "n_seeds": len(scores), "table6_iqm": t6}
             for i, t in enumerate(TABLE6_TASKS):
                 row[t] = float(arr[:, i].mean())
             rows.append(row)
 
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return df
+    zr = df[df["condition"] == "clean_fb_zr"].set_index("dynamics")["table6_iqm"]
+    df["delta_vs_zr"] = df["table6_iqm"] - df["dynamics"].map(zr)
+    mean_rows = (
+        df.groupby("condition", sort=False)[["table6_iqm", *TABLE6_TASKS, "delta_vs_zr"]].mean().reset_index()
+    )
+    mean_rows.insert(0, "dynamics", "mean_of_4_dynamics")
+    mean_rows.insert(2, "n_seeds", int(df["n_seeds"].min()))
+    return pd.concat([df, mean_rows], ignore_index=True)
+
+
+def to_markdown(df: pd.DataFrame) -> str:
+    names = {
+        "clean_fb_zr": "Frozen FB $z_r$",
+        "clean_anfis_transfer": "Clean ANFIS-z 直接遷移",
+        "ood_4sensor": "OOD finetune，4 sensors",
+        "ood_custom": "OOD finetune，客製 sensors",
+    }
+    lines = [
+        "| OOD 環境 | 方法 | stand | walk | run | flip | All-task IQM | 相對 $z_r$ |",
+        "|---|---|---:|---:|---:|---:|---:|---:|",
+    ]
+    for _, r in df.iterrows():
+        dyn = "四環境平均" if r["dynamics"] == "mean_of_4_dynamics" else r["dynamics"]
+        lines.append(
+            f"| {dyn} | {names[r['condition']]} | {r['stand']:.1f} | {r['walk']:.1f} | {r['run']:.1f} | "
+            f"{r['flip']:.1f} | {r['table6_iqm']:.1f} | {r['delta_vs_zr']:+.1f} |"
+        )
+    return "\n".join(lines) + "\n"
 
 
 def main() -> None:
@@ -88,6 +118,7 @@ def main() -> None:
         return
     args.out_csv.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.out_csv, index=False, float_format="%.2f")
+    args.out_csv.with_suffix(".md").write_text(to_markdown(df))
     print(df.to_string(index=False))
 
 

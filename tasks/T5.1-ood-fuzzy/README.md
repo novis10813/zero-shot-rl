@@ -48,8 +48,17 @@ lab sweep tasks/T5.1-ood-fuzzy/configs/sweep_ood_friction.yaml
 lab sweep tasks/T5.1-ood-fuzzy/configs/sweep_ood_actuator.yaml
 ```
 
-## 彙整結果
+實際執行時依序跑完每個環境的 10 個 `ft_seed`（每個 job `--vram 16G`，單 job 峰值約 8.4 GiB），參數與上列 sweep 相同，輸出的 `table6.csv`、`baseline_table6.csv`、`eval_episodes.csv`、`train.csv`、`config_resolved.yaml` 存入 `data/inputs/<condition>/<dynamics>/ft<seed>/`（`clean/baseline/ft<seed>/` 為原環境訓練，`frozen_fb/clean/` 為原環境的 Frozen FB $z_r$ 評估，由 `run_frozen_fb_ood.sh` 的 `--eval_zr_only` 產生）。
+
+## 彙整結果與重現
 
 ```bash
-PYTHONPATH=. uv run python -m tasks.T5.1-ood-fuzzy.analyze.summarize
+PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.summarize
+```
+
+產生 `data/summary.csv` 與 `REPORT.md` 的表格（`data/summary.md`）。原環境參考值：
+
+```bash
+PYTHONPATH=. uv run python -m analysis.table6_aggregate data/inputs/clean/baseline/ft*/table6.csv   # 在 tasks/T5.1-ood-fuzzy/ 下執行
+PYTHONPATH=. uv run python -m analysis.table6_aggregate data/inputs/frozen_fb/clean/frozen_fb_clean/table6.csv
 ```
