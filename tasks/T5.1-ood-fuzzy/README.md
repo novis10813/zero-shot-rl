@@ -59,6 +59,6 @@ PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.summarize
 產生 `data/summary.csv` 與 `REPORT.md` 的表格（`data/summary.md`）。原環境參考值：
 
 ```bash
-PYTHONPATH=. uv run python -m analysis.table6_aggregate data/inputs/clean/baseline/ft*/table6.csv   # 在 tasks/T5.1-ood-fuzzy/ 下執行
-PYTHONPATH=. uv run python -m analysis.table6_aggregate data/inputs/frozen_fb/clean/frozen_fb_clean/table6.csv
+PYTHONPATH=. uv run python -m analysis.table6_aggregate tasks/T5.1-ood-fuzzy/data/inputs/clean/baseline/ft*/table6.csv
+PYTHONPATH=. uv run python -m analysis.table6_aggregate tasks/T5.1-ood-fuzzy/data/inputs/frozen_fb/clean/frozen_fb_clean/table6.csv
 ```
