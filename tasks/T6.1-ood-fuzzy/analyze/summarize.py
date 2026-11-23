@@ -1,6 +1,6 @@
-"""Summarize T5.1-ood-fuzzy Table-6 IQM across OOD dynamics, conditions, and finetune seeds.
+"""Summarize T6.1-ood-fuzzy Table-6 IQM across OOD dynamics, conditions, and finetune seeds.
 
-Expected input layout under `--inputs_dir` (default `tasks/T5.1-ood-fuzzy/data/inputs`):
+Expected input layout under `--inputs_dir` (default `tasks/T6.1-ood-fuzzy/data/inputs`):
     <condition>/<dynamics>/ft<seed>/table6.csv
     <condition>/<dynamics>/ft<seed>/baseline_table6.csv   (used for clean_fb_zr)
 
@@ -10,7 +10,7 @@ Conditions:
     - ood_custom           : shift-specific expanded-sensor ANFIS-z finetuned in OOD env
 
 Usage (repo root):
-    PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.summarize
+    PYTHONPATH=.:tasks/T6.1-ood-fuzzy uv run python -m analyze.summarize
 """
 
 from argparse import ArgumentParser
@@ -136,8 +136,8 @@ def to_markdown(df: pd.DataFrame) -> str:
 
 def main() -> None:
     parser = ArgumentParser(description=__doc__)
-    parser.add_argument("--inputs_dir", type=Path, default=Path("tasks/T5.1-ood-fuzzy/data/inputs"))
-    parser.add_argument("--out_csv", type=Path, default=Path("tasks/T5.1-ood-fuzzy/data/summary.csv"))
+    parser.add_argument("--inputs_dir", type=Path, default=Path("tasks/T6.1-ood-fuzzy/data/inputs"))
+    parser.add_argument("--out_csv", type=Path, default=Path("tasks/T6.1-ood-fuzzy/data/summary.csv"))
     args = parser.parse_args()
 
     df = summarize(args.inputs_dir)

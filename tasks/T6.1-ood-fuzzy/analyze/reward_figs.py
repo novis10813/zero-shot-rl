@@ -6,11 +6,11 @@ environment (clean and the four OOD dynamics).
 
 Modes (repo root):
     1. Extract reward grids from saved models (writes data/inputs/reward_grid/<env>.npz):
-       PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.reward_figs --extract \\
+       PYTHONPATH=.:tasks/T6.1-ood-fuzzy uv run python -m analyze.reward_figs --extract \\
            clean=<models_dir> friction_mild=<models_dir> ...
        and, for the custom-sensor ANFIS (8 or 7 sensors), `--extract_extended friction_mild_custom=<models_dir>`
     2. Regenerate figures/step50/<env>/reward_{slices,heatmap}.png from data/inputs/reward_grid/:
-       PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.reward_figs
+       PYTHONPATH=.:tasks/T6.1-ood-fuzzy uv run python -m analyze.reward_figs
 """
 
 import importlib.util

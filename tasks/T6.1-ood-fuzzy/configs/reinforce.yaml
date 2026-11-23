@@ -1,4 +1,4 @@
-# Experiment / finetuning / evaluation protocol for T5.1-ood-fuzzy.
+# Experiment / finetuning / evaluation protocol for T6.1-ood-fuzzy.
 # Evaluates on the 20 shared eval environments (seeds 5..24) while finetuning
 # ANFIS-z on disjoint finetune environment seeds (--seed / --train_seed_offset).
 

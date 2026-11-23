@@ -9,7 +9,7 @@ OUT_ROOT=${OUT_ROOT:-out/frozen_fb}
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. MUJOCO_GL=egl \
   uv run python -m zero_shot_rl.finetune.anfis_z \
     --anfis_config configs/anfis/walker.yaml \
-    --config tasks/T5.1-ood-fuzzy/configs/reinforce.yaml \
+    --config tasks/T6.1-ood-fuzzy/configs/reinforce.yaml \
     --checkpoint "$CHECKPOINT" \
     --dataset_path "$DATASET" \
     --eval_zr_only \
@@ -26,7 +26,7 @@ for name in friction_mild friction_high_mild actuator_mild actuator_high_mild; d
   OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. MUJOCO_GL=egl \
     uv run python -m zero_shot_rl.finetune.anfis_z \
       --anfis_config configs/anfis/walker.yaml \
-      --config tasks/T5.1-ood-fuzzy/configs/reinforce.yaml \
+      --config tasks/T6.1-ood-fuzzy/configs/reinforce.yaml \
       --checkpoint "$CHECKPOINT" \
       --dataset_path "$DATASET" \
       --dynamics "${DYNAMICS[$name]}" \

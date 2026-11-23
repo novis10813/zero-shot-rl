@@ -1,4 +1,4 @@
-"""Validate T5.1-ood-fuzzy ANFIS sensor configs and reinforce config."""
+"""Validate T6.1-ood-fuzzy ANFIS sensor configs and reinforce config."""
 
 import unittest
 from pathlib import Path
@@ -9,10 +9,10 @@ from zero_shot_rl.finetune.anfis_z import load_config, resolve_anfis_sensors
 from zero_shot_rl.latent.anfis import ANFIS
 
 REPO = Path(__file__).resolve().parents[3]
-TASK_DIR = REPO / "tasks/T5.1-ood-fuzzy"
+TASK_DIR = REPO / "tasks/T6.1-ood-fuzzy"
 
 
-class T51OodFuzzyConfigTest(unittest.TestCase):
+class T61OodFuzzyConfigTest(unittest.TestCase):
     def test_custom_sensor_configs_build_expected_rules(self):
         exp_cfg = TASK_DIR / "configs/reinforce.yaml"
         expected = {

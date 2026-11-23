@@ -1,4 +1,4 @@
-# T5.1-ood-fuzzy
+# T6.1-ood-fuzzy
 
 在 Walker OOD 動力學偏移環境中比較四種取得 FB task latent $z$ 的方式，並驗證依動力學偏移類型客製化 ANFIS sensors 是否能進一步提升適應表現。
 
@@ -34,18 +34,18 @@
 
 ```bash
 # 1. 訓練 clean ANFIS-z（10 finetune seeds）
-lab sweep tasks/T5.1-ood-fuzzy/configs/sweep_clean.yaml
+lab sweep tasks/T6.1-ood-fuzzy/configs/sweep_clean.yaml
 
 # 2. Clean ANFIS-z 直接遷移到 4 個 OOD 環境（以單一或多個 clean models/ 目錄執行）
 CLEAN_MODELS_DIR=<out/clean_ft1000/models> OUT_ROOT=out/transfer_ft1000 \
-  bash tasks/T5.1-ood-fuzzy/run_transfer_eval.sh
+  bash tasks/T6.1-ood-fuzzy/run_transfer_eval.sh
 
 # 3. 4-sensor ANFIS-z 在 OOD 環境重新 finetune（10 ft_seeds × 4 dynamics = 40 jobs）
-lab sweep tasks/T5.1-ood-fuzzy/configs/sweep_ood_4sensor.yaml
+lab sweep tasks/T6.1-ood-fuzzy/configs/sweep_ood_4sensor.yaml
 
 # 4. 客製化 sensor ANFIS-z 在 OOD 環境重新 finetune（各 10 ft_seeds × 2 dynamics = 20 jobs）
-lab sweep tasks/T5.1-ood-fuzzy/configs/sweep_ood_friction.yaml
-lab sweep tasks/T5.1-ood-fuzzy/configs/sweep_ood_actuator.yaml
+lab sweep tasks/T6.1-ood-fuzzy/configs/sweep_ood_friction.yaml
+lab sweep tasks/T6.1-ood-fuzzy/configs/sweep_ood_actuator.yaml
 ```
 
 實際執行時依序跑完每個環境的 10 個 `ft_seed`（每個 job `--vram 16G`，單 job 峰值約 8.4 GiB），參數與上列 sweep 相同，輸出的 `table6.csv`、`baseline_table6.csv`、`eval_episodes.csv`、`train.csv`、`config_resolved.yaml` 存入 `data/inputs/<condition>/<dynamics>/ft<seed>/`（`clean/baseline/ft<seed>/` 為原環境訓練，`frozen_fb/clean/` 為原環境的 Frozen FB $z_r$ 評估，由 `run_frozen_fb_ood.sh` 的 `--eval_zr_only` 產生）。
@@ -55,7 +55,7 @@ lab sweep tasks/T5.1-ood-fuzzy/configs/sweep_ood_actuator.yaml
 第一段 finetune（step 1 到 50）完成後，每個 finetune 條件從各自儲存的 `<task>_final.pt` 接續到 step 200，參數與 `reinforce.yaml` 相同，只有 `iters` 改為 200（`configs/reinforce_resume.yaml`）。每個 job 的指令為第一段的指令加上：
 
 ```bash
---config tasks/T5.1-ood-fuzzy/configs/reinforce_resume.yaml \
+--config tasks/T6.1-ood-fuzzy/configs/reinforce_resume.yaml \
 --resume_models_dir <第一段 job 的 out/run/models> --resume_step 50
 ```
 
@@ -64,15 +64,15 @@ lab sweep tasks/T5.1-ood-fuzzy/configs/sweep_ood_actuator.yaml
 ## 彙整結果與重現
 
 ```bash
-PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.summarize
-PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.curves   # data/curves.csv 與 figures/curves.png
+PYTHONPATH=.:tasks/T6.1-ood-fuzzy uv run python -m analyze.summarize
+PYTHONPATH=.:tasks/T6.1-ood-fuzzy uv run python -m analyze.curves   # data/curves.csv 與 figures/curves.png
 ```
 
 產生 `data/summary.csv` 與 `REPORT.md` 的表格（`data/summary.md`），finetune 方法依 Table 6 取各自最佳 step。原環境參考值：
 
 ```bash
-PYTHONPATH=. uv run python -m analysis.table6_aggregate tasks/T5.1-ood-fuzzy/data/inputs/clean/baseline/ft*/table6.csv
-PYTHONPATH=. uv run python -m analysis.table6_aggregate tasks/T5.1-ood-fuzzy/data/inputs/frozen_fb/clean/frozen_fb_clean/table6.csv
+PYTHONPATH=. uv run python -m analysis.table6_aggregate tasks/T6.1-ood-fuzzy/data/inputs/clean/baseline/ft*/table6.csv
+PYTHONPATH=. uv run python -m analysis.table6_aggregate tasks/T6.1-ood-fuzzy/data/inputs/frozen_fb/clean/frozen_fb_clean/table6.csv
 ```
 
 ## 學到的 reward 權重圖（step 50）
@@ -81,10 +81,10 @@ PYTHONPATH=. uv run python -m analysis.table6_aggregate tasks/T5.1-ood-fuzzy/dat
 
 ```bash
 # 從 artifacts 中的模型重新萃取（需要模型）
-PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.reward_figs --extract clean=<models_dir> friction_mild=<models_dir> ...
-PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.reward_figs --extract_extended friction_mild_custom=<models_dir> ...
+PYTHONPATH=.:tasks/T6.1-ood-fuzzy uv run python -m analyze.reward_figs --extract clean=<models_dir> friction_mild=<models_dir> ...
+PYTHONPATH=.:tasks/T6.1-ood-fuzzy uv run python -m analyze.reward_figs --extract_extended friction_mild_custom=<models_dir> ...
 # 從 data/inputs/reward_grid/ 重新畫圖
-PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.reward_figs
+PYTHONPATH=.:tasks/T6.1-ood-fuzzy uv run python -m analyze.reward_figs
 ```
 
 接續訓練後的 step 200 模型加上 `--step 200`，資料在 `data/inputs/reward_grid_step200/`，圖在 `figures/step200/`。

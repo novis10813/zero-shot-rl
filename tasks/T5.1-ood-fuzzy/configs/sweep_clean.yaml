@@ -1,5 +1,0 @@
-on: idlab
-vram: 16G
-command: OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. MUJOCO_GL=egl uv run python -m zero_shot_rl.finetune.anfis_z --anfis_config configs/anfis/walker.yaml --config tasks/T5.1-ood-fuzzy/configs/reinforce.yaml --checkpoint /home/sam/zsrl-artifacts/T4.1.3.1-residual-soft-q/zero-shot-rl-297/660000.pt --dataset_path /home/sam/zsrl-datasets/walker/rnd/dataset.npz --seed {ft_seed} --train_seed_offset {ft_seed}00 --out_dir out/clean_ft{ft_seed}
-grid:
-  ft_seed: [1000, 1010, 1020, 1030, 1040, 1050, 1060, 1070, 1080, 1090]

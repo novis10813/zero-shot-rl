@@ -1,4 +1,4 @@
-# T5.1-ood-fuzzy：在 Walker OOD 動力學中以 ANFIS 尋找更好的 FB latent $z$
+# T6.1-ood-fuzzy：在 Walker OOD 動力學中以 ANFIS 尋找更好的 FB latent $z$
 
 固定預訓練好的 FB 模型（Walker RND 660k，1 個 checkpoint），在 4 種偏移動力學中比較四種取得 task latent $z$ 的方法。$z$ 一律由 $z = \sqrt{d}\,\operatorname{normalize}(\mathbb{E}[\tilde{r}_\theta(s) B(s)])$ 計算，差別只在狀態權重 $\tilde{r}_\theta(s)$ 的來源與訓練環境。
 

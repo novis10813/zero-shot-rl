@@ -5,7 +5,7 @@ Writes `data/curves.csv` (per step: mean over seeds of the all-task IQM and of c
 `figures/curves.png`.
 
 Usage (repo root):
-    PYTHONPATH=.:tasks/T5.1-ood-fuzzy uv run python -m analyze.curves
+    PYTHONPATH=.:tasks/T6.1-ood-fuzzy uv run python -m analyze.curves
 """
 
 from argparse import ArgumentParser
@@ -95,9 +95,9 @@ def main() -> None:
     from analyze.summarize import summarize
 
     parser = ArgumentParser(description=__doc__)
-    parser.add_argument("--inputs_dir", type=Path, default=Path("tasks/T5.1-ood-fuzzy/data/inputs"))
-    parser.add_argument("--out_csv", type=Path, default=Path("tasks/T5.1-ood-fuzzy/data/curves.csv"))
-    parser.add_argument("--out_fig", type=Path, default=Path("tasks/T5.1-ood-fuzzy/figures/curves.png"))
+    parser.add_argument("--inputs_dir", type=Path, default=Path("tasks/T6.1-ood-fuzzy/data/inputs"))
+    parser.add_argument("--out_csv", type=Path, default=Path("tasks/T6.1-ood-fuzzy/data/curves.csv"))
+    parser.add_argument("--out_fig", type=Path, default=Path("tasks/T6.1-ood-fuzzy/figures/curves.png"))
     args = parser.parse_args()
 
     curves = build_curves(args.inputs_dir)
