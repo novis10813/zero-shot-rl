@@ -17,6 +17,8 @@ from zero_shot_rl.finetune.anfis_updaters import (
     ANFISLatent,
     CandidateEvaluator,
     CemUpdater,
+    CmaEsOptimizer,
+    CmaEsUpdater,
     DirectZLatent,
     EvalScheduler,
     PhysicsStateBuffer,
@@ -393,6 +395,98 @@ class ANFISUpdatersUnitTest(unittest.TestCase):
                 score_after = float((latent_param.compute_z() @ v_star).item())
             self.assertGreater(score_after, score_before + 1.0, f"failed for {param_kind}/{scope}")
             self.assertIsNotNone(CemUpdater)
+
+    def test_cmaes_invariants_and_reproducibility(self):
+        init = torch.zeros(8)
+        opt1 = CmaEsOptimizer(init_mean=init, init_sigma=0.5, seed=42, diagonal=False)
+        opt2 = CmaEsOptimizer(init_mean=init, init_sigma=0.5, seed=42, diagonal=False)
+
+        # Weight normalization and mu_eff formula
+        self.assertAlmostEqual(float(opt1.weights.sum().item()), 1.0, places=10)
+        expected_mu_eff = 1.0 / float((opt1.weights ** 2).sum().item())
+        self.assertAlmostEqual(opt1.mu_eff, expected_mu_eff, places=10)
+
+        for _ in range(10):
+            c1 = opt1.ask()
+            c2 = opt2.ask()
+            torch.testing.assert_close(c1, c2, atol=0, rtol=0)
+            fit = -(c1 ** 2).sum(dim=-1)
+            opt1.tell(c1, fit)
+            opt2.tell(c2, fit)
+            # Covariance matrix C must remain symmetric, PSD, and match B D^2 B^T
+            C = opt1.C
+            torch.testing.assert_close(C, C.T, atol=1e-10, rtol=0)
+            eigvals = torch.linalg.eigvalsh(C)
+            self.assertTrue((eigvals > 0).all())
+            reconstructed = (opt1.B * (opt1.D ** 2).unsqueeze(0)) @ opt1.B.T
+            torch.testing.assert_close(reconstructed, C, atol=1e-8, rtol=1e-6)
+        torch.testing.assert_close(opt1.mean_tensor(), opt2.mean_tensor(), atol=0, rtol=0)
+
+    def test_cmaes_converges_on_rotated_ellipsoid_and_high_dim_sep(self):
+        # 1. Full-cov CMA-ES on a 6D rotated ill-conditioned ellipsoid
+        g = torch.Generator().manual_seed(7)
+        Q, _ = torch.linalg.qr(torch.randn(6, 6, generator=g, dtype=torch.float64))
+        scales = torch.logspace(0, 3, 6, dtype=torch.float64)
+        target = torch.tensor([1.0, -1.5, 2.0, -0.5, 0.8, -1.2], dtype=torch.float64)
+
+        opt_full = CmaEsOptimizer(init_mean=torch.zeros(6), init_sigma=1.0, seed=7, diagonal=False)
+        for _ in range(250):
+            xs = opt_full.ask()
+            diff = xs.to(torch.float64) - target
+            rot = diff @ Q
+            fit = -(scales * (rot ** 2)).sum(dim=-1)
+            opt_full.tell(xs, fit)
+        final_err = float((opt_full.mean_tensor().to(torch.float64) - target).norm().item())
+        self.assertLess(final_err, 1e-2)
+
+        # 2. sep-CMA-ES (diagonal=True) on a 200D axis-aligned ellipsoid
+        dim = 200
+        weights_200 = torch.logspace(0, 2, dim, dtype=torch.float64)
+        init_200 = torch.ones(dim, dtype=torch.float32)
+        opt_sep = CmaEsOptimizer(init_mean=init_200, init_sigma=0.5, pop_size=24, seed=11, diagonal=True)
+        init_loss = float((weights_200 * (init_200.to(torch.float64) ** 2)).sum().item())
+        for _ in range(250):
+            xs = opt_sep.ask()
+            fit = -(weights_200 * (xs.to(torch.float64) ** 2)).sum(dim=-1)
+            opt_sep.tell(xs, fit)
+        final_loss = float((weights_200 * (opt_sep.mean_tensor().to(torch.float64) ** 2)).sum().item())
+        self.assertLess(final_loss, init_loss * 0.05)
+
+    def test_cmaes_improves_anfis_and_direct_z(self):
+        for param_kind, diag in (("anfis", True), ("anfis", False), ("z", False)):
+            torch.manual_seed(23)
+            z_dim = 16
+            v_star = F.normalize(torch.randn(z_dim), dim=0)
+            if param_kind == "anfis":
+                feats = torch.randn(64, 2)
+                B = torch.randn(64, z_dim)
+                model = ANFIS.from_config(_tiny_anfis_cfg()["anfis"], out_dim=1)
+                model.init_from_data(feats, seed=99)
+                latent_param = ANFISLatent(model, feats, B)
+            else:
+                latent_param = DirectZLatent(z_dim=z_dim, init_z=None, seed=99)
+
+            with torch.no_grad():
+                score_before = float((latent_param.compute_z() @ v_star).item())
+
+            opt = CmaEsOptimizer(
+                init_mean=latent_param.get_flat_params("all"),
+                init_sigma=0.4,
+                pop_size=16,
+                seed=23,
+                diagonal=diag,
+            )
+            for _ in range(25):
+                cands = opt.ask()
+                zs = latent_param.eval_candidates_to_zs(cands, scope="all")
+                fit = zs @ v_star
+                opt.tell(cands, fit)
+                latent_param.set_flat_params(opt.mean_tensor(), "all")
+
+            with torch.no_grad():
+                score_after = float((latent_param.compute_z() @ v_star).item())
+            self.assertGreater(score_after, score_before + 1.0, f"failed for {param_kind}/diag={diag}")
+            self.assertIsNotNone(CmaEsUpdater)
 
 
 class ANFISUpdatersIntegrationTest(unittest.TestCase):

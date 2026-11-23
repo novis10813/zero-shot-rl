@@ -1466,6 +1466,266 @@ class CemUpdater:
         return train_rows
 
 
+class CmaEsOptimizer:
+    """Pure-PyTorch CMA-ES (Hansen 2016) with optional diagonal ``sep-CMA-ES`` (Ros & Hansen 2008).
+
+    Maximizes scalar fitness values passed to ``tell(candidates, fitness)``.
+    Internal state is maintained in ``float64`` for numerical stability during eigendecomposition.
+    """
+
+    def __init__(
+        self,
+        init_mean: torch.Tensor,
+        init_sigma: float = 0.3,
+        pop_size: Optional[int] = None,
+        seed: int = 0,
+        diagonal: bool = False,
+        min_sigma: float = 1e-6,
+        max_sigma: float = 10.0,
+    ):
+        mean_1d = init_mean.detach().reshape(-1)
+        self.dim = int(mean_1d.numel())
+        if self.dim <= 0:
+            raise ValueError("init_mean must be non-empty")
+        if init_sigma <= 0:
+            raise ValueError(f"init_sigma must be positive, got {init_sigma}")
+
+        self.device = mean_1d.device
+        self.out_dtype = mean_1d.dtype
+        self.diagonal = bool(diagonal)
+        self.min_sigma = float(min_sigma)
+        self.max_sigma = float(max_sigma)
+
+        n = self.dim
+        default_lam = 4 + int(math.floor(3.0 * math.log(max(n, 2))))
+        self.pop_size = int(pop_size) if pop_size is not None else default_lam
+        if self.pop_size < 4:
+            raise ValueError(f"pop_size must be >= 4, got {self.pop_size}")
+        self.mu = self.pop_size // 2
+
+        # Positive logarithmic recombination weights (Hansen 2016, Table 1)
+        ranks = torch.arange(1, self.mu + 1, device=self.device, dtype=torch.float64)
+        raw_w = math.log(self.mu + 0.5) - torch.log(ranks)
+        self.weights = raw_w / raw_w.sum()
+        self.mu_eff = float((1.0 / (self.weights ** 2).sum()).item())
+
+        # Step-size control (CSA) parameters
+        self.c_sigma = (self.mu_eff + 2.0) / (n + self.mu_eff + 5.0)
+        self.d_sigma = (
+            1.0 + 2.0 * max(0.0, math.sqrt((self.mu_eff - 1.0) / (n + 1.0)) - 1.0) + self.c_sigma
+        )
+        self.chi_n = math.sqrt(n) * (1.0 - 1.0 / (4.0 * n) + 1.0 / (21.0 * n * n))
+
+        # Covariance adaptation parameters
+        self.c_c = (4.0 + self.mu_eff / n) / (n + 4.0 + 2.0 * self.mu_eff / n)
+        c1_base = 2.0 / ((n + 1.3) ** 2 + self.mu_eff)
+        cmu_base = min(
+            1.0 - c1_base,
+            2.0 * (self.mu_eff - 2.0 + 1.0 / self.mu_eff) / ((n + 2.0) ** 2 + self.mu_eff),
+        )
+        if self.diagonal:
+            # sep-CMA-ES learning-rate boost (Ros & Hansen 2008)
+            boost = (n + 2.0) / 3.0
+            self.c_1 = min(1.0, c1_base * boost)
+            self.c_mu = min(1.0 - self.c_1, cmu_base * boost)
+        else:
+            self.c_1 = c1_base
+            self.c_mu = cmu_base
+
+        self.mean = mean_1d.to(dtype=torch.float64).clone()
+        self.sigma = float(init_sigma)
+        self.p_sigma = torch.zeros(n, device=self.device, dtype=torch.float64)
+        self.p_c = torch.zeros(n, device=self.device, dtype=torch.float64)
+        self.D = torch.ones(n, device=self.device, dtype=torch.float64)
+        if not self.diagonal:
+            self.B = torch.eye(n, device=self.device, dtype=torch.float64)
+            self.C = torch.eye(n, device=self.device, dtype=torch.float64)
+        else:
+            self.B = None
+            self.C = None
+
+        self.generation = 0
+        self._gen = torch.Generator(device=self.device).manual_seed(int(seed))
+
+    def mean_tensor(self) -> torch.Tensor:
+        return self.mean.to(dtype=self.out_dtype)
+
+    @torch.no_grad()
+    def ask(self) -> torch.Tensor:
+        """Sample ``[pop_size, dim]`` candidate parameter vectors."""
+        z = torch.randn(self.pop_size, self.dim, generator=self._gen, device=self.device, dtype=torch.float64)
+        if self.diagonal:
+            y = z * self.D.unsqueeze(0)
+        else:
+            assert self.B is not None
+            y = (z * self.D.unsqueeze(0)) @ self.B.T
+        xs = self.mean.unsqueeze(0) + self.sigma * y
+        return xs.to(dtype=self.out_dtype)
+
+    @torch.no_grad()
+    def tell(self, candidates: torch.Tensor, fitness: torch.Tensor) -> None:
+        """Update mean, step size, evolution paths, and covariance from ``fitness`` (maximized)."""
+        xs = candidates.detach().to(device=self.device, dtype=torch.float64)
+        fit = torch.as_tensor(fitness, device=self.device, dtype=torch.float64).reshape(-1)
+        if xs.shape != (self.pop_size, self.dim):
+            raise ValueError(f"Expected candidates shape {(self.pop_size, self.dim)}, got {tuple(xs.shape)}")
+        if fit.shape[0] != self.pop_size:
+            raise ValueError(f"Expected {self.pop_size} fitness values, got {fit.shape[0]}")
+
+        self.generation += 1
+        order = torch.argsort(fit, descending=True)[: self.mu]
+        elites = xs[order]
+
+        y_elites = (elites - self.mean.unsqueeze(0)) / self.sigma
+        y_w = (self.weights.unsqueeze(-1) * y_elites).sum(dim=0)
+        self.mean = self.mean + self.sigma * y_w
+
+        # Compute C^{-1/2} y_w
+        if self.diagonal:
+            inv_sqrt_c_yw = y_w / self.D
+        else:
+            assert self.B is not None
+            inv_sqrt_c_yw = self.B @ ((self.B.T @ y_w) / self.D)
+
+        # Evolution path for step-size control
+        cs_factor = math.sqrt(self.c_sigma * (2.0 - self.c_sigma) * self.mu_eff)
+        self.p_sigma = (1.0 - self.c_sigma) * self.p_sigma + cs_factor * inv_sqrt_c_yw
+        p_sigma_norm = float(self.p_sigma.norm().item())
+
+        # Stall indicator h_sigma
+        denom = math.sqrt(max(1.0 - (1.0 - self.c_sigma) ** (2 * self.generation), 1e-16))
+        h_sigma = 1.0 if (p_sigma_norm / denom) < (1.4 + 2.0 / (self.dim + 1.0)) * self.chi_n else 0.0
+
+        # Evolution path for covariance matrix
+        cc_factor = math.sqrt(self.c_c * (2.0 - self.c_c) * self.mu_eff)
+        self.p_c = (1.0 - self.c_c) * self.p_c + h_sigma * cc_factor * y_w
+        delta_h = (1.0 - h_sigma) * self.c_c * (2.0 - self.c_c)
+
+        # Covariance update
+        decay = 1.0 - self.c_1 - self.c_mu + self.c_1 * delta_h
+        if self.diagonal:
+            c_diag = (
+                decay * (self.D ** 2)
+                + self.c_1 * (self.p_c ** 2)
+                + self.c_mu * (self.weights.unsqueeze(-1) * (y_elites ** 2)).sum(dim=0)
+            )
+            self.D = torch.sqrt(c_diag.clamp_min(1e-16))
+        else:
+            assert self.C is not None
+            rank_one = torch.outer(self.p_c, self.p_c)
+            weighted_y = y_elites * self.weights.unsqueeze(-1)
+            rank_mu = weighted_y.T @ y_elites
+            C_new = decay * self.C + self.c_1 * rank_one + self.c_mu * rank_mu
+            C_new = 0.5 * (C_new + C_new.T)
+            eigvals, eigvecs = torch.linalg.eigh(C_new)
+            eigvals = eigvals.clamp_min(1e-16)
+            self.D = torch.sqrt(eigvals)
+            self.B = eigvecs
+            self.C = (eigvecs * eigvals.unsqueeze(0)) @ eigvecs.T
+            self.C = 0.5 * (self.C + self.C.T)
+
+        # Step-size update
+        exponent = (self.c_sigma / self.d_sigma) * (p_sigma_norm / self.chi_n - 1.0)
+        exponent = max(-1.0, min(1.0, exponent))
+        self.sigma = float(min(self.max_sigma, max(self.min_sigma, self.sigma * math.exp(exponent))))
+
+
+class CmaEsUpdater:
+    """Derivative-free CMA-ES / sep-CMA-ES updater operating in ``LatentParam`` parameter space."""
+
+    def __init__(self, cfg: Dict[str, Any]):
+        self.cfg = cfg
+
+    def run(
+        self,
+        *,
+        task: str,
+        domain: str,
+        agent: FB,
+        latent_param: LatentParam,
+        z_r: torch.Tensor,
+        w_r: torch.Tensor,
+        reward_fn,
+        dynamics,
+        seed: int,
+        eval_callback: Callable[[Sequence[int]], None],
+        budget_cfg: Dict[str, Any],
+        device: torch.device,
+    ) -> List[Dict[str, Any]]:
+        c = self.cfg
+        max_env_steps = int(budget_cfg["max_env_steps"])
+        eval_every_env_steps = int(budget_cfg.get("eval_every_env_steps") or 0)
+
+        param_scope = str(c.get("param_scope", "all"))
+        init_mean = latent_param.get_flat_params(param_scope).to(device=device)
+        opt = CmaEsOptimizer(
+            init_mean=init_mean,
+            init_sigma=float(c.get("init_sigma", 0.3)),
+            pop_size=c.get("pop_size"),
+            seed=seed,
+            diagonal=bool(c.get("diagonal", False)),
+            min_sigma=float(c.get("min_sigma", 1e-4)),
+            max_sigma=float(c.get("max_sigma", 5.0)),
+        )
+
+        evaluator = CandidateEvaluator(
+            agent=agent,
+            domain=domain,
+            reward_fn=reward_fn,
+            w_r=w_r,
+            dynamics=dynamics,
+            episodes_per_z=int(c.get("train_episodes_per_z", 1)),
+            episode_steps=c.get("episode_steps"),
+            horizon=c.get("horizon"),
+            num_start_states=int(c.get("num_start_states", 2)),
+            init_state_prob=float(c.get("init_state_prob", 0.2)),
+            bootstrap=bool(c.get("bootstrap", True)),
+            fb_q_head=str(c.get("fb_q_head", "min")),
+            discount=float(c.get("discount", 0.98)),
+            buffer_size=int(c.get("buffer_size", 100000)),
+            seed=seed,
+            train_seed_offset=int(c.get("train_seed_offset", 10000)),
+        )
+
+        scheduler = EvalScheduler.from_budget(max_env_steps, eval_every_env_steps, eval_callback, start_step=0)
+        scheduler.trigger_due(0)
+
+        train_rows: List[Dict[str, Any]] = []
+        env_steps = 0
+        try:
+            while env_steps < max_env_steps:
+                candidates = opt.ask()
+                zs = latent_param.eval_candidates_to_zs(candidates, scope=param_scope)
+                fitness, batch_steps = evaluator.evaluate(zs)
+                env_steps += batch_steps
+
+                opt.tell(candidates, torch.as_tensor(fitness, device=device, dtype=torch.float64))
+                latent_param.set_flat_params(opt.mean_tensor(), scope=param_scope)
+
+                with torch.no_grad():
+                    mu_z = latent_param.compute_z()
+                    cos = float(F.cosine_similarity(mu_z.unsqueeze(0), z_r.unsqueeze(0)).item())
+
+                train_rows.append({
+                    "task": task,
+                    "step": opt.generation,
+                    "env_steps": env_steps,
+                    "mean_return": float(fitness.mean()),
+                    "std_return": float(fitness.std()),
+                    "max_return": float(fitness.max()),
+                    "cos_to_zr": cos,
+                    "loss": float("nan"),
+                    "critic_loss": float("nan"),
+                    "sigma_mean": float(opt.sigma * opt.D.mean().item()),
+                })
+                scheduler.trigger_due(env_steps)
+        finally:
+            evaluator.close()
+
+        scheduler.finalize(env_steps)
+        return train_rows
+
+
 def build_updater(algo: str, cfg: Dict[str, Any]):
     """Instantiate the updater for ``algo`` ('reinforce', 'lola', or 'rela')."""
     key = normalize_algo_type(algo)
