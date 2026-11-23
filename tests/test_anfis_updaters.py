@@ -96,6 +96,10 @@ class ANFISUpdatersUnitTest(unittest.TestCase):
         self.assertEqual(normalize_algo_type("reinforce"), "reinforce")
         self.assertEqual(normalize_algo_type("lola"), "lola")
         self.assertEqual(normalize_algo_type("rela"), "rela")
+        self.assertEqual(normalize_algo_type("cem"), "cem")
+        self.assertEqual(normalize_algo_type("cmaes"), "cmaes")
+        self.assertEqual(normalize_algo_type("cma-es"), "cmaes")
+        self.assertEqual(normalize_algo_type("cma_es"), "cmaes")
         with self.assertRaises(ValueError):
             normalize_param_type("unknown")
         with self.assertRaises(ValueError):
@@ -608,6 +612,66 @@ class ANFISUpdatersIntegrationTest(unittest.TestCase):
             self.assertEqual(sorted(res["iqm_by_step"].keys()), [0, 1, 2])
             self.assertEqual([r["step"] for r in res["train_rows"]], [1, 2])
             self.assertEqual([r["env_steps"] for r in res["train_rows"]], [20, 40])
+
+    def test_cem_and_cmaes_end_to_end_integration(self):
+        cases = [
+            ("cem", "anfis", {"horizon": None, "episode_steps": 15, "pop_size": 2, "num_elites": 1, "param_scope": "all"}),
+            ("cem", "z", {"horizon": 5, "num_start_states": 1, "pop_size": 6, "num_elites": 2, "bootstrap": True}),
+            (
+                "cmaes",
+                "anfis",
+                {"horizon": 5, "num_start_states": 1, "pop_size": 6, "bootstrap": True, "diagonal": True, "param_scope": "consequent"},
+            ),
+            ("cmaes", "z", {"horizon": None, "episode_steps": 5, "pop_size": 6, "diagonal": False}),
+        ]
+        fb_snap = {k: v.detach().clone() for k, v in self.agent.state_dict().items()}
+
+        for algo, param, overrides in cases:
+            with self.subTest(algo=algo, param=param, overrides=overrides), tempfile.TemporaryDirectory() as tmp:
+                cfg = _tiny_anfis_cfg()
+                self.assertIn(algo, cfg)
+                cfg["algo"] = algo
+                cfg["param"] = param
+                cfg["budget"]["max_env_steps"] = 60
+                cfg["budget"]["eval_every_env_steps"] = 30
+                cfg[algo].update(overrides)
+
+                out_dir = Path(tmp)
+                res = train_task(
+                    task="stand",
+                    task_index=0,
+                    domain="walker",
+                    agent=self.agent,
+                    features=self.feats if param == "anfis" else None,
+                    backward_repr=self.B,
+                    target_rewards=self.rewards,
+                    reward_fn=self.reward_fn,
+                    cfg=cfg,
+                    dynamics=None,
+                    out_dir=out_dir,
+                    device=torch.device("cpu"),
+                )
+
+                self.assertEqual(sorted(res["iqm_by_step"].keys()), [0, 30, 60])
+                self.assertGreater(len(res["train_rows"]), 0)
+                self.assertEqual(res["train_rows"][-1]["env_steps"], 60)
+
+                t6_path = out_dir / "table6.csv"
+                write_table6_csv(t6_path, ["stand"], {"stand": res["iqm_by_step"]})
+                self.assertTrue(t6_path.exists())
+
+                for tag in ("final", "best"):
+                    ckpt = out_dir / "models" / f"stand_{tag}.pt"
+                    self.assertTrue(ckpt.exists())
+                    loaded, meta = load_latent_checkpoint(ckpt)
+                    self.assertIsNotNone(loaded)
+                    self.assertEqual(meta["algo"], algo)
+                    torch.testing.assert_close(
+                        meta["z"].norm(), torch.tensor(math.sqrt(12)), atol=1e-4, rtol=0
+                    )
+
+                for k, v in self.agent.state_dict().items():
+                    torch.testing.assert_close(v, fb_snap[k])
 
 
 if __name__ == "__main__":

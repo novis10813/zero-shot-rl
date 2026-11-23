@@ -6,7 +6,7 @@ Supports two latent parameterizations:
   - ``z`` (alias ``direct_z``): direct optimization of a free latent vector z on the
     sqrt(d_z)-sphere, as in Sikchi et al. (2025).
 
-Supports three update algorithms:
+Supports five update algorithms:
   - ``reinforce``: episodic REINFORCE with (antithetic) Gaussian perturbations on z.
   - ``lola``: Lookahead Latent Adaptation (Sikchi et al., 2025, arXiv:2504.07896, Alg. 2) —
     short-horizon on-policy rollouts from arbitrary reset states with frozen FB terminal
@@ -14,6 +14,9 @@ Supports three update algorithms:
   - ``rela``: Residual Latent Adaptation (Sikchi et al., 2025, arXiv:2504.07896, Alg. 1) —
     TD3-based off-policy actor-critic with small twin residual critics correcting the
     frozen FB base Q-function, backpropagating deterministic policy gradients into z / ANFIS.
+  - ``cem``: Cross-Entropy Method in ``LatentParam`` parameter space (full-episode or lookahead).
+  - ``cmaes``: pure-PyTorch CMA-ES (Hansen 2016) / ``sep-CMA-ES`` (Ros & Hansen 2008) in
+    ``LatentParam`` parameter space (full-episode or lookahead).
 
 All updaters can be budgeted and evaluated by cumulative environment steps (``max_env_steps``
 and ``eval_every_env_steps``) for apples-to-apples sample-efficiency comparison.
@@ -36,7 +39,7 @@ from zero_shot_rl.latent.anfis import ANFIS, load_anfis, weighted_z
 
 PARAM_TYPES: Tuple[str, ...] = ("anfis", "z")
 PARAM_SCOPES: Tuple[str, ...] = ("all", "consequent")
-ALGO_TYPES: Tuple[str, ...] = ("reinforce", "lola", "rela")
+ALGO_TYPES: Tuple[str, ...] = ("reinforce", "lola", "rela", "cem", "cmaes")
 
 TRAIN_FIELDS: Tuple[str, ...] = (
     "task",
@@ -63,8 +66,10 @@ def normalize_param_type(name: str) -> str:
 
 
 def normalize_algo_type(name: str) -> str:
-    """Canonicalize update algorithm name to ``'reinforce'``, ``'lola'``, or ``'rela'``."""
+    """Canonicalize update algorithm name to one of ``ALGO_TYPES``."""
     key = str(name).strip().lower()
+    if key in ("cma-es", "cma_es"):
+        return "cmaes"
     if key in ALGO_TYPES:
         return key
     raise ValueError(f"Unknown algo {name!r}; expected one of {ALGO_TYPES}")
@@ -1727,7 +1732,7 @@ class CmaEsUpdater:
 
 
 def build_updater(algo: str, cfg: Dict[str, Any]):
-    """Instantiate the updater for ``algo`` ('reinforce', 'lola', or 'rela')."""
+    """Instantiate the updater for ``algo`` ('reinforce', 'lola', 'rela', 'cem', or 'cmaes')."""
     key = normalize_algo_type(algo)
     if key == "reinforce":
         return ReinforceUpdater(cfg["reinforce"])
@@ -1735,4 +1740,8 @@ def build_updater(algo: str, cfg: Dict[str, Any]):
         return LolaUpdater(cfg["lola"])
     if key == "rela":
         return RelaUpdater(cfg["rela"])
+    if key == "cem":
+        return CemUpdater(cfg["cem"])
+    if key == "cmaes":
+        return CmaEsUpdater(cfg["cmaes"])
     raise ValueError(f"Unsupported algo {algo!r}")

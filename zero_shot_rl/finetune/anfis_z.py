@@ -1,4 +1,4 @@
-"""Optimize FB task latents z via REINFORCE, LoLA, or ReLA with ANFIS or direct-z parameterization.
+"""Optimize FB task latents z via REINFORCE, LoLA, ReLA, CEM, or CMA-ES (ANFIS or direct z).
 
 Given a frozen FB checkpoint and a YAML config:
 
@@ -15,6 +15,8 @@ Given a frozen FB checkpoint and a YAML config:
          - ``reinforce``: episodic REINFORCE with Gaussian perturbations on z.
          - ``lola``: Lookahead Latent Adaptation (Sikchi et al., 2025, arXiv:2504.07896, Alg. 2).
          - ``rela``: Residual Latent Adaptation (Sikchi et al., 2025, arXiv:2504.07896, Alg. 1).
+         - ``cem``: Cross-Entropy Method in parameter space (full-episode or lookahead bootstrap).
+         - ``cmaes``: CMA-ES / sep-CMA-ES in parameter space (full-episode or lookahead bootstrap).
        Stopping and periodic Table-6 evaluation are controlled by cumulative environment steps
        (``budget.max_env_steps`` and ``budget.eval_every_env_steps``). For backward compatibility,
        ``algo=reinforce`` without ``budget.max_env_steps`` retains the legacy ``reinforce.iters``
@@ -197,6 +199,47 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "weight_decay": 0.0,
         "grad_clip": 1.0,
         "log_every_env_steps": 1000,
+        "train_seed_offset": 10000,
+        "seed": 0,
+    },
+    "cem": {
+        "pop_size": 16,
+        "elite_frac": 0.25,
+        "num_elites": None,
+        "init_sigma": 0.3,
+        "min_sigma": 1e-2,
+        "max_sigma": 2.0,
+        "alpha": 0.7,
+        "antithetic": True,
+        "param_scope": "all",
+        "train_episodes_per_z": 1,
+        "episode_steps": None,
+        "horizon": None,
+        "num_start_states": 2,
+        "init_state_prob": 0.2,
+        "bootstrap": True,
+        "fb_q_head": "min",
+        "discount": 0.98,
+        "buffer_size": 100000,
+        "train_seed_offset": 10000,
+        "seed": 0,
+    },
+    "cmaes": {
+        "pop_size": None,
+        "init_sigma": 0.3,
+        "min_sigma": 1e-4,
+        "max_sigma": 5.0,
+        "diagonal": False,
+        "param_scope": "all",
+        "train_episodes_per_z": 1,
+        "episode_steps": None,
+        "horizon": None,
+        "num_start_states": 2,
+        "init_state_prob": 0.2,
+        "bootstrap": True,
+        "fb_q_head": "min",
+        "discount": 0.98,
+        "buffer_size": 100000,
         "train_seed_offset": 10000,
         "seed": 0,
     },
@@ -389,7 +432,7 @@ def _resolve_budget(cfg: Dict[str, Any], algo: str) -> Dict[str, Any]:
     budget = dict(cfg.get("budget") or {})
     max_env_steps = budget.get("max_env_steps")
     eval_every_env_steps = budget.get("eval_every_env_steps")
-    if algo in ("lola", "rela"):
+    if algo in ("lola", "rela", "cem", "cmaes"):
         if max_env_steps is None:
             max_env_steps = DEFAULT_ENV_STEPS_BUDGET
         if eval_every_env_steps is None:
@@ -639,13 +682,13 @@ def write_table6_csv(path: Path, tasks: Sequence[str], iqm_per_task: Dict[str, D
 
 
 def main():
-    parser = ArgumentParser(description="Optimize FB latent z via REINFORCE, LoLA, or ReLA (ANFIS or direct z)")
+    parser = ArgumentParser(description="Optimize FB latent z via REINFORCE, LoLA, ReLA, CEM, or CMA-ES (ANFIS or direct z)")
     parser.add_argument(
         "--algo",
         type=str,
         default=None,
-        choices=list(ALGO_TYPES),
-        help="Update algorithm: reinforce, lola, or rela (overrides config)",
+        choices=[*ALGO_TYPES, "cma-es"],
+        help="Update algorithm: reinforce, lola, rela, cem, or cmaes (overrides config)",
     )
     parser.add_argument(
         "--param",
