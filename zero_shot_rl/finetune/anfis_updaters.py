@@ -35,6 +35,7 @@ from zero_shot_rl.env.walker import policy
 from zero_shot_rl.latent.anfis import ANFIS, load_anfis, weighted_z
 
 PARAM_TYPES: Tuple[str, ...] = ("anfis", "z")
+PARAM_SCOPES: Tuple[str, ...] = ("all", "consequent")
 ALGO_TYPES: Tuple[str, ...] = ("reinforce", "lola", "rela")
 
 TRAIN_FIELDS: Tuple[str, ...] = (
@@ -127,6 +128,47 @@ class LatentParam(nn.Module):
     def post_step(self) -> None:
         """Optional projection applied after an optimizer step."""
 
+    def param_tensors(self, scope: str = "all") -> List[nn.Parameter]:
+        """Return trainable parameter tensors selected by ``scope`` ('all' or 'consequent')."""
+        if scope not in PARAM_SCOPES:
+            raise ValueError(f"Unknown param_scope {scope!r}; expected one of {PARAM_SCOPES}")
+        return list(self.parameters())
+
+    @torch.no_grad()
+    def get_flat_params(self, scope: str = "all") -> torch.Tensor:
+        """Return a 1D detached clone of parameters in ``scope``."""
+        tensors = self.param_tensors(scope)
+        return torch.cat([p.detach().reshape(-1) for p in tensors]).clone()
+
+    @torch.no_grad()
+    def set_flat_params(self, flat: torch.Tensor, scope: str = "all") -> None:
+        """Write a 1D parameter vector back into ``scope`` tensors and apply ``post_step()``."""
+        tensors = self.param_tensors(scope)
+        expected = sum(p.numel() for p in tensors)
+        flat_1d = flat.reshape(-1)
+        if flat_1d.numel() != expected:
+            raise ValueError(f"Expected flat param length {expected} for scope={scope!r}, got {flat_1d.numel()}")
+        offset = 0
+        for p in tensors:
+            n = p.numel()
+            p.data.copy_(flat_1d[offset : offset + n].to(device=p.device, dtype=p.dtype).view_as(p))
+            offset += n
+        self.post_step()
+
+    @torch.no_grad()
+    def eval_candidates_to_zs(self, candidates: torch.Tensor, scope: str = "all") -> torch.Tensor:
+        """Map ``candidates [K, D]`` to latents ``[K, d_z]`` without mutating current parameters."""
+        saved = self.get_flat_params(scope)
+        zs: List[torch.Tensor] = []
+        self.eval()
+        try:
+            for k in range(candidates.shape[0]):
+                self.set_flat_params(candidates[k], scope)
+                zs.append(self.compute_z().detach())
+        finally:
+            self.set_flat_params(saved, scope)
+        return torch.stack(zs, dim=0)
+
     def snapshot_state(self) -> Dict[str, torch.Tensor]:
         return {k: v.detach().cpu().clone() for k, v in self.state_dict().items()}
 
@@ -154,6 +196,13 @@ class ANFISLatent(LatentParam):
 
     def parameters(self, recurse: bool = True):  # type: ignore[override]
         return self.model.parameters(recurse=recurse)
+
+    def param_tensors(self, scope: str = "all") -> List[nn.Parameter]:
+        if scope == "all":
+            return list(self.model.parameters())
+        if scope == "consequent":
+            return list(self.model.consequent.parameters())
+        raise ValueError(f"Unknown param_scope {scope!r}; expected one of {PARAM_SCOPES}")
 
     def snapshot_state(self) -> Dict[str, torch.Tensor]:
         return {k: v.detach().cpu().clone() for k, v in self.model.state_dict().items()}
@@ -466,6 +515,162 @@ class TransitionBuffer:
             torch.as_tensor(self.rewards[idx], dtype=torch.float32, device=device),
             torch.as_tensor(self.next_obs[idx], dtype=torch.float32, device=device),
         )
+
+
+class CandidateEvaluator:
+    """Evaluates a batch of candidate latents ``zs [K, d_z]`` via full episodes or lookahead bootstrap.
+
+    - ``horizon is None``: runs ``episodes_per_z`` full episodes (capped at ``episode_steps`` if set)
+      per candidate using common episode seeds within each call.
+    - ``horizon > 0``: samples ``num_start_states`` shared start states (initial reset with prob
+      ``init_state_prob``, else from an online ``PhysicsStateBuffer``), rolls out all ``K``
+      candidates in lockstep for ``horizon`` steps, optionally adds frozen FB terminal bootstrap
+      ``gamma^horizon * F(s_n, pi_z(s_n), z)^T w_r``, and averages over the start states.
+    """
+
+    def __init__(
+        self,
+        *,
+        agent: FB,
+        domain: str,
+        reward_fn,
+        w_r: torch.Tensor,
+        dynamics=None,
+        episodes_per_z: int = 1,
+        episode_steps: Optional[int] = None,
+        horizon: Optional[int] = None,
+        num_start_states: int = 2,
+        init_state_prob: float = 0.2,
+        bootstrap: bool = True,
+        fb_q_head: str = "min",
+        discount: float = 0.98,
+        buffer_size: int = 100000,
+        seed: int = 0,
+        train_seed_offset: int = 10000,
+    ):
+        self.agent = agent
+        self.domain = domain
+        self.reward_fn = reward_fn
+        self.w_r = w_r
+        self.dynamics = dynamics
+        self.episodes_per_z = int(episodes_per_z)
+        self.episode_steps = int(episode_steps) if episode_steps is not None else None
+        self.horizon = int(horizon) if horizon is not None else None
+        self.num_start_states = int(num_start_states)
+        self.init_state_prob = float(init_state_prob)
+        self.bootstrap = bool(bootstrap)
+        self.fb_q_head = str(fb_q_head)
+        self.discount = float(discount)
+        self.seed = int(seed)
+        self.train_seed_offset = int(train_seed_offset)
+        self._call_idx = 0
+        self._rng = np.random.default_rng(self.seed + self.train_seed_offset)
+        self.state_buffer = PhysicsStateBuffer(int(buffer_size))
+        self._envs: List[Any] = []
+        self._reset_env: Any = None
+        self._env_k: int = 0
+
+    def _ensure_lookahead_envs(self, k: int) -> None:
+        if self._envs and self._env_k == k:
+            return
+        self.close()
+        total = self.num_start_states * k
+        base_seed = self.seed + self.train_seed_offset
+        self._reset_env = make_domain_env(self.domain, base_seed, dynamics=self.dynamics)
+        self._envs = [make_domain_env(self.domain, base_seed + 1 + i, dynamics=self.dynamics) for i in range(total)]
+        self._env_k = k
+
+    def evaluate(self, zs: torch.Tensor) -> Tuple[np.ndarray, int]:
+        """Return ``(fitness [K], env_steps_consumed)`` for ``zs [K, d_z]``."""
+        k = int(zs.shape[0])
+        self._call_idx += 1
+        if self.horizon is None:
+            base = self.train_seed_offset + self.seed * 1000 + self._call_idx * self.episodes_per_z
+            ep_seeds = [base + e for e in range(self.episodes_per_z)]
+            rets, steps = evaluate_zs_with_steps(
+                self.agent,
+                zs,
+                ep_seeds,
+                self.reward_fn,
+                domain=self.domain,
+                dynamics=self.dynamics,
+                steps=self.episode_steps,
+            )
+            return rets.mean(axis=1), steps
+
+        m = self.num_start_states
+        horizon = self.horizon
+        self._ensure_lookahead_envs(k)
+        assert self._reset_env is not None
+
+        start_states: List[Tuple[np.ndarray, np.ndarray]] = []
+        for _ in range(m):
+            use_init = (len(self.state_buffer) == 0) or (float(self._rng.random()) < self.init_state_prob)
+            if use_init:
+                ts = self._reset_env.reset()
+                phys = self._reset_env.physics.get_state().copy()
+                obs0 = ts.observation["observations"].copy()
+                self.state_buffer.add(phys, obs0)
+                start_states.append((phys, obs0))
+            else:
+                start_states.append(self.state_buffer.sample(self._rng))
+
+        total = m * k
+        obs_batch = np.empty((total, start_states[0][1].shape[0]), dtype=np.float32)
+        for i, (phys, obs0) in enumerate(start_states):
+            for j in range(k):
+                idx = i * k + j
+                set_env_physics(self._envs[idx], phys)
+                obs_batch[idx] = obs0
+
+        # Candidate z_j is evaluated from every start state i -> repeat [k, d_z] across m blocks.
+        z_flat = zs.unsqueeze(0).expand(m, k, -1).reshape(total, -1)
+        returns = np.zeros(total, dtype=np.float64)
+        done = np.zeros(total, dtype=bool)
+        gamma_pow = 1.0
+        steps_consumed = 0
+
+        for _ in range(horizon):
+            s_t = torch.as_tensor(obs_batch, dtype=torch.float32, device=z_flat.device)
+            with torch.no_grad():
+                actions = policy(self.agent, s_t, z_flat).cpu().numpy()
+            for idx, env in enumerate(self._envs):
+                if done[idx]:
+                    continue
+                ts = env.step(actions[idx])
+                steps_consumed += 1
+                next_obs = ts.observation["observations"]
+                obs_batch[idx] = next_obs
+                returns[idx] += gamma_pow * float(self.reward_fn(env.physics))
+                self.state_buffer.add(env.physics.get_state().copy(), next_obs.copy())
+                if ts.last():
+                    done[idx] = True
+            gamma_pow *= self.discount
+            if done.all():
+                break
+
+        if self.bootstrap:
+            alive = ~done
+            if alive.any():
+                s_term = torch.as_tensor(obs_batch[alive], dtype=torch.float32, device=z_flat.device)
+                z_term = z_flat[torch.as_tensor(alive, dtype=torch.bool, device=z_flat.device)]
+                with torch.no_grad():
+                    a_term = policy(self.agent, s_term, z_term)
+                    v_term = fb_q_base(
+                        self.agent, s_term, a_term, z_term, self.w_r, head=self.fb_q_head
+                    ).cpu().numpy()
+                returns[alive] += gamma_pow * v_term
+
+        return returns.reshape(m, k).mean(axis=0), steps_consumed
+
+    def close(self) -> None:
+        for env in self._envs:
+            env.close()
+        self._envs = []
+        self._env_k = 0
+        if self._reset_env is not None:
+            self._reset_env.close()
+            self._reset_env = None
 
 
 def _build_q_mlp(obs_dim: int, action_dim: int, hidden_dim: int, layers: int, zero_init_last: bool) -> nn.Sequential:

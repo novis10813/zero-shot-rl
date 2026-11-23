@@ -15,6 +15,7 @@ from zero_shot_rl.env.dynamics import parse_dynamics
 from zero_shot_rl.env.sensors import make_domain_env
 from zero_shot_rl.finetune.anfis_updaters import (
     ANFISLatent,
+    CandidateEvaluator,
     DirectZLatent,
     EvalScheduler,
     PhysicsStateBuffer,
@@ -219,6 +220,107 @@ class ANFISUpdatersUnitTest(unittest.TestCase):
             self.assertAlmostEqual(float(env.physics.model.geom_friction[0, 0]), 0.15, places=6)
         finally:
             env.close()
+
+    def test_flat_params_roundtrip_and_scope_isolation(self):
+        torch.manual_seed(0)
+        z_dim = 12
+        feats = torch.randn(32, 2)
+        B = torch.randn(32, z_dim)
+        model = ANFIS.from_config(_tiny_anfis_cfg()["anfis"], out_dim=1)
+        model.init_from_data(feats, seed=0)
+        anfis_param = ANFISLatent(model, feats, B)
+
+        vec_all = anfis_param.get_flat_params("all")
+        vec_cons = anfis_param.get_flat_params("consequent")
+        self.assertGreater(vec_all.numel(), vec_cons.numel())
+        self.assertEqual(vec_cons.numel(), sum(p.numel() for p in model.consequent.parameters()))
+
+        mem_before = [p.detach().clone() for p in model.memberships.parameters()]
+        perturbed_cons = vec_cons + 0.25
+        anfis_param.set_flat_params(perturbed_cons, "consequent")
+        torch.testing.assert_close(anfis_param.get_flat_params("consequent"), perturbed_cons, atol=1e-6, rtol=0)
+        for p_after, p_before in zip(model.memberships.parameters(), mem_before):
+            torch.testing.assert_close(p_after, p_before, atol=0, rtol=0)
+
+        # eval_candidates_to_zs must leave parameters unchanged afterward
+        cands = torch.stack([perturbed_cons, perturbed_cons + 0.1, perturbed_cons - 0.1], dim=0)
+        zs = anfis_param.eval_candidates_to_zs(cands, scope="consequent")
+        self.assertEqual(zs.shape, (3, z_dim))
+        torch.testing.assert_close(anfis_param.get_flat_params("consequent"), perturbed_cons, atol=1e-6, rtol=0)
+
+        # DirectZLatent projects onto sqrt(d_z)-sphere after set_flat_params
+        dz = DirectZLatent(z_dim=z_dim, init_z=None, seed=5)
+        raw_target = torch.ones(z_dim) * 3.0
+        dz.set_flat_params(raw_target, "all")
+        torch.testing.assert_close(dz.get_flat_params("all").norm(), torch.tensor(math.sqrt(z_dim)), atol=1e-5, rtol=0)
+
+        with self.assertRaises(ValueError):
+            anfis_param.get_flat_params("invalid_scope")
+        with self.assertRaises(ValueError):
+            anfis_param.set_flat_params(torch.zeros(3), "all")
+
+    def test_candidate_evaluator_full_episode_and_lookahead_bootstrap(self):
+        agent = _make_tiny_fb(obs_dim=24, act_dim=6, z_dim=12)
+        torch.manual_seed(0)
+        obs = torch.randn(32, 24)
+        rewards = torch.rand(32, 1)
+        with torch.no_grad():
+            B = agent.FB.backward_representation(obs).detach()
+        w_r = unnormalized_w_r(rewards, B).detach()
+        zs = math.sqrt(12) * F.normalize(torch.randn(3, 12), dim=-1)
+        def reward_fn(physics):
+            return float(physics.torso_upright())
+        dyn = parse_dynamics({"base": {"geom_friction": {"all": 0.2}}})
+
+        # Full-episode (short capped steps for test speed)
+        ev_full = CandidateEvaluator(
+            agent=agent,
+            domain="walker",
+            reward_fn=reward_fn,
+            w_r=w_r,
+            dynamics=dyn,
+            episodes_per_z=1,
+            episode_steps=6,
+            horizon=None,
+            seed=10,
+        )
+        try:
+            fit, steps = ev_full.evaluate(zs)
+            self.assertEqual(fit.shape, (3,))
+            self.assertEqual(steps, 18)
+            self.assertTrue(np.isfinite(fit).all())
+        finally:
+            ev_full.close()
+
+        # Lookahead with bootstrap=True and bootstrap=False, verifying shifted dynamics preserved
+        for use_bs in (True, False):
+            ev_la = CandidateEvaluator(
+                agent=agent,
+                domain="walker",
+                reward_fn=reward_fn,
+                w_r=w_r,
+                dynamics=dyn,
+                horizon=4,
+                num_start_states=2,
+                init_state_prob=0.5,
+                bootstrap=use_bs,
+                discount=0.98,
+                seed=10,
+            )
+            try:
+                fit1, steps1 = ev_la.evaluate(zs)
+                fit2, steps2 = ev_la.evaluate(zs)
+                self.assertEqual(fit1.shape, (3,))
+                self.assertEqual(steps1, 2 * 3 * 4)
+                self.assertEqual(steps2, 2 * 3 * 4)
+                self.assertTrue(np.isfinite(fit1).all())
+                self.assertTrue(np.isfinite(fit2).all())
+                self.assertGreater(len(ev_la.state_buffer), 0)
+                self.assertAlmostEqual(
+                    float(ev_la._envs[0].physics.model.geom_friction[0, 0]), 0.2, places=6
+                )
+            finally:
+                ev_la.close()
 
 
 class ANFISUpdatersIntegrationTest(unittest.TestCase):
