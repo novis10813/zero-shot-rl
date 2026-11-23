@@ -27,6 +27,11 @@ MEMBERSHIPS = ("gaussian", "bell", "triangular", "trapezoidal", "sigmoid", "psig
 CONSEQUENTS = ("zero_order", "first_order", "mlp")
 T_NORMS = ("product", "min")
 OUTPUT_ACTIVATIONS = ("identity", "softplus", "sigmoid", "tanh")
+INPUT_NORMALIZERS = ("none", "zscore", "minmax", "robust", "symlog_zscore")
+
+
+def _symlog(x: torch.Tensor) -> torch.Tensor:
+    return torch.sign(x) * torch.log1p(torch.abs(x))
 
 
 def _inv_softplus(value: float) -> float:
@@ -548,11 +553,14 @@ def parse_sensor_specs(anfis_cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
         if num_terms <= 0:
             raise ValueError(f"sensor {name!r} num_terms must be positive, got {num_terms}")
         mem_spec = _merge_membership_spec(entry.get("membership"), default_mem)
-        specs.append({
+        spec: Dict[str, Any] = {
             "name": str(name),
             "num_terms": num_terms,
             "membership": mem_spec,
-        })
+        }
+        if entry.get("normalize") is not None:
+            spec["normalize"] = str(entry["normalize"])
+        specs.append(spec)
 
     if not specs:
         raise ValueError("at least one sensor in anfis.sensors must have enabled: true")
@@ -646,8 +654,10 @@ class ANFIS(torch.nn.Module):
         memberships = []
         sensor_names: List[str] = []
         term_counts: List[int] = []
+        input_normalizers: List[str] = []
         serialised_sensors: List[Dict[str, Any]] = []
         all_serialisable = True
+        default_norm = "zscore" if self.normalize_inputs else "none"
 
         for i, s in enumerate(sensors):
             if not isinstance(s, dict):
@@ -658,14 +668,24 @@ class ANFIS(torch.nn.Module):
             m_count = int(s["num_terms"])
             if m_count <= 0:
                 raise ValueError(f"sensor {name!r} num_terms must be positive, got {m_count}")
+            raw_norm = s.get("normalize")
+            norm_kind = default_norm if raw_norm is None else str(raw_norm).strip().lower()
+            if norm_kind not in INPUT_NORMALIZERS:
+                raise ValueError(
+                    f"sensor {name!r} normalize must be one of {INPUT_NORMALIZERS}, got {raw_norm!r}"
+                )
             mem_mod, mem_cfg = _build_sensor_membership(s.get("membership", "gaussian"), num_terms=m_count)
             memberships.append(mem_mod)
             sensor_names.append(name)
             term_counts.append(m_count)
+            input_normalizers.append(norm_kind)
             if mem_cfg is None:
                 all_serialisable = False
             else:
-                serialised_sensors.append({"name": name, "num_terms": m_count, "membership": mem_cfg})
+                ser_entry: Dict[str, Any] = {"name": name, "num_terms": m_count, "membership": mem_cfg}
+                if raw_norm is not None:
+                    ser_entry["normalize"] = norm_kind
+                serialised_sensors.append(ser_entry)
 
         num_rules = math.prod(term_counts)
         if self.max_rules is not None and num_rules > self.max_rules:
@@ -676,6 +696,8 @@ class ANFIS(torch.nn.Module):
 
         self.sensor_names: Tuple[str, ...] = tuple(sensor_names)
         self.term_counts: Tuple[int, ...] = tuple(term_counts)
+        self.input_normalizers: Tuple[str, ...] = tuple(input_normalizers)
+        self._any_normalized: bool = any(n != "none" for n in self.input_normalizers)
         self.num_rules = int(num_rules)
         self.memberships = torch.nn.ModuleList(memberships)
 
@@ -688,6 +710,16 @@ class ANFIS(torch.nn.Module):
 
         self.register_buffer("x_mean", torch.zeros(self.in_dim))
         self.register_buffer("x_std", torch.ones(self.in_dim))
+        self.register_buffer(
+            "_symlog_mask",
+            torch.tensor([n == "symlog_zscore" for n in self.input_normalizers], dtype=torch.bool),
+            persistent=False,
+        )
+        self.register_buffer(
+            "_none_mask",
+            torch.tensor([n == "none" for n in self.input_normalizers], dtype=torch.bool),
+            persistent=False,
+        )
 
         self.config = (
             dict(
@@ -732,23 +764,51 @@ class ANFIS(torch.nn.Module):
         self.x_std.copy_(s)
 
     def normalize(self, x: torch.Tensor) -> torch.Tensor:
-        if not self.normalize_inputs:
+        if not self._any_normalized:
             return x
-        return (x - self.x_mean) / self.x_std
+        x_in = torch.where(self._symlog_mask, _symlog(x), x) if self._symlog_mask.any() else x
+        xn = (x_in - self.x_mean) / self.x_std
+        if self._none_mask.any():
+            xn = torch.where(self._none_mask, x, xn)
+        return xn
 
     @torch.no_grad()
     def init_from_data(self, x: torch.Tensor, seed: int = 0) -> None:
         """Initialise each sensor's linguistic terms from empirical quantiles of `x`.
 
-        If `normalize_inputs=True`, also sets `x_mean` and `x_std` from `x` first.
+        Fits per-sensor location/scale statistics into ``x_mean`` and ``x_std`` according
+        to ``self.input_normalizers`` before computing membership quantiles.
         The `seed` argument is kept for call-site symmetry (quantile init is deterministic).
         """
         _ = seed
         x = x.reshape(-1, self.in_dim).to(device=self.x_mean.device, dtype=self.x_mean.dtype)
         if len(x) == 0:
             raise ValueError("init_from_data requires at least one sample")
-        if self.normalize_inputs:
-            self.set_input_stats(x.mean(0), x.std(0, unbiased=False))
+        if self._any_normalized:
+            locs = torch.zeros(self.in_dim, device=x.device, dtype=x.dtype)
+            scales = torch.ones(self.in_dim, device=x.device, dtype=x.dtype)
+            for i, kind in enumerate(self.input_normalizers):
+                col = x[:, i]
+                if kind == "none":
+                    locs[i] = 0.0
+                    scales[i] = 1.0
+                elif kind == "zscore":
+                    locs[i] = col.mean()
+                    scales[i] = col.std(unbiased=False)
+                elif kind == "minmax":
+                    lo = col.min()
+                    hi = col.max()
+                    locs[i] = 0.5 * (lo + hi)
+                    scales[i] = 0.5 * (hi - lo)
+                elif kind == "robust":
+                    locs[i] = torch.quantile(col, 0.5)
+                    iqr = torch.quantile(col, 0.75) - torch.quantile(col, 0.25)
+                    scales[i] = iqr if float(iqr.item()) >= self.eps else col.std(unbiased=False)
+                elif kind == "symlog_zscore":
+                    u = _symlog(col)
+                    locs[i] = u.mean()
+                    scales[i] = u.std(unbiased=False)
+            self.set_input_stats(locs, scales)
         xn = self.normalize(x)
         for i, mem in enumerate(self.memberships):
             if hasattr(mem, "init_from_1d"):
