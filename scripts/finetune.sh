@@ -20,7 +20,7 @@ Modes:
   value-correction (vc)   Online Q_adapt / residual soft-Q finetuning (saves q/*.pt, adds --train_only by default; pass --with-eval to also run inline eval)
   action-transform (aa)   FB-AA test-time g_1 + T_theta finetuning (saves <out-dir>/<config>/transformer.pt)
   online-inference (opti) OpTI-BFM online task-vector adaptation (UCB / TS / Random / FB)
-  anfis-z (anfis)         REINFORCE optimization of YAML-composed ANFIS -> FB latent z
+  anfis-z (anfis)         Latent adaptation (REINFORCE / LoLA / ReLA) with ANFIS or direct z
 
 Evaluate saved finetuned models separately with:
   bash scripts/evaluate.sh value-correction ...
