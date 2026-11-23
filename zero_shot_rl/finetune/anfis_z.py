@@ -49,7 +49,7 @@ from zero_shot_rl.env.sensors import (
     validate_sensors,
 )
 from zero_shot_rl.env.walker import policy
-from zero_shot_rl.latent.anfis import ANFIS, parse_sensor_specs, weighted_z
+from zero_shot_rl.latent.anfis import ANFIS, load_anfis, parse_sensor_specs, weighted_z
 from zero_shot_rl.provenance import no_clobber, sha256
 from zero_shot_rl.utils import BASE_DIR, set_seed_everywhere
 
@@ -408,8 +408,10 @@ def train_task(
     ev_cfg = cfg["eval"]
 
     seed = int(rf_cfg["seed"]) + task_index * 100
-    torch.manual_seed(seed)
-    gen = torch.Generator(device=device).manual_seed(seed)
+    resume_dir = rf_cfg.get("resume_models_dir")
+    resume_step = int(rf_cfg.get("resume_step", 0)) if resume_dir else 0
+    torch.manual_seed(seed + resume_step)
+    gen = torch.Generator(device=device).manual_seed(seed + resume_step)
 
     z_r = weighted_z(target_rewards, backward_repr).detach()
     eval_seeds = [int(ev_cfg["eval_seed_start"]) + i for i in range(int(ev_cfg["eval_episodes"]))]
@@ -419,11 +421,18 @@ def train_task(
     print(f"[{task}] baseline z_r  eval IQM={baseline_iqm:.1f}  mean={baseline_returns.mean():.1f}", flush=True)
 
     model = ANFIS.from_config(anfis_cfg, out_dim=1).to(device)
-    if anfis_cfg.get("init_from_data", True):
+    ws_info = {"warmstart_mse": float("nan"), "warmstart_cos": float("nan")}
+    if resume_dir:
+        # Continue from a saved `<task>_final.pt`: weights and input normalisation are restored, the
+        # Adam state is not saved and restarts from zero.
+        loaded, loaded_meta = load_anfis(Path(resume_dir) / f"{task}_final.pt", device=device)
+        model.load_state_dict(loaded.state_dict())
+        ws_info = loaded_meta.get("warmstart", ws_info)
+        print(f"[{task}] resumed from {resume_dir} at step {resume_step}", flush=True)
+    elif anfis_cfg.get("init_from_data", True):
         model.init_from_data(features, seed=seed)
 
-    ws_info = {"warmstart_mse": float("nan"), "warmstart_cos": float("nan")}
-    if ws_cfg.get("enabled", True) and int(ws_cfg.get("steps", 0)) > 0:
+    if not resume_dir and ws_cfg.get("enabled", True) and int(ws_cfg.get("steps", 0)) > 0:
         ws_info = warmstart_anfis(
             model,
             features,
@@ -448,6 +457,9 @@ def train_task(
 
     iters = int(rf_cfg["iters"])
     eval_steps = set(eval_points(iters, int(ev_cfg["eval_every"])))
+    if resume_dir:
+        # step == resume_step is re-evaluated to confirm the restored model; it is not trained again.
+        eval_steps = {resume_step} | {st for st in eval_steps if st > resume_step}
     pop_size = int(rf_cfg["pop_size"])
     sigma = float(rf_cfg["sigma"])
     antithetic = bool(rf_cfg.get("antithetic", True))
@@ -483,11 +495,11 @@ def train_task(
             flush=True,
         )
 
-    if 0 in eval_steps:
-        run_eval(0)
+    if resume_step in eval_steps:
+        run_eval(resume_step)
 
     t0 = time.time()
-    for step in range(1, iters + 1):
+    for step in range(resume_step + 1, iters + 1):
         model.eval()
         with torch.no_grad():
             mu_z = weighted_z(model(features), backward_repr)
@@ -587,19 +599,67 @@ def main():
         help="Experiment/finetune/eval YAML (e.g. tasks/T6-anfis/configs/reinforce.yaml)",
     )
     parser.add_argument("--checkpoint", type=str, required=True, help="Frozen FB checkpoint (.pt)")
-    parser.add_argument("--dataset_path", type=str, required=True, help="Offline ExORL dataset (.npz)")
+    parser.add_argument("--dataset_path", type=str, default=None, help="Offline ExORL dataset (.npz)")
     parser.add_argument("--out_dir", type=str, required=True, help="Output directory (refuses to overwrite existing table6.csv)")
     parser.add_argument("--dynamics", type=str, default=None, help="Optional shifted dynamics YAML (Walker only)")
     parser.add_argument("--tasks", nargs="+", default=None, help="Override eval.tasks from config")
     parser.add_argument("--seed", type=int, default=None, help="Override reinforce.seed from config")
+    parser.add_argument(
+        "--train_seed_offset",
+        type=int,
+        default=None,
+        help="Override reinforce.train_seed_offset from config",
+    )
+    parser.add_argument(
+        "--eval_models_dir",
+        type=str,
+        default=None,
+        help="Evaluate pre-trained ANFIS checkpoints (<dir>/<task>_<tag>.pt) without finetuning",
+    )
+    parser.add_argument(
+        "--eval_model_tag",
+        type=str,
+        default="final",
+        choices=["final", "best"],
+        help="Which saved ANFIS checkpoint tag to evaluate with --eval_models_dir",
+    )
+    parser.add_argument(
+        "--resume_models_dir",
+        type=str,
+        default=None,
+        help="Continue REINFORCE from <dir>/<task>_final.pt (no warm-start), starting after --resume_step",
+    )
+    parser.add_argument(
+        "--resume_step",
+        type=int,
+        default=None,
+        help="Iterations already done in --resume_models_dir; steps resume_step+1..reinforce.iters are run",
+    )
+    parser.add_argument(
+        "--eval_zr_only",
+        action="store_true",
+        help="Evaluate frozen FB baseline z_r only (no ANFIS warmstart or REINFORCE)",
+    )
     parser.add_argument("--device", type=str, default=None, help="torch device (default: cuda if available else cpu)")
     args = parser.parse_args()
+
+    if args.eval_models_dir is None and not args.dataset_path:
+        parser.error("--dataset_path is required unless --eval_models_dir is specified")
 
     cfg = load_config(args.config, anfis_config=args.anfis_config)
     if args.tasks is not None:
         cfg["eval"]["tasks"] = list(args.tasks)
     if args.seed is not None:
         cfg["reinforce"]["seed"] = int(args.seed)
+    if args.train_seed_offset is not None:
+        cfg["reinforce"]["train_seed_offset"] = int(args.train_seed_offset)
+    if (args.resume_models_dir is None) != (args.resume_step is None):
+        parser.error("--resume_models_dir and --resume_step must be given together")
+    if args.resume_models_dir is not None:
+        if args.resume_step < 1 or args.resume_step >= int(cfg["reinforce"]["iters"]):
+            parser.error("--resume_step must satisfy 1 <= resume_step < reinforce.iters")
+        cfg["reinforce"]["resume_models_dir"] = args.resume_models_dir
+        cfg["reinforce"]["resume_step"] = int(args.resume_step)
 
     # Validate domain, sensors, and ANFIS architecture before loading checkpoints or datasets.
     domain, _, sensor_names = resolve_anfis_sensors(cfg["anfis"])
@@ -629,32 +689,16 @@ def main():
     agent.eval()
 
     ref_cfg = cfg["reference"]
-    print(
-        f"Collecting {ref_cfg['z_inference_steps']} reference transitions from {args.dataset_path}",
-        flush=True,
-    )
-    observations, features, rewards, reward_fns = collect_reference_set(
-        dataset_path=Path(args.dataset_path),
-        domain=domain,
-        sensor_names=sensor_names,
-        tasks=tasks,
-        dataset_transitions=int(ref_cfg["dataset_transitions"]),
-        z_inference_steps=int(ref_cfg["z_inference_steps"]),
-        seed=int(ref_cfg["seed"]),
-        discount=float(ref_cfg["discount"]),
-        device=device,
-    )
-    with torch.no_grad():
-        backward_repr = agent.FB.backward_representation(observations).detach()
-
     resolved = copy.deepcopy(cfg)
     resolved["provenance"] = {
         "anfis_config": args.anfis_config,
         "config": args.config,
         "checkpoint": str(args.checkpoint),
         "checkpoint_sha256": sha256(Path(args.checkpoint)),
-        "dataset_path": str(args.dataset_path),
+        "dataset_path": str(args.dataset_path) if args.dataset_path else None,
         "dynamics": args.dynamics,
+        "eval_models_dir": args.eval_models_dir,
+        "eval_model_tag": args.eval_model_tag if args.eval_models_dir else None,
     }
     (out_dir / "config_resolved.yaml").write_text(yaml.safe_dump(resolved, sort_keys=False))
 
@@ -663,25 +707,95 @@ def main():
     all_train_rows: List[Dict[str, Any]] = []
     all_eval_rows: List[Dict[str, Any]] = []
 
-    for idx, task in enumerate(tasks):
-        res = train_task(
-            task=task,
-            task_index=idx,
-            domain=domain,
-            agent=agent,
-            features=features,
-            backward_repr=backward_repr,
-            target_rewards=rewards[task],
-            reward_fn=reward_fns[task],
-            cfg=cfg,
-            dynamics=dynamics,
-            out_dir=out_dir,
+    if args.eval_models_dir is not None:
+        models_dir = Path(args.eval_models_dir)
+        ev_cfg = cfg["eval"]
+        eval_seeds = [int(ev_cfg["eval_seed_start"]) + i for i in range(int(ev_cfg["eval_episodes"]))]
+        rc = RewardFunctionConstructor(
+            domain_name=domain,
+            task_names=list(tasks),
+            seed=int(ref_cfg["seed"]),
             device=device,
         )
-        iqm_per_task[task] = res["iqm_by_step"]
-        baseline_per_task[task] = {0: res["baseline_iqm"]}
-        all_train_rows.extend(res["train_rows"])
-        all_eval_rows.extend(res["eval_rows"])
+        reward_fns = rc.reward_functions
+        for task in tasks:
+            ckpt_path = models_dir / f"{task}_{args.eval_model_tag}.pt"
+            _, meta = load_anfis(ckpt_path, device=device)
+            z = meta["z"].to(device=device, dtype=torch.float32)
+            rets = evaluate_zs(agent, z.unsqueeze(0), eval_seeds, reward_fns[task], domain=domain, dynamics=dynamics)[0]
+            score = iqm(rets)
+            iqm_per_task[task] = {0: score}
+            for s_id, r in zip(eval_seeds, rets):
+                all_eval_rows.append({"task": task, "step": 0, "episode_seed": s_id, "return": float(r)})
+
+            if "z_r" in meta and meta["z_r"] is not None:
+                z_r = meta["z_r"].to(device=device, dtype=torch.float32)
+                base_rets = evaluate_zs(
+                    agent, z_r.unsqueeze(0), eval_seeds, reward_fns[task], domain=domain, dynamics=dynamics
+                )[0]
+                base_iqm = iqm(base_rets)
+                baseline_per_task[task] = {0: base_iqm}
+                print(
+                    f"[{task}] eval-only ({args.eval_model_tag})  IQM={score:6.1f}  "
+                    f"baseline z_r IQM={base_iqm:6.1f}  delta={score - base_iqm:+6.1f}",
+                    flush=True,
+                )
+            else:
+                baseline_per_task[task] = {0: float("nan")}
+                print(f"[{task}] eval-only ({args.eval_model_tag})  IQM={score:6.1f}", flush=True)
+    else:
+        print(
+            f"Collecting {ref_cfg['z_inference_steps']} reference transitions from {args.dataset_path}",
+            flush=True,
+        )
+        observations, features, rewards, reward_fns = collect_reference_set(
+            dataset_path=Path(args.dataset_path),
+            domain=domain,
+            sensor_names=sensor_names,
+            tasks=tasks,
+            dataset_transitions=int(ref_cfg["dataset_transitions"]),
+            z_inference_steps=int(ref_cfg["z_inference_steps"]),
+            seed=int(ref_cfg["seed"]),
+            discount=float(ref_cfg["discount"]),
+            device=device,
+        )
+        with torch.no_grad():
+            backward_repr = agent.FB.backward_representation(observations).detach()
+
+        if args.eval_zr_only:
+            ev_cfg = cfg["eval"]
+            eval_seeds = [int(ev_cfg["eval_seed_start"]) + i for i in range(int(ev_cfg["eval_episodes"]))]
+            for task in tasks:
+                z_r = weighted_z(rewards[task], backward_repr).detach()
+                rets = evaluate_zs(
+                    agent, z_r.unsqueeze(0), eval_seeds, reward_fns[task], domain=domain, dynamics=dynamics
+                )[0]
+                score = iqm(rets)
+                iqm_per_task[task] = {0: score}
+                baseline_per_task[task] = {0: score}
+                for s_id, r in zip(eval_seeds, rets):
+                    all_eval_rows.append({"task": task, "step": 0, "episode_seed": s_id, "return": float(r)})
+                print(f"[{task}] frozen FB z_r  eval IQM={score:6.1f}  mean={rets.mean():.1f}", flush=True)
+        else:
+            for idx, task in enumerate(tasks):
+                res = train_task(
+                    task=task,
+                    task_index=idx,
+                    domain=domain,
+                    agent=agent,
+                    features=features,
+                    backward_repr=backward_repr,
+                    target_rewards=rewards[task],
+                    reward_fn=reward_fns[task],
+                    cfg=cfg,
+                    dynamics=dynamics,
+                    out_dir=out_dir,
+                    device=device,
+                )
+                iqm_per_task[task] = res["iqm_by_step"]
+                baseline_per_task[task] = {0: res["baseline_iqm"]}
+                all_train_rows.extend(res["train_rows"])
+                all_eval_rows.extend(res["eval_rows"])
 
     with no_clobber(table6_path) as tmp:
         write_table6_csv(tmp, tasks, iqm_per_task)

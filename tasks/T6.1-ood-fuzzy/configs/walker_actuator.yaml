@@ -1,0 +1,32 @@
+# Custom ANFIS sensor config for Walker actuator OOD shifts (8 sensors, 2^8 = 256 rules).
+# Adds bilateral hip and knee angular velocities to the 4 base reward sensors to capture
+# torque-scaled joint kinematics under weakened (76%) or strengthened (130%) actuators.
+
+anfis:
+  domain: walker
+  normalize_inputs: true
+  temperature: null
+  t_norm: product
+  normalize_firing: true
+  max_rules: 256
+
+  default_membership:
+    type: gaussian
+    min_sigma: 0.001
+    init_sigma: 1.0
+
+  sensors:
+    torso_height:        { enabled: true, num_terms: 2, membership: { type: gaussian } }
+    torso_upright:       { enabled: true, num_terms: 2, membership: { type: gaussian } }
+    horizontal_velocity: { enabled: true, num_terms: 2, membership: { type: gaussian } }
+    angmomentum:         { enabled: true, num_terms: 2, membership: { type: gaussian } }
+    qvel_right_hip:      { enabled: true, num_terms: 2, membership: { type: gaussian } }
+    qvel_left_hip:       { enabled: true, num_terms: 2, membership: { type: gaussian } }
+    qvel_right_knee:     { enabled: true, num_terms: 2, membership: { type: gaussian } }
+    qvel_left_knee:      { enabled: true, num_terms: 2, membership: { type: gaussian } }
+
+  consequent:
+    type: first_order
+
+  output_activation: identity
+  init_from_data: true

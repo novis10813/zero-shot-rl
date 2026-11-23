@@ -1,0 +1,31 @@
+# Custom ANFIS sensor config for Walker friction OOD shifts (7 sensors, 2^7 = 128 rules).
+# Adds vertical CoM velocity and bilateral ankle angular velocities to the 4 base reward sensors
+# to capture foot-ground slip, stick-slip, and vertical bounce under lowered/raised friction.
+
+anfis:
+  domain: walker
+  normalize_inputs: true
+  temperature: null
+  t_norm: product
+  normalize_firing: true
+  max_rules: 256
+
+  default_membership:
+    type: gaussian
+    min_sigma: 0.001
+    init_sigma: 1.0
+
+  sensors:
+    torso_height:        { enabled: true, num_terms: 2, membership: { type: gaussian } }
+    torso_upright:       { enabled: true, num_terms: 2, membership: { type: gaussian } }
+    horizontal_velocity: { enabled: true, num_terms: 2, membership: { type: gaussian } }
+    angmomentum:         { enabled: true, num_terms: 2, membership: { type: gaussian } }
+    com_vz:              { enabled: true, num_terms: 2, membership: { type: gaussian } }
+    qvel_right_ankle:    { enabled: true, num_terms: 2, membership: { type: gaussian } }
+    qvel_left_ankle:     { enabled: true, num_terms: 2, membership: { type: gaussian } }
+
+  consequent:
+    type: first_order
+
+  output_activation: identity
+  init_from_data: true
