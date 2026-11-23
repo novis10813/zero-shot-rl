@@ -1310,6 +1310,162 @@ class RelaUpdater:
         return train_rows
 
 
+def cem_sample_candidates(
+    mean: torch.Tensor,
+    std: torch.Tensor,
+    pop_size: int,
+    antithetic: bool,
+    generator: torch.Generator,
+) -> torch.Tensor:
+    """Sample ``pop_size`` parameter vectors from ``N(mean, diag(std^2))``."""
+    d = mean.shape[0]
+    if antithetic:
+        if pop_size % 2 != 0:
+            raise ValueError(f"antithetic sampling requires even pop_size, got {pop_size}")
+        half = torch.randn(pop_size // 2, d, generator=generator, device=mean.device, dtype=mean.dtype)
+        eps = torch.cat([half, -half], dim=0)
+    else:
+        eps = torch.randn(pop_size, d, generator=generator, device=mean.device, dtype=mean.dtype)
+    return mean.unsqueeze(0) + eps * std.unsqueeze(0)
+
+
+def cem_update_step(
+    mean: torch.Tensor,
+    std: torch.Tensor,
+    candidates: torch.Tensor,
+    returns: torch.Tensor,
+    *,
+    num_elites: int,
+    alpha: float = 0.7,
+    min_sigma: float = 1e-2,
+    max_sigma: float = 2.0,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """One diagonal Cross-Entropy Method update from candidate parameters and scalar returns."""
+    pop_size = int(candidates.shape[0])
+    k_elites = max(1, min(int(num_elites), pop_size))
+    if not (0.0 < alpha <= 1.0):
+        raise ValueError(f"alpha must be in (0, 1], got {alpha}")
+    returns_t = torch.as_tensor(returns, device=candidates.device, dtype=candidates.dtype).reshape(-1)
+    top_idx = torch.topk(returns_t, k=k_elites, largest=True).indices
+    elites = candidates[top_idx]
+    elite_mean = elites.mean(dim=0)
+    elite_std = elites.std(dim=0, unbiased=False) if k_elites > 1 else torch.zeros_like(std)
+    new_mean = (1.0 - alpha) * mean + alpha * elite_mean
+    new_std = ((1.0 - alpha) * std + alpha * elite_std).clamp(min=float(min_sigma), max=float(max_sigma))
+    return new_mean, new_std
+
+
+class CemUpdater:
+    """Derivative-free Cross-Entropy Method updater operating in ``LatentParam`` parameter space."""
+
+    def __init__(self, cfg: Dict[str, Any]):
+        self.cfg = cfg
+
+    def run(
+        self,
+        *,
+        task: str,
+        domain: str,
+        agent: FB,
+        latent_param: LatentParam,
+        z_r: torch.Tensor,
+        w_r: torch.Tensor,
+        reward_fn,
+        dynamics,
+        seed: int,
+        eval_callback: Callable[[Sequence[int]], None],
+        budget_cfg: Dict[str, Any],
+        device: torch.device,
+    ) -> List[Dict[str, Any]]:
+        c = self.cfg
+        max_env_steps = int(budget_cfg["max_env_steps"])
+        eval_every_env_steps = int(budget_cfg.get("eval_every_env_steps") or 0)
+
+        pop_size = int(c.get("pop_size", 16))
+        elite_frac = float(c.get("elite_frac", 0.25))
+        raw_num_elites = c.get("num_elites")
+        num_elites = int(raw_num_elites) if raw_num_elites is not None else max(2, int(round(pop_size * elite_frac)))
+        init_sigma = float(c.get("init_sigma", 0.3))
+        min_sigma = float(c.get("min_sigma", 1e-2))
+        max_sigma = float(c.get("max_sigma", 2.0))
+        alpha = float(c.get("alpha", 0.7))
+        antithetic = bool(c.get("antithetic", True))
+        param_scope = str(c.get("param_scope", "all"))
+
+        gen = torch.Generator(device=device).manual_seed(seed)
+        mean = latent_param.get_flat_params(param_scope).to(device=device)
+        std = torch.full_like(mean, init_sigma)
+
+        evaluator = CandidateEvaluator(
+            agent=agent,
+            domain=domain,
+            reward_fn=reward_fn,
+            w_r=w_r,
+            dynamics=dynamics,
+            episodes_per_z=int(c.get("train_episodes_per_z", 1)),
+            episode_steps=c.get("episode_steps"),
+            horizon=c.get("horizon"),
+            num_start_states=int(c.get("num_start_states", 2)),
+            init_state_prob=float(c.get("init_state_prob", 0.2)),
+            bootstrap=bool(c.get("bootstrap", True)),
+            fb_q_head=str(c.get("fb_q_head", "min")),
+            discount=float(c.get("discount", 0.98)),
+            buffer_size=int(c.get("buffer_size", 100000)),
+            seed=seed,
+            train_seed_offset=int(c.get("train_seed_offset", 10000)),
+        )
+
+        scheduler = EvalScheduler.from_budget(max_env_steps, eval_every_env_steps, eval_callback, start_step=0)
+        scheduler.trigger_due(0)
+
+        train_rows: List[Dict[str, Any]] = []
+        env_steps = 0
+        gen_idx = 0
+        try:
+            while env_steps < max_env_steps:
+                gen_idx += 1
+                candidates = cem_sample_candidates(mean, std, pop_size, antithetic, gen)
+                zs = latent_param.eval_candidates_to_zs(candidates, scope=param_scope)
+                fitness, batch_steps = evaluator.evaluate(zs)
+                env_steps += batch_steps
+
+                mean, std = cem_update_step(
+                    mean,
+                    std,
+                    candidates,
+                    torch.as_tensor(fitness, device=device, dtype=mean.dtype),
+                    num_elites=num_elites,
+                    alpha=alpha,
+                    min_sigma=min_sigma,
+                    max_sigma=max_sigma,
+                )
+                latent_param.set_flat_params(mean, scope=param_scope)
+                mean = latent_param.get_flat_params(param_scope).to(device=device)
+
+                with torch.no_grad():
+                    mu_z = latent_param.compute_z()
+                    cos = float(F.cosine_similarity(mu_z.unsqueeze(0), z_r.unsqueeze(0)).item())
+
+                train_rows.append({
+                    "task": task,
+                    "step": gen_idx,
+                    "env_steps": env_steps,
+                    "mean_return": float(fitness.mean()),
+                    "std_return": float(fitness.std()),
+                    "max_return": float(fitness.max()),
+                    "cos_to_zr": cos,
+                    "loss": float("nan"),
+                    "critic_loss": float("nan"),
+                    "sigma_mean": float(std.mean().item()),
+                })
+                scheduler.trigger_due(env_steps)
+        finally:
+            evaluator.close()
+
+        scheduler.finalize(env_steps)
+        return train_rows
+
+
 def build_updater(algo: str, cfg: Dict[str, Any]):
     """Instantiate the updater for ``algo`` ('reinforce', 'lola', or 'rela')."""
     key = normalize_algo_type(algo)

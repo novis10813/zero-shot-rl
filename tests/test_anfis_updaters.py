@@ -16,9 +16,12 @@ from zero_shot_rl.env.sensors import make_domain_env
 from zero_shot_rl.finetune.anfis_updaters import (
     ANFISLatent,
     CandidateEvaluator,
+    CemUpdater,
     DirectZLatent,
     EvalScheduler,
     PhysicsStateBuffer,
+    cem_sample_candidates,
+    cem_update_step,
     fb_q_base,
     load_latent_checkpoint,
     lola_rloo_advantages,
@@ -321,6 +324,75 @@ class ANFISUpdatersUnitTest(unittest.TestCase):
                 )
             finally:
                 ev_la.close()
+
+    def test_cem_update_step_formula_bounds_and_quadratic_convergence(self):
+        mean = torch.tensor([0.0, 0.0])
+        std = torch.tensor([1.0, 1.0])
+        cands = torch.tensor([
+            [1.0, 3.0],   # ret 10 (elite)
+            [3.0, 1.0],   # ret 20 (elite)
+            [-5.0, -5.0], # ret -1
+            [-4.0, -4.0], # ret 0
+        ])
+        rets = torch.tensor([10.0, 20.0, -1.0, 0.0])
+        # Elites are [1, 3] and [3, 1] -> elite_mean = [2, 2], elite_std = [1, 1]
+        new_mean, new_std = cem_update_step(
+            mean, std, cands, rets, num_elites=2, alpha=0.5, min_sigma=0.05, max_sigma=1.5
+        )
+        torch.testing.assert_close(new_mean, torch.tensor([1.0, 1.0]), atol=1e-6, rtol=0)
+        torch.testing.assert_close(new_std, torch.tensor([1.0, 1.0]), atol=1e-6, rtol=0)
+
+        # Identical elites clamp std down to min_sigma when alpha=1.0
+        same_cands = torch.tensor([[2.0, 2.0], [2.0, 2.0], [0.0, 0.0], [0.0, 0.0]])
+        _, clamped_std = cem_update_step(
+            mean, std, same_cands, rets, num_elites=2, alpha=1.0, min_sigma=0.05, max_sigma=1.5
+        )
+        torch.testing.assert_close(clamped_std, torch.tensor([0.05, 0.05]), atol=1e-6, rtol=0)
+
+        # Quadratic optimization convergence in R^6
+        gen = torch.Generator().manual_seed(0)
+        target = torch.tensor([1.5, -2.0, 0.5, 3.0, -1.0, 2.5])
+        mu = torch.zeros(6)
+        sig = torch.full((6,), 2.0)
+        for _ in range(50):
+            xs = cem_sample_candidates(mu, sig, pop_size=48, antithetic=True, generator=gen)
+            fit = -((xs - target) ** 2).sum(dim=-1)
+            mu, sig = cem_update_step(mu, sig, xs, fit, num_elites=16, alpha=0.7, min_sigma=1e-3, max_sigma=3.0)
+        self.assertLess(float((mu - target).norm().item()), 0.05)
+        self.assertLess(float(sig.mean().item()), 0.05)
+
+    def test_cem_improves_anfis_all_consequent_and_direct_z(self):
+        for param_kind, scope in (("anfis", "all"), ("anfis", "consequent"), ("z", "all")):
+            torch.manual_seed(17)
+            z_dim = 16
+            v_star = F.normalize(torch.randn(z_dim), dim=0)
+            if param_kind == "anfis":
+                feats = torch.randn(64, 2)
+                B = torch.randn(64, z_dim)
+                model = ANFIS.from_config(_tiny_anfis_cfg()["anfis"], out_dim=1)
+                model.init_from_data(feats, seed=99)
+                latent_param = ANFISLatent(model, feats, B)
+            else:
+                latent_param = DirectZLatent(z_dim=z_dim, init_z=None, seed=99)
+
+            with torch.no_grad():
+                score_before = float((latent_param.compute_z() @ v_star).item())
+
+            mu = latent_param.get_flat_params(scope)
+            sig = torch.full_like(mu, 0.4)
+            gen = torch.Generator().manual_seed(17)
+            for _ in range(25):
+                cands = cem_sample_candidates(mu, sig, pop_size=20, antithetic=True, generator=gen)
+                zs = latent_param.eval_candidates_to_zs(cands, scope=scope)
+                fit = zs @ v_star
+                mu, sig = cem_update_step(mu, sig, cands, fit, num_elites=5, alpha=0.7, min_sigma=1e-2, max_sigma=2.0)
+                latent_param.set_flat_params(mu, scope)
+                mu = latent_param.get_flat_params(scope)
+
+            with torch.no_grad():
+                score_after = float((latent_param.compute_z() @ v_star).item())
+            self.assertGreater(score_after, score_before + 1.0, f"failed for {param_kind}/{scope}")
+            self.assertIsNotNone(CemUpdater)
 
 
 class ANFISUpdatersIntegrationTest(unittest.TestCase):
