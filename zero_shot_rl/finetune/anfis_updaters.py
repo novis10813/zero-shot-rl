@@ -488,38 +488,67 @@ class PhysicsStateBuffer:
 
 
 class TransitionBuffer:
-    """Fixed-capacity ring buffer of ``(s, a, r, s')`` transitions for ReLA."""
+    """Device-resident fixed-capacity ring buffer of ``(s, a, r, s'[, base_q])`` transitions for ReLA."""
 
-    def __init__(self, capacity: int, obs_dim: int, action_dim: int):
+    def __init__(
+        self,
+        capacity: int,
+        obs_dim: int,
+        action_dim: int,
+        device: torch.device = torch.device("cpu"),
+        store_base_q: bool = False,
+    ):
         self.capacity = int(capacity)
-        self.obs = np.empty((self.capacity, obs_dim), dtype=np.float32)
-        self.actions = np.empty((self.capacity, action_dim), dtype=np.float32)
-        self.rewards = np.empty((self.capacity,), dtype=np.float32)
-        self.next_obs = np.empty((self.capacity, obs_dim), dtype=np.float32)
+        self.device = device
+        self.obs = torch.empty((self.capacity, obs_dim), dtype=torch.float32, device=device)
+        self.actions = torch.empty((self.capacity, action_dim), dtype=torch.float32, device=device)
+        self.rewards = torch.empty((self.capacity,), dtype=torch.float32, device=device)
+        self.next_obs = torch.empty((self.capacity, obs_dim), dtype=torch.float32, device=device)
+        self.base_q: Optional[torch.Tensor] = (
+            torch.empty((self.capacity,), dtype=torch.float32, device=device) if store_base_q else None
+        )
         self._ptr = 0
         self._size = 0
 
     def __len__(self) -> int:
         return self._size
 
-    def add(self, obs: np.ndarray, action: np.ndarray, reward: float, next_obs: np.ndarray) -> None:
-        self.obs[self._ptr] = obs
-        self.actions[self._ptr] = action
-        self.rewards[self._ptr] = float(reward)
-        self.next_obs[self._ptr] = next_obs
-        self._ptr = (self._ptr + 1) % self.capacity
+    @torch.no_grad()
+    def add(
+        self,
+        obs: Any,
+        action: Any,
+        reward: float,
+        next_obs: Any,
+        base_q: Optional[torch.Tensor] = None,
+    ) -> None:
+        idx = self._ptr
+        self.obs[idx].copy_(torch.as_tensor(obs, dtype=torch.float32, device=self.device))
+        self.actions[idx].copy_(torch.as_tensor(action, dtype=torch.float32, device=self.device))
+        self.rewards[idx] = float(reward)
+        self.next_obs[idx].copy_(torch.as_tensor(next_obs, dtype=torch.float32, device=self.device))
+        if self.base_q is not None and base_q is not None:
+            self.base_q[idx].copy_(base_q.detach().reshape(()))
+        self._ptr = (idx + 1) % self.capacity
         self._size = min(self._size + 1, self.capacity)
 
     def sample(
         self, batch_size: int, rng: np.random.Generator, device: torch.device
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        idx = rng.integers(0, self._size, size=batch_size)
+        idx = torch.as_tensor(rng.integers(0, self._size, size=batch_size), dtype=torch.long, device=self.device)
         return (
-            torch.as_tensor(self.obs[idx], dtype=torch.float32, device=device),
-            torch.as_tensor(self.actions[idx], dtype=torch.float32, device=device),
-            torch.as_tensor(self.rewards[idx], dtype=torch.float32, device=device),
-            torch.as_tensor(self.next_obs[idx], dtype=torch.float32, device=device),
+            self.obs[idx].to(device),
+            self.actions[idx].to(device),
+            self.rewards[idx].to(device),
+            self.next_obs[idx].to(device),
         )
+
+    def sample_with_base_q(
+        self, batch_size: int, generator: torch.Generator
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
+        idx = torch.randint(0, self._size, (batch_size,), generator=generator, device=self.device)
+        bq = self.base_q[idx] if self.base_q is not None else None
+        return self.obs[idx], self.actions[idx], self.rewards[idx], self.next_obs[idx], bq
 
 
 class CandidateEvaluator:
@@ -1077,9 +1106,11 @@ class LolaUpdater:
 
 
 @torch.no_grad()
-def _polyak_update(online: nn.Module, target: nn.Module, tau: float) -> None:
-    for p, tp in zip(online.parameters(), target.parameters()):
-        tp.data.mul_(1.0 - tau).add_(p.data, alpha=tau)
+def _polyak_update_params(
+    online_params: Sequence[torch.Tensor], target_params: Sequence[torch.Tensor], tau: float
+) -> None:
+    torch._foreach_mul_(target_params, 1.0 - tau)
+    torch._foreach_add_(target_params, online_params, alpha=tau)
 
 
 class RelaUpdater:
@@ -1134,7 +1165,6 @@ class RelaUpdater:
         log_every_env_steps = int(c.get("log_every_env_steps", 1000))
         train_offset = int(c.get("train_seed_offset", 10000))
 
-        rng = np.random.default_rng(seed)
         gen = torch.Generator(device=device).manual_seed(seed)
 
         env = make_domain_env(domain, train_offset + seed, dynamics=dynamics)
@@ -1155,8 +1185,11 @@ class RelaUpdater:
 
         critic_opt = torch.optim.Adam(critic.parameters(), lr=critic_lr)
         actor_opt = torch.optim.Adam(latent_param.parameters(), lr=actor_lr, weight_decay=weight_decay)
+        critic_params = list(critic.parameters())
+        target_params = list(target_critic.parameters())
+        actor_params = list(latent_param.parameters())
 
-        buffer = TransitionBuffer(buffer_size, obs_dim, action_dim)
+        buffer = TransitionBuffer(buffer_size, obs_dim, action_dim, device=device, store_base_q=use_residual)
         scheduler = EvalScheduler.from_budget(
             max_steps=max_env_steps,
             eval_every=eval_every_env_steps,
@@ -1173,8 +1206,10 @@ class RelaUpdater:
         train_rows: List[Dict[str, Any]] = []
         ep_return = 0.0
         completed_returns: List[float] = []
-        critic_losses: List[float] = []
-        actor_losses: List[float] = []
+        critic_loss_sum = torch.zeros((), device=device)
+        critic_loss_count = 0
+        actor_loss_sum = torch.zeros((), device=device)
+        actor_loss_count = 0
         critic_updates = 0
         actor_updates = 0
 
@@ -1186,17 +1221,23 @@ class RelaUpdater:
             for env_step in range(1, max_env_steps + 1):
                 with torch.no_grad():
                     s_t = torch.as_tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
-                    a_det = policy(agent, s_t, z_curr.unsqueeze(0))[0].cpu().numpy()
-                if exploration_std > 0:
-                    noise = rng.normal(0.0, exploration_std, size=action_dim).astype(np.float32)
-                    action = np.clip(a_det + noise, -1.0, 1.0)
-                else:
-                    action = a_det
+                    a_det_t = policy(agent, s_t, z_curr.unsqueeze(0))[0]
+                    if exploration_std > 0:
+                        noise_t = torch.randn(action_dim, generator=gen, device=device, dtype=a_det_t.dtype) * exploration_std
+                        a_t = (a_det_t + noise_t).clamp(-1.0, 1.0)
+                    else:
+                        a_t = a_det_t
+                    base_q_t = (
+                        fb_q_base(agent, s_t, a_t.unsqueeze(0), z_r, w_r, head=fb_q_head)[0]
+                        if use_residual
+                        else None
+                    )
+                    action = a_t.cpu().numpy()
 
                 ts = env.step(action)
                 next_obs = np.asarray(ts.observation["observations"], dtype=np.float32)
                 reward = float(reward_fn(env.physics))
-                buffer.add(obs, action, reward, next_obs)
+                buffer.add(s_t[0], a_t, reward, next_obs, base_q=base_q_t)
                 ep_return += reward
 
                 if ts.last():
@@ -1208,74 +1249,102 @@ class RelaUpdater:
                     obs = next_obs
 
                 if env_step >= warmup_steps and len(buffer) >= batch_size:
-                    for _ in range(utd):
-                        s_b, a_b, r_b, s_next_b = buffer.sample(batch_size, rng, device)
+                    # Fuse frozen-FB target evaluations across consecutive UTD steps sharing the same z_curr.
+                    remaining = utd
+                    while remaining > 0:
+                        if env_step >= actor_warmup_steps:
+                            steps_to_actor = actor_update_freq - (critic_updates % actor_update_freq)
+                            chunk = min(remaining, steps_to_actor)
+                        else:
+                            chunk = remaining
+                        total_b = chunk * batch_size
+                        s_c, a_c, r_c, sn_c, bq_c = buffer.sample_with_base_q(total_b, gen)
 
-                        # 1. TD3 critic update on Q_base(s, a) + Q_res(s, a)
                         with torch.no_grad():
-                            z_exp = z_curr.unsqueeze(0).expand(batch_size, -1)
-                            a_next = policy(agent, s_next_b, z_exp)
+                            z_exp = z_curr.unsqueeze(0).expand(total_b, -1)
+                            a_next_c = policy(agent, sn_c, z_exp)
                             if target_policy_noise > 0:
                                 eps_t = torch.randn(
-                                    a_next.shape, generator=gen, device=device, dtype=a_next.dtype
+                                    a_next_c.shape, generator=gen, device=device, dtype=a_next_c.dtype
                                 ) * target_policy_noise
                                 eps_t = eps_t.clamp(-target_noise_clip, target_noise_clip)
-                                a_next = (a_next + eps_t).clamp(-1.0, 1.0)
-                            tq1, tq2 = target_critic(s_next_b, a_next)
-                            tq_res = torch.minimum(tq1, tq2)
-                            if use_residual:
-                                tq_base = fb_q_base(agent, s_next_b, a_next, z_r, w_r, head=fb_q_head)
-                                target_q = r_b + discount * (tq_base + tq_res)
-                                base_q = fb_q_base(agent, s_b, a_b, z_r, w_r, head=fb_q_head)
+                                a_next_c = (a_next_c + eps_t).clamp(-1.0, 1.0)
+                            tq_base_c = (
+                                fb_q_base(agent, sn_c, a_next_c, z_r, w_r, head=fb_q_head)
+                                if use_residual
+                                else None
+                            )
+
+                        last_s_b = s_c[:batch_size]
+                        for u in range(chunk):
+                            lo = u * batch_size
+                            hi = lo + batch_size
+                            s_b = s_c[lo:hi]
+                            a_b = a_c[lo:hi]
+                            r_b = r_c[lo:hi]
+                            sn_b = sn_c[lo:hi]
+                            a_next_b = a_next_c[lo:hi]
+                            last_s_b = s_b
+
+                            # 1. TD3 critic update on Q_base(s, a) + Q_res(s, a)
+                            with torch.no_grad():
+                                tq1, tq2 = target_critic(sn_b, a_next_b)
+                                tq_res = torch.minimum(tq1, tq2)
+                                if use_residual and tq_base_c is not None:
+                                    target_q = r_b + discount * (tq_base_c[lo:hi] + tq_res)
+                                else:
+                                    target_q = r_b + discount * tq_res
+
+                            q1_res, q2_res = critic(s_b, a_b)
+                            if use_residual and bq_c is not None:
+                                base_q = bq_c[lo:hi]
+                                q1_pred = base_q + q1_res
+                                q2_pred = base_q + q2_res
                             else:
-                                target_q = r_b + discount * tq_res
-                                base_q = None
+                                q1_pred = q1_res
+                                q2_pred = q2_res
 
-                        q1_res, q2_res = critic(s_b, a_b)
-                        if use_residual and base_q is not None:
-                            q1_pred = base_q + q1_res
-                            q2_pred = base_q + q2_res
-                        else:
-                            q1_pred = q1_res
-                            q2_pred = q2_res
-
-                        c_loss = F.mse_loss(q1_pred, target_q) + F.mse_loss(q2_pred, target_q)
-                        critic_opt.zero_grad()
-                        c_loss.backward()
-                        if grad_clip is not None and grad_clip > 0:
-                            torch.nn.utils.clip_grad_norm_(critic.parameters(), grad_clip)
-                        critic_opt.step()
-                        _polyak_update(critic, target_critic, tau)
-                        critic_losses.append(float(c_loss.item()))
-                        critic_updates += 1
+                            c_loss = F.mse_loss(q1_pred, target_q) + F.mse_loss(q2_pred, target_q)
+                            critic_opt.zero_grad(set_to_none=True)
+                            c_loss.backward()
+                            if grad_clip is not None and grad_clip > 0:
+                                torch.nn.utils.clip_grad_norm_(critic_params, grad_clip)
+                            critic_opt.step()
+                            _polyak_update_params(critic_params, target_params, tau)
+                            critic_loss_sum.add_(c_loss.detach())
+                            critic_loss_count += 1
+                            critic_updates += 1
 
                         # 2. Latent actor update through frozen FB actor & Q_base + Q_res
                         if env_step >= actor_warmup_steps and critic_updates % actor_update_freq == 0:
-                            for p in critic.parameters():
+                            for p in critic_params:
                                 p.requires_grad_(False)
                             latent_param.train()
-                            actor_opt.zero_grad()
+                            actor_opt.zero_grad(set_to_none=True)
                             z_phi = latent_param.compute_z()
-                            a_phi = policy(agent, s_b, z_phi.unsqueeze(0).expand(batch_size, -1))
-                            q1_a, _ = critic(s_b, a_phi)
+                            a_phi = policy(agent, last_s_b, z_phi.unsqueeze(0).expand(batch_size, -1))
+                            q1_a, _ = critic(last_s_b, a_phi)
                             if use_residual:
-                                q_base_a = fb_q_base(agent, s_b, a_phi, z_r, w_r, head=fb_q_head)
+                                q_base_a = fb_q_base(agent, last_s_b, a_phi, z_r, w_r, head=fb_q_head)
                                 q_actor = q_base_a + q1_a
                             else:
                                 q_actor = q1_a
                             a_loss = -q_actor.mean()
                             a_loss.backward()
                             if grad_clip is not None and grad_clip > 0:
-                                torch.nn.utils.clip_grad_norm_(latent_param.parameters(), grad_clip)
+                                torch.nn.utils.clip_grad_norm_(actor_params, grad_clip)
                             actor_opt.step()
                             latent_param.post_step()
                             latent_param.eval()
-                            for p in critic.parameters():
+                            for p in critic_params:
                                 p.requires_grad_(True)
                             with torch.no_grad():
                                 z_curr = latent_param.compute_z().detach()
-                            actor_losses.append(float(a_loss.item()))
+                            actor_loss_sum.add_(a_loss.detach())
+                            actor_loss_count += 1
                             actor_updates += 1
+
+                        remaining -= chunk
 
                 if env_step % log_every_env_steps == 0 or env_step == max_env_steps:
                     with torch.no_grad():
@@ -1297,13 +1366,17 @@ class RelaUpdater:
                         "std_return": std_r,
                         "max_return": max_r,
                         "cos_to_zr": cos,
-                        "loss": float(np.mean(actor_losses)) if actor_losses else float("nan"),
-                        "critic_loss": float(np.mean(critic_losses)) if critic_losses else float("nan"),
+                        "loss": float((actor_loss_sum / actor_loss_count).item()) if actor_loss_count else float("nan"),
+                        "critic_loss": (
+                            float((critic_loss_sum / critic_loss_count).item()) if critic_loss_count else float("nan")
+                        ),
                         "sigma_mean": exploration_std,
                     })
                     completed_returns.clear()
-                    critic_losses.clear()
-                    actor_losses.clear()
+                    critic_loss_sum.zero_()
+                    critic_loss_count = 0
+                    actor_loss_sum.zero_()
+                    actor_loss_count = 0
 
                 scheduler.trigger_due(env_step)
         finally:

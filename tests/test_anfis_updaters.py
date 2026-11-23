@@ -22,6 +22,7 @@ from zero_shot_rl.finetune.anfis_updaters import (
     DirectZLatent,
     EvalScheduler,
     PhysicsStateBuffer,
+    TransitionBuffer,
     cem_sample_candidates,
     cem_update_step,
     fb_q_base,
@@ -491,6 +492,33 @@ class ANFISUpdatersUnitTest(unittest.TestCase):
                 score_after = float((latent_param.compute_z() @ v_star).item())
             self.assertGreater(score_after, score_before + 1.0, f"failed for {param_kind}/diag={diag}")
             self.assertIsNotNone(CmaEsUpdater)
+
+    def test_transition_buffer_device_and_cached_base_q(self):
+        agent = _make_tiny_fb(obs_dim=24, act_dim=6, z_dim=12)
+        torch.manual_seed(0)
+        obs = torch.randn(16, 24)
+        acts = torch.randn(16, 6).clamp(-1.0, 1.0)
+        rewards = torch.rand(16, 1)
+        with torch.no_grad():
+            B = agent.FB.backward_representation(obs)
+            z_r = weighted_z(rewards, B)
+            w_r = unnormalized_w_r(rewards, B)
+            expected_bq = fb_q_base(agent, obs, acts, z_r, w_r, head="min")
+
+        buf = TransitionBuffer(capacity=32, obs_dim=24, action_dim=6, device=torch.device("cpu"), store_base_q=True)
+        for i in range(16):
+            buf.add(obs[i], acts[i], float(rewards[i].item()), obs[(i + 1) % 16], base_q=expected_bq[i])
+        self.assertEqual(len(buf), 16)
+        gen = torch.Generator().manual_seed(0)
+        s_b, a_b, r_b, sn_b, bq_b = buf.sample_with_base_q(8, gen)
+        self.assertEqual(s_b.shape, (8, 24))
+        self.assertEqual(a_b.shape, (8, 6))
+        self.assertEqual(r_b.shape, (8,))
+        self.assertEqual(sn_b.shape, (8, 24))
+        self.assertIsNotNone(bq_b)
+        with torch.no_grad():
+            recomputed = fb_q_base(agent, s_b, a_b, z_r, w_r, head="min")
+        torch.testing.assert_close(bq_b, recomputed, atol=1e-6, rtol=0)
 
 
 class ANFISUpdatersIntegrationTest(unittest.TestCase):
