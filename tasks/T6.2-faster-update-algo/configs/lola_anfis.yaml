@@ -35,8 +35,8 @@ lola:
   learn_std: true
   min_sigma: 0.01
   max_sigma: 2.0
-  lr: 0.05
-  std_lr: null
+  lr: 0.01
+  std_lr: 0.05
   weight_decay: 0.0
   grad_clip: 1.0
   normalize_advantages: false
