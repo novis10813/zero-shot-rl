@@ -17,6 +17,10 @@ class T62ConfigsTest(unittest.TestCase):
             ("lola_z.yaml", "lola", "z"),
             ("rela_z.yaml", "rela", "z"),
             ("lola_anfis.yaml", "lola", "anfis"),
+            ("cem_z.yaml", "cem", "z"),
+            ("cem_anfis.yaml", "cem", "anfis"),
+            ("cmaes_z.yaml", "cmaes", "z"),
+            ("cmaes_anfis.yaml", "cmaes", "anfis"),
         ):
             cfg = load_config(str(TASK_DIR / "configs" / fname))
             self.assertEqual(cfg["algo"], expected_algo)
