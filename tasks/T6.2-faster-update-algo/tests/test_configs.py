@@ -13,10 +13,14 @@ TASK_DIR = REPO / "tasks/T6.2-faster-update-algo"
 
 class T62ConfigsTest(unittest.TestCase):
     def test_lola_and_rela_paper_configs(self):
-        for fname, expected_algo in (("lola_z.yaml", "lola"), ("rela_z.yaml", "rela")):
+        for fname, expected_algo, expected_param in (
+            ("lola_z.yaml", "lola", "z"),
+            ("rela_z.yaml", "rela", "z"),
+            ("lola_anfis.yaml", "lola", "anfis"),
+        ):
             cfg = load_config(str(TASK_DIR / "configs" / fname))
             self.assertEqual(cfg["algo"], expected_algo)
-            self.assertEqual(cfg["param"], "z")
+            self.assertEqual(cfg["param"], expected_param)
             self.assertTrue(cfg["zero_shot_init"])
             self.assertEqual(cfg["budget"]["max_env_steps"], 800000)
             self.assertEqual(cfg["budget"]["eval_every_env_steps"], 40000)
