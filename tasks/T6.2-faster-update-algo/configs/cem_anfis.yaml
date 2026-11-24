@@ -27,7 +27,7 @@ cem:
   pop_size: 16                 # 50 generations over 800k steps (full episodes)
   elite_frac: 0.25             # top 4 elites per generation
   num_elites: null
-  init_sigma: 0.1              # scaled for ~200 normalized ANFIS parameters
+  init_sigma: 0.5              # tuned via T6.2 sigma probe (0.1 / 0.3 / 0.5)
   min_sigma: 0.005
   max_sigma: 1.0
   alpha: 0.7
