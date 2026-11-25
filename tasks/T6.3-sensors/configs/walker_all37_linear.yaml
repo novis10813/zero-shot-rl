@@ -1,0 +1,61 @@
+# All 37 Walker sensors with one linguistic term each: a single rule, so the first_order ANFIS
+# reduces to a linear reward r(s) = W x(s) + b over the z-scored sensors (38 parameters).
+# The Cartesian grid cannot hold 37 sensors with 2 terms (2^37 rules).
+
+anfis:
+  domain: walker
+  normalize_inputs: true
+  temperature: null
+  t_norm: product
+  normalize_firing: true
+  max_rules: 1
+
+  default_membership:
+    type: gaussian
+    min_sigma: 0.001
+    init_sigma: 1.0
+
+  sensors:
+    torso_height: { enabled: true, num_terms: 1 }
+    torso_upright: { enabled: true, num_terms: 1 }
+    horizontal_velocity: { enabled: true, num_terms: 1 }
+    angmomentum: { enabled: true, num_terms: 1 }
+    com_vz: { enabled: true, num_terms: 1 }
+    qvel_rootz: { enabled: true, num_terms: 1 }
+    qvel_rootx: { enabled: true, num_terms: 1 }
+    qvel_rooty: { enabled: true, num_terms: 1 }
+    qvel_right_hip: { enabled: true, num_terms: 1 }
+    qvel_right_knee: { enabled: true, num_terms: 1 }
+    qvel_right_ankle: { enabled: true, num_terms: 1 }
+    qvel_left_hip: { enabled: true, num_terms: 1 }
+    qvel_left_knee: { enabled: true, num_terms: 1 }
+    qvel_left_ankle: { enabled: true, num_terms: 1 }
+    qpos_rootz: { enabled: true, num_terms: 1 }
+    qpos_rootx: { enabled: true, num_terms: 1 }
+    qpos_rooty: { enabled: true, num_terms: 1 }
+    qpos_right_hip: { enabled: true, num_terms: 1 }
+    qpos_right_knee: { enabled: true, num_terms: 1 }
+    qpos_right_ankle: { enabled: true, num_terms: 1 }
+    qpos_left_hip: { enabled: true, num_terms: 1 }
+    qpos_left_knee: { enabled: true, num_terms: 1 }
+    qpos_left_ankle: { enabled: true, num_terms: 1 }
+    orient_torso_xx: { enabled: true, num_terms: 1 }
+    orient_torso_xz: { enabled: true, num_terms: 1 }
+    orient_right_thigh_xx: { enabled: true, num_terms: 1 }
+    orient_right_thigh_xz: { enabled: true, num_terms: 1 }
+    orient_right_leg_xx: { enabled: true, num_terms: 1 }
+    orient_right_leg_xz: { enabled: true, num_terms: 1 }
+    orient_right_foot_xx: { enabled: true, num_terms: 1 }
+    orient_right_foot_xz: { enabled: true, num_terms: 1 }
+    orient_left_thigh_xx: { enabled: true, num_terms: 1 }
+    orient_left_thigh_xz: { enabled: true, num_terms: 1 }
+    orient_left_leg_xx: { enabled: true, num_terms: 1 }
+    orient_left_leg_xz: { enabled: true, num_terms: 1 }
+    orient_left_foot_xx: { enabled: true, num_terms: 1 }
+    orient_left_foot_xz: { enabled: true, num_terms: 1 }
+
+  consequent:
+    type: first_order
+
+  output_activation: identity
+  init_from_data: true
