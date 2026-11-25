@@ -27,6 +27,12 @@ membership 參數取 `init_from_data` 的初始化。
 輸出 `data/zdict_rank.csv`（每組的數值秩、有效秩、條件數、四個任務 $z_r$ 的投影殘差）與
 `data/zdict_spectra.npz`（完整奇異值）。
 
+`REPORT.md` 的表格取自 `data/zdict_rank.csv`。文中提到的個別奇異值比例 $\sigma_i/\sigma_1$ 由下列指令列出：
+
+```bash
+uv run python -c "import numpy as np; d = np.load('tasks/T6.3-sensors/data/zdict_spectra.npz'); [print(k, d[k] / d[k][0]) for k in d.files]"
+```
+
 ## 測試
 
 ```bash
