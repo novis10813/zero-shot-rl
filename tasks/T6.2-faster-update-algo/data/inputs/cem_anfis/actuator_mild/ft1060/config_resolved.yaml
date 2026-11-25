@@ -1,0 +1,332 @@
+algo: cem
+param: anfis
+zero_shot_init: true
+budget:
+  max_env_steps: 800000
+  eval_every_env_steps: 40000
+anfis:
+  domain: walker
+  normalize_inputs: true
+  temperature: null
+  t_norm: product
+  normalize_firing: true
+  max_rules: 256
+  default_membership:
+    type: gaussian
+    min_sigma: 0.001
+    init_sigma: 1.0
+  sensors:
+    torso_height:
+      enabled: true
+      num_terms: 3
+      membership:
+        type: gaussian
+        min_sigma: 0.001
+        init_sigma: 1.0
+    torso_upright:
+      enabled: true
+      num_terms: 2
+      membership:
+        type: gaussian
+    horizontal_velocity:
+      enabled: true
+      num_terms: 3
+      membership:
+        type: gaussian
+    angmomentum:
+      enabled: true
+      num_terms: 2
+      membership:
+        type: gaussian
+    com_vz:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qvel_rootz:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qvel_rootx:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qvel_rooty:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qvel_right_hip:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qvel_right_knee:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qvel_right_ankle:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qvel_left_hip:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qvel_left_knee:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qvel_left_ankle:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qpos_rootz:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qpos_rootx:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qpos_rooty:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qpos_right_hip:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qpos_right_knee:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qpos_right_ankle:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qpos_left_hip:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qpos_left_knee:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    qpos_left_ankle:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    orient_torso_xx:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    orient_torso_xz:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    orient_right_thigh_xx:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    orient_right_thigh_xz:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    orient_right_leg_xx:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    orient_right_leg_xz:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    orient_right_foot_xx:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    orient_right_foot_xz:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    orient_left_thigh_xx:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    orient_left_thigh_xz:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    orient_left_leg_xx:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    orient_left_leg_xz:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    orient_left_foot_xx:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+    orient_left_foot_xz:
+      enabled: false
+      num_terms: 2
+      membership:
+        type: gaussian
+  consequent:
+    type: first_order
+  output_activation: identity
+  init_from_data: true
+reference:
+  dataset_transitions: 100000
+  z_inference_steps: 10000
+  seed: 42
+  discount: 0.98
+warmstart:
+  enabled: true
+  steps: 500
+  lr: 0.01
+  weight_decay: 0.0
+reinforce:
+  iters: 50
+  pop_size: 16
+  antithetic: true
+  sigma: 0.5
+  lr: 0.01
+  weight_decay: 0.0
+  grad_clip: 1.0
+  train_episodes_per_z: 1
+  train_seed_offset: 106000
+  seed: 1060
+lola:
+  horizon: 100
+  num_start_states: 2
+  num_latents: 5
+  init_state_prob: 0.2
+  bootstrap: true
+  fb_q_head: min
+  discount: 0.98
+  init_sigma: 0.5
+  learn_std: true
+  min_sigma: 0.01
+  max_sigma: 2.0
+  lr: 0.05
+  std_lr: null
+  weight_decay: 0.0
+  grad_clip: 1.0
+  normalize_advantages: false
+  buffer_size: 100000
+  train_seed_offset: 10000
+  seed: 0
+rela:
+  use_residual: true
+  hidden_dim: null
+  residual_hidden_dim: 64
+  scratch_hidden_dim: 1024
+  critic_layers: 2
+  fb_q_head: min
+  discount: 0.98
+  tau: 0.005
+  utd: 4
+  actor_update_freq: 4
+  batch_size: 256
+  buffer_size: 300000
+  exploration_std: 0.1
+  target_policy_noise: 0.2
+  target_noise_clip: 0.3
+  warmup_steps: 256
+  actor_warmup_steps: 0
+  critic_lr: 0.0001
+  actor_lr: 0.0001
+  weight_decay: 0.0
+  grad_clip: 1.0
+  log_every_env_steps: 1000
+  train_seed_offset: 10000
+  seed: 0
+cem:
+  pop_size: 16
+  elite_frac: 0.25
+  num_elites: null
+  init_sigma: 0.5
+  min_sigma: 0.005
+  max_sigma: 1.0
+  alpha: 0.7
+  antithetic: true
+  param_scope: all
+  train_episodes_per_z: 1
+  episode_steps: null
+  horizon: null
+  num_start_states: 2
+  init_state_prob: 0.2
+  bootstrap: true
+  fb_q_head: min
+  discount: 0.98
+  buffer_size: 100000
+  train_seed_offset: 106000
+  seed: 1060
+cmaes:
+  pop_size: null
+  init_sigma: 0.3
+  min_sigma: 0.0001
+  max_sigma: 5.0
+  diagonal: false
+  param_scope: all
+  train_episodes_per_z: 1
+  episode_steps: null
+  horizon: null
+  num_start_states: 2
+  init_state_prob: 0.2
+  bootstrap: true
+  fb_q_head: min
+  discount: 0.98
+  buffer_size: 100000
+  train_seed_offset: 10000
+  seed: 0
+eval:
+  tasks:
+  - stand
+  - walk
+  - run
+  - flip
+  eval_every: 10
+  eval_episodes: 20
+  eval_seed_start: 5
+provenance:
+  anfis_config: configs/anfis/walker.yaml
+  config: tasks/T6.2-faster-update-algo/configs/cem_anfis.yaml
+  checkpoint: /home/sam/zsrl-artifacts/T4.1.3.1-residual-soft-q/zero-shot-rl-297/660000.pt
+  checkpoint_sha256: 9b194f3546a8377ce8d918c1f4512571b1123166333d6dd3948b71cc48bc31a8
+  dataset_path: /home/sam/zsrl-datasets/walker/rnd/dataset.npz
+  dynamics: tasks/T3.2-ood-robustness/configs/actuator_mild.yaml
+  eval_models_dir: null
+  eval_model_tag: null
