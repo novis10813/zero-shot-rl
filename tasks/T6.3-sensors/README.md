@@ -78,6 +78,21 @@ PYTHONPATH=.:tasks/T6.3-sensors MUJOCO_GL=egl uv run python -m analyze.z_reward 
 PYTHONPATH=.:tasks/T6.3-sensors uv run python -m analyze.z_reward_figs
 ```
 
+## 用 Walker reward 公式配適隱含 reward
+
+先匯出 reference 狀態（B、4 個 sensors、真實 reward），之後的配適不需要模擬器：
+
+```bash
+PYTHONPATH=.:tasks/T6.3-sensors MUJOCO_GL=egl uv run python -m analyze.reference_states \
+  --checkpoint <FB 660000.pt> --dataset_path datasets/walker/rnd/dataset.npz
+```
+
+輸出 `data/inputs/reference_states.npz`。以 13 個參數的 Walker reward 公式配適真實 reward、$r_{z_r}$ 與 `data/inputs/found_z.npz` 的 $r_z$，輸出 `data/reward_template.csv` 與 `data/reward_template.md`：
+
+```bash
+PYTHONPATH=.:tasks/T6.3-sensors OMP_NUM_THREADS=1 uv run python -m analyze.reward_template
+```
+
 ## 測試
 
 ```bash
