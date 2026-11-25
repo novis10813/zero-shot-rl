@@ -56,6 +56,28 @@ lab sweep tasks/T6.3-sensors/configs/sweep_sepcmaes_z_high_mild.yaml
 PYTHONPATH=.:tasks/T6.3-sensors uv run python -m analyze.sep_vs_full
 ```
 
+## 找到的 $z$ 隱含的 reward
+
+$r_z(s) = B(s)^\top \Sigma_B^{-1} z$ 是 $B$ 張成空間中唯一產生 $z$ 的 reward。先從 T6.2 的模型取出 800k 步的 $z$（sep-CMA-ES ANFIS 4 sensors 與 full-cov CMA-ES 直接搜 $z$，各 4 環境 × 10 seeds）：
+
+```bash
+PYTHONPATH=.:tasks/T6.3-sensors uv run python -m analyze.extract_found_z \
+  --artifacts_dir <T6.2 artifacts 目錄>
+```
+
+輸出 `data/inputs/found_z.npz`。在 reference 狀態上計算 $r_z$，輸出 `data/z_reward_corr.csv`（與真實 reward 和 $r_{z_r}$ 的相關係數）與 `data/z_reward_bins.npz`（沿 4 個 sensors 分箱的平均）：
+
+```bash
+PYTHONPATH=.:tasks/T6.3-sensors MUJOCO_GL=egl uv run python -m analyze.z_reward \
+  --checkpoint <FB 660000.pt> --dataset_path datasets/walker/rnd/dataset.npz --out_dir tasks/T6.3-sensors/data
+```
+
+由 `data/z_reward_bins.npz` 畫出 `figures/z_reward/<task>.png`：
+
+```bash
+PYTHONPATH=.:tasks/T6.3-sensors uv run python -m analyze.z_reward_figs
+```
+
 ## 測試
 
 ```bash
