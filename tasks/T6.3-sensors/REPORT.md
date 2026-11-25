@@ -1,8 +1,11 @@
 # T6.3-sensors：ANFIS 規則字典的秩與 sensor 數量
 
-在固定的 FB 模型下，ANFIS 能產生的任務潛向量 $z$ 全部落在一個字典矩陣 $\mathbf{Z}_{\text{dict}}$ 的欄空間裡。本報告比較 4、8、37 個 sensors 時這個欄空間的大小與數值條件，判斷增加 sensors 會不會讓 ANFIS 表示更多任務。
+在固定的 FB 模型下，ANFIS 能產生的任務潛向量 $z$ 全部落在一個字典矩陣 $\mathbf{Z}_{\text{dict}}$ 的欄空間裡。本報告比較 4、8、37 個 sensors 時這個欄空間的大小與數值條件，判斷增加 sensors 會不會讓 ANFIS 表示更多任務，並用一個對照實驗解釋 T6.2 中直接搜 $z$ 優於 ANFIS 的原因。
 
-結論：在 fuzzy 規則結構下，4 個 sensors 已經能表示所有 $z \in \mathbb{R}^{50}$。增加到 8 個 sensors 不擴大表示範圍，只把字典的條件數從 2137 降到 258。37 個 sensors 的線性 reward 則表示不完全，四個任務的 $z_r$ 殘差在 3.5% 到 17.4% 之間。
+結論：
+
+- 在 fuzzy 規則結構下，4 個 sensors 已經能表示所有 $z \in \mathbb{R}^{50}$。增加到 8 個 sensors 不擴大表示範圍，只把字典的條件數從 2137 降到 258。37 個 sensors 的線性 reward 則表示不完全，四個任務的 $z_r$ 殘差在 3.5% 到 17.4% 之間。
+- 將 T6.2 直接搜 $z$ 的 full-cov CMA-ES 換成與 ANFIS 相同的 sep-CMA-ES 後，4 環境平均 select IQM 是 652.9，與 full-cov 的 645.3 相當，仍比 ANFIS 高約 95 分。T6.2 中直接搜 $z$ 的領先來自搜尋空間，不是演算法。
 
 ## 1. 方法
 
@@ -56,10 +59,57 @@ $$z \propto \mathbb{E}_\rho\big[B(s)\,r(s)\big] = \mathbf{Z}_{\text{dict}}\,\the
 
 **對 sensors 搜尋實驗的意義。** 在 fuzzy 規則結構下，sensors 數量不影響能表示哪些 $z$。之後 CMA-ES 比較 4 和 8 sensors 時，結果反映的是「條件數改善」和「搜尋維度增加約 10 倍」之間的取捨。37 sensors 線性版的上限本來就比較低，它表現較差不能用來說明 sensors 越多越好。
 
-## 4. 限制
+## 4. 對照實驗：sep-CMA-ES 直接搜 $z$
+
+T6.2 中直接搜 $z$ 用 full-cov CMA-ES，ANFIS 用 sep-CMA-ES（對角共變異數）。為了分開演算法與搜尋空間的影響，本實驗用 sep-CMA-ES 直接搜 $z$。
+
+**設定**
+
+- 設定檔 `configs/sepcmaes_z.yaml` 與 T6.2 的 `cmaes_z.yaml` 只差 `diagonal: true`：`pop_size=16`、$\sigma_0=0.5$、從 $z_r$ 開始、每個任務 800,000 環境步數、每 40,000 步在 20 個評估環境（種子 `5..24`）評估一次。
+- 環境與 T6.2 相同：`friction_mild`、`friction_high_mild`、`actuator_mild`、`actuator_high_mild`。
+- 只跑 3 個 finetune seeds（1000、1010、1020）。表中 T6.2 的三個條件也只取這 3 個 seeds，所有列的環境與 seeds 完全配對。
+- 每個環境以 Table 6（Jeen et al. 2024，`analysis.table6_aggregate`）彙整。`select IQM` 是所有評估點中 all-task IQM 最高者，`final IQM` 是第 800,000 步的 all-task IQM。
+
+**4 環境平均**
+
+資料來源：`data/sep_vs_full.csv`。
+
+| 演算法 | 搜尋空間 | select IQM | final IQM | stand | walk | run | flip |
+|---|---|---:|---:|---:|---:|---:|---:|
+| sep-CMA-ES | $z$ | 652.9 | 641.2 | 860.1 | 760.9 | 282.9 | 521.5 |
+| full-cov CMA-ES（T6.2） | $z$ | 645.3 | 642.7 | 862.4 | 747.4 | 274.6 | 538.0 |
+| sep-CMA-ES（T6.2） | ANFIS 4 sensors | 560.1 | 552.0 | 742.9 | 645.1 | 220.5 | 458.9 |
+| sep-CMA-ES（T6.2） | ANFIS custom sensors | 554.3 | 538.7 | 756.2 | 629.7 | 232.6 | 447.7 |
+
+各任務欄是第 800,000 步的分數。
+
+**各環境的 select IQM**
+
+| 環境 | sep-CMA-ES $z$ | full-cov CMA-ES $z$ | sep-CMA-ES ANFIS 4 sensors | sep-CMA-ES ANFIS custom sensors |
+|---|---:|---:|---:|---:|
+| friction_mild | 649.1 | 626.6 | 515.8 | 511.8 |
+| friction_high_mild | 650.4 | 642.1 | 581.5 | 580.3 |
+| actuator_mild | 546.8 | 556.3 | 497.1 | 479.3 |
+| actuator_high_mild | 765.5 | 756.2 | 646.1 | 645.6 |
+
+**解讀**
+
+- **演算法不是主因。** 直接搜 $z$ 時，sep 與 full-cov 在 4 個環境的 select IQM 差距都在 23 分以內，互有勝負。在 50 維的 $z$ 空間裡，學不學共變異數的旋轉幾乎沒有影響。
+- **搜尋空間是主因。** 演算法同為 sep-CMA-ES 時，ANFIS 的 4 環境平均 select IQM 比直接搜 $z$ 低 93 到 99 分。4 個環境 × 4 個任務的 16 格中，兩種 ANFIS 的最終分數都低於 sep-CMA-ES 直接搜 $z$。
+- **和字典的數值條件一致。** 參數 $\theta$ 的擾動 $\delta\theta \sim \mathcal{N}(0, \sigma^2 I)$ 在 $z$ 空間的共變異數是 $\sigma^2\,\mathbf{Z}_{\text{dict}}\mathbf{Z}_{\text{dict}}^\top$，各方向的變異數正比於 $\sigma_i^2$。依第 2 節的奇異值，4 sensors 時前 10 個方向佔 98% 的變異數，最弱的 25 個方向只佔 0.02%；8 sensors 時是 98% 與 0.17%。以 $\sigma_i^2$ 計算的有效秩分別是 6.3 與 6.1。直接搜 $z$ 時 50 個方向的變異數相同。ANFIS 的探索大多集中在約 6 個 $z$ 方向。
+- **參數維度不是主因。** custom sensors 的參數比 4 sensors 多約 10 倍（2,336 對約 200），兩者的分數卻相近。
+
+**評估對數值誤差很敏感**
+
+同一個 $z_r$ 在不同執行設定下的評估分數差很多。以 friction_mild、seed 1000 的 stand 為例，`baseline_table6.csv` 的 $z_r$ 分數在 T6.2 的 CMA-ES 與 CEM 是 161.2，在 T6.2 的 LoLA ANFIS 是 271.3，在本實驗是 127.3。同一個 run 裡，第 0 步評估的 $z$ 與 $z_r$ 的 cosine 為 1.0000，分數却是 178.3。policy 是確定性的，評估環境的種子也固定，比較可能的原因是不同主機與執行緒數造成的微小浮點誤差在 walker 的 rollout 中被放大，但尚未驗證。本實驗在單執行緒下執行，T6.2 的 CMA-ES 為兩個執行緒，因此 sep 與 full-cov 之間幾分的差距在雜訊範圍內。ANFIS 與直接搜 $z$ 的差距遠大於此。
+
+## 5. 限制
 
 - membership 參數取初始化值。T6.2 的 CMA-ES 使用 `param_scope: all`，會同時調整 membership，字典在搜尋過程中會改變。本分析只描述搜尋起點。
 - 線性關係只在 identity 輸出層下成立。使用 softplus 等輸出層時，可到達的集合不再是欄空間。
 - 能表示某個 $z$ 不代表搜尋找得到它。條件數只是搜尋難度的一個指標，實際效果要由 CMA-ES 實驗確認。
 - 8 sensors 只測了 T6.1 actuator 組這一種組合，其他 8 個 sensors 的組合可能有不同的條件數。
 - 只用了一個 FB 模型與一組 10,000 個狀態，沒有估計抽樣變異。
+- 對照實驗只有 3 個 seeds。
+- 「ANFIS 的探索集中在少數 $z$ 方向」是由奇異值推得的解釋，尚未直接驗證。直接的驗證是把直接搜 $z$ 得到的 $z - z_r$ 投影到 $\mathbf{Z}_{\text{dict}}$ 的奇異向量上，檢查進步是否落在弱方向。
+- ANFIS 與直接搜 $z$ 還有其他設定差異：ANFIS 先用真實 reward warm-start 500 步，`max_sigma` 為 2.0（$z$ 為 5.0），且 membership 參數也在搜尋範圍內。

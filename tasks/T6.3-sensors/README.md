@@ -33,6 +33,29 @@ membership 參數取 `init_from_data` 的初始化。
 uv run python -c "import numpy as np; d = np.load('tasks/T6.3-sensors/data/zdict_spectra.npz'); [print(k, d[k] / d[k][0]) for k in d.files]"
 ```
 
+`REPORT.md` 第 4 節的探索變異數分布（以 $\sigma_i^2$ 計算的有效秩、前 10 個與最弱 25 個方向的佔比）：
+
+```bash
+uv run python -c "import numpy as np; d = np.load('tasks/T6.3-sensors/data/zdict_spectra.npz'); [print(k, round(float(np.exp(-(p * np.log(p)).sum())), 1), round(float(p[:10].sum()), 4), round(float(p[25:].sum()), 4)) for k in ('walker', 'walker_actuator') for p in [d[k] ** 2 / (d[k] ** 2).sum()]]"
+```
+
+## sep-CMA-ES 直接搜 $z$
+
+`configs/sepcmaes_z.yaml` 與 T6.2 的 `cmaes_z.yaml` 只差 `diagonal: true`。4 個 OOD 環境 × 3 個 finetune seeds（1000、1010、1020），只用 CPU、每個 job 一個 thread：
+
+```bash
+lab sweep tasks/T6.3-sensors/configs/sweep_sepcmaes_z_mild.yaml
+lab sweep tasks/T6.3-sensors/configs/sweep_sepcmaes_z_high_mild.yaml
+```
+
+每個 job 的 `out/sepcmaes_z_<env>_ft<seed>/` 中的 `table6.csv`、`baseline_table6.csv`、`train.csv`、`eval_episodes.csv`、`config_resolved.yaml` 存於 `data/inputs/sepcmaes_z/<env>/ft<seed>/`。
+
+與 T6.2 同 seeds 的比較表（`data/sep_vs_full.csv`、`data/sep_vs_full.md`）：
+
+```bash
+PYTHONPATH=.:tasks/T6.3-sensors uv run python -m analyze.sep_vs_full
+```
+
 ## 測試
 
 ```bash
