@@ -1,0 +1,33 @@
+# 4 reward sensors, additive rules (10 rules), unnormalised firing, zero_order (1-layer RBF-KAN).
+anfis:
+  domain: walker
+  normalize_inputs: true
+  temperature: null          # null -> 1.0 in additive mode
+  rule_mode: additive
+  normalize_firing: false
+  max_rules: 256
+
+  default_membership:
+    type: gaussian
+    min_sigma: 0.001
+    init_sigma: 1.0
+
+  sensors:
+    torso_height:
+      enabled: true
+      num_terms: 3
+    torso_upright:
+      enabled: true
+      num_terms: 2
+    horizontal_velocity:
+      enabled: true
+      num_terms: 3
+    angmomentum:
+      enabled: true
+      num_terms: 2
+
+  consequent:
+    type: zero_order
+
+  output_activation: identity
+  init_from_data: true

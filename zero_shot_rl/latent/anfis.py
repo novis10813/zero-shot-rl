@@ -26,6 +26,7 @@ import torch.nn.functional as F
 MEMBERSHIPS = ("gaussian", "bell", "triangular", "trapezoidal", "sigmoid", "psig")
 CONSEQUENTS = ("zero_order", "first_order", "mlp")
 T_NORMS = ("product", "min")
+RULE_MODES = ("cartesian", "additive")
 OUTPUT_ACTIVATIONS = ("identity", "softplus", "sigmoid", "tanh")
 INPUT_NORMALIZERS = ("none", "zscore", "minmax", "robust", "symlog_zscore")
 
@@ -591,10 +592,12 @@ def _build_consequent(spec, in_dim: int, out_dim: int, num_rules: int):
 
 
 class ANFIS(torch.nn.Module):
-    """Classical Cartesian-grid multi-input multi-output Takagi-Sugeno ANFIS.
+    """Multi-input multi-output Takagi-Sugeno ANFIS (Cartesian-grid or additive rules).
 
     Each sensor `i` has its own 1D membership function module with `M_i` shared linguistic terms.
-    Rules are the full Cartesian product over all sensors (`num_rules = prod_i M_i`).
+    In ``"cartesian"`` mode (default), rules are the full Cartesian product over all sensors
+    (`num_rules = prod_i M_i`). In ``"additive"`` mode, each term of each sensor is an
+    independent 1D rule (`num_rules = sum_i M_i`).
 
     Args:
         sensors: Non-empty sequence of per-sensor spec dicts:
@@ -603,14 +606,17 @@ class ANFIS(torch.nn.Module):
         consequent: "first_order", "zero_order", "mlp", a config dict `{"type": ..., ...}`, or
             an `nn.Module` mapping `[..., D] -> [..., R, O]`.
         t_norm: "product" (sum of log-memberships) or "min" (minimum log-membership across sensors).
+            Used only when `rule_mode == "cartesian"`.
         normalize_firing: If True (default), normalise rule strengths via softmax (standard ANFIS).
             If False, use unnormalised strengths psi_k(x) = exp(log w_k(x)) in (0, 1].
         output_activation: "identity", "softplus", "sigmoid", or "tanh" applied after aggregation.
-        temperature: Divisor on aggregated log-memberships. Defaults to sqrt(in_dim) for "product"
-            and 1.0 for "min".
+        temperature: Divisor on aggregated log-memberships. Defaults to sqrt(in_dim) for
+            cartesian `"product"`, and 1.0 for `"min"` or `rule_mode == "additive"`.
         normalize_inputs: If True, standardise inputs with stored `x_mean` and `x_std` buffers.
-        max_rules: Optional upper bound on `prod(num_terms)` to prevent accidental rule explosion.
+        max_rules: Optional upper bound on `num_rules` to prevent accidental rule explosion.
         eps: Floor on `x_std` during input standardisation.
+        rule_mode: `"cartesian"` (full grid, `prod M_i` rules) or `"additive"` (per-sensor
+            terms concatenated, `sum M_i` rules).
     """
 
     def __init__(
@@ -625,6 +631,7 @@ class ANFIS(torch.nn.Module):
         normalize_inputs: bool = False,
         max_rules: Optional[int] = 1024,
         eps: float = 1e-6,
+        rule_mode: str = "cartesian",
     ):
         super().__init__()
         if not sensors:
@@ -633,16 +640,22 @@ class ANFIS(torch.nn.Module):
             raise ValueError("out_dim must be positive")
         if t_norm not in T_NORMS:
             raise ValueError(f"t_norm must be one of {T_NORMS}, got {t_norm!r}")
+        if rule_mode not in RULE_MODES:
+            raise ValueError(f"rule_mode must be one of {RULE_MODES}, got {rule_mode!r}")
         if output_activation not in OUTPUT_ACTIVATIONS:
             raise ValueError(f"output_activation must be one of {OUTPUT_ACTIVATIONS}, got {output_activation!r}")
 
         self.in_dim = len(sensors)
         self.out_dim = int(out_dim)
         self.t_norm = t_norm
+        self.rule_mode = rule_mode
         self.normalize_firing = bool(normalize_firing)
         self.output_activation = output_activation
         self._out_act = _activation_fn(output_activation)
-        default_temp = math.sqrt(self.in_dim) if t_norm == "product" else 1.0
+        if rule_mode == "additive":
+            default_temp = 1.0
+        else:
+            default_temp = math.sqrt(self.in_dim) if t_norm == "product" else 1.0
         resolved_temp = default_temp if temperature is None else float(temperature)
         if resolved_temp <= 0:
             raise ValueError(f"temperature must be positive, got {resolved_temp}")
@@ -687,10 +700,14 @@ class ANFIS(torch.nn.Module):
                     ser_entry["normalize"] = norm_kind
                 serialised_sensors.append(ser_entry)
 
-        num_rules = math.prod(term_counts)
+        if self.rule_mode == "cartesian":
+            num_rules = math.prod(term_counts)
+        else:
+            num_rules = sum(term_counts)
         if self.max_rules is not None and num_rules > self.max_rules:
+            mode_label = "Cartesian product" if self.rule_mode == "cartesian" else "Additive union"
             raise ValueError(
-                f"Cartesian product of num_terms {term_counts} produces {num_rules} rules, "
+                f"{mode_label} of num_terms {term_counts} produces {num_rules} rules, "
                 f"exceeding max_rules={self.max_rules}"
             )
 
@@ -701,9 +718,15 @@ class ANFIS(torch.nn.Module):
         self.num_rules = int(num_rules)
         self.memberships = torch.nn.ModuleList(memberships)
 
-        grid = torch.cartesian_prod(*[torch.arange(m, dtype=torch.long) for m in term_counts])
-        if self.in_dim == 1:
-            grid = grid.unsqueeze(-1)
+        if self.rule_mode == "cartesian":
+            grid = torch.cartesian_prod(*[torch.arange(m, dtype=torch.long) for m in term_counts])
+            if self.in_dim == 1:
+                grid = grid.unsqueeze(-1)
+        else:
+            grid = torch.tensor(
+                [(i, m) for i, count in enumerate(term_counts) for m in range(count)],
+                dtype=torch.long,
+            )
         self.register_buffer("rule_indices", grid)
 
         self.consequent, cons_cfg = _build_consequent(consequent, self.in_dim, self.out_dim, self.num_rules)
@@ -727,6 +750,7 @@ class ANFIS(torch.nn.Module):
                 out_dim=self.out_dim,
                 consequent=cons_cfg,
                 t_norm=self.t_norm,
+                rule_mode=self.rule_mode,
                 normalize_firing=self.normalize_firing,
                 output_activation=self.output_activation,
                 temperature=self.temperature,
@@ -740,7 +764,7 @@ class ANFIS(torch.nn.Module):
 
     @classmethod
     def from_config(cls, cfg: Dict[str, Any], out_dim: Optional[int] = None) -> "ANFIS":
-        """Build a Cartesian-grid ANFIS from a YAML/dict configuration (the `anfis:` section)."""
+        """Build an ANFIS from a YAML/dict configuration (the `anfis:` section)."""
         sensor_specs = parse_sensor_specs(cfg)
         resolved_out = cfg.get("out_dim", 1) if out_dim is None else out_dim
         return cls(
@@ -748,6 +772,7 @@ class ANFIS(torch.nn.Module):
             out_dim=int(resolved_out),
             consequent=cfg.get("consequent", "first_order"),
             t_norm=cfg.get("t_norm", "product"),
+            rule_mode=cfg.get("rule_mode", "cartesian"),
             normalize_firing=bool(cfg.get("normalize_firing", True)),
             output_activation=cfg.get("output_activation", "identity"),
             temperature=cfg.get("temperature", None),
@@ -821,6 +846,9 @@ class ANFIS(torch.nn.Module):
 
     def log_firing_strengths(self, x: torch.Tensor) -> torch.Tensor:
         """Unnormalised log firing strengths `[..., num_rules]` on already-normalised input `x`."""
+        if self.rule_mode == "additive":
+            log_mus = [mem.log_membership(x[..., i]) for i, mem in enumerate(self.memberships)]
+            return torch.cat(log_mus, dim=-1) / self.temperature
         agg: Optional[torch.Tensor] = None
         for i, mem in enumerate(self.memberships):
             log_mu_i = mem.log_membership(x[..., i])  # [..., M_i]

@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 import torch
 
-from analyze.zdict_rank import projection_residual, rule_basis, spectrum_stats
+from analysis.zdict_rank import projection_residual, rule_basis, spectrum_stats
 from zero_shot_rl.finetune.anfis_z import load_anfis_config, resolve_anfis_sensors
 from zero_shot_rl.latent.anfis import ANFIS
 

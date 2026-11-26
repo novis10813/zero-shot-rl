@@ -14,6 +14,7 @@ from zero_shot_rl.latent.anfis import (
     INPUT_NORMALIZERS,
     MEMBERSHIPS,
     OUTPUT_ACTIVATIONS,
+    RULE_MODES,
     T_NORMS,
     load_anfis,
     parse_sensor_specs,
@@ -396,6 +397,107 @@ class ANFISTest(unittest.TestCase):
                 sensors=[{"name": "bad", "num_terms": 2, "membership": "gaussian", "normalize": "bogus"}],
                 out_dim=1,
             )
+
+    def test_additive_rule_mode_unnormalized_and_normalized(self):
+        self.assertEqual(RULE_MODES, ("cartesian", "additive"))
+        torch.manual_seed(13)
+        x = torch.randn(20, 4)
+        terms = (3, 2, 3, 2)
+        model = ANFIS(
+            sensors=_uniform_sensors(terms, "gaussian"),
+            out_dim=1,
+            consequent="zero_order",
+            rule_mode="additive",
+            normalize_firing=False,
+            normalize_inputs=True,
+        )
+        self.assertEqual(model.rule_mode, "additive")
+        self.assertEqual(model.temperature, 1.0)
+        self.assertEqual(model.num_rules, sum(terms))
+        self.assertEqual(model.rule_indices.shape, (sum(terms), 2))
+        model.init_from_data(x)
+
+        y, w = model(x, return_weights=True)
+        self.assertEqual(y.shape, (20, 1))
+        self.assertEqual(w.shape, (20, 10))
+        expected_w = torch.cat(model.sensor_memberships(x), dim=-1)
+        torch.testing.assert_close(w, expected_w, atol=1e-6, rtol=0)
+        torch.testing.assert_close(y, w @ model.consequent.bias, atol=1e-6, rtol=0)
+
+        (y ** 2).mean().backward()
+        for mem in model.memberships:
+            self.assertGreater(mem.centers.grad.abs().sum().item(), 0.0)
+        self.assertGreater(model.consequent.bias.grad.abs().sum().item(), 0.0)
+
+        # Normalized additive mode sums to 1 across all rules and matches single-sensor cartesian.
+        norm_add = ANFIS(
+            sensors=_uniform_sensors((4,), "gaussian"),
+            out_dim=2,
+            rule_mode="additive",
+            normalize_firing=True,
+        )
+        norm_cart = ANFIS(
+            sensors=_uniform_sensors((4,), "gaussian"),
+            out_dim=2,
+            rule_mode="cartesian",
+            normalize_firing=True,
+        )
+        norm_cart.memberships.load_state_dict(norm_add.memberships.state_dict())
+        norm_cart.consequent.load_state_dict(norm_add.consequent.state_dict())
+        x1 = torch.randn(10, 1)
+        y_add, w_add = norm_add(x1, return_weights=True)
+        y_cart, w_cart = norm_cart(x1, return_weights=True)
+        torch.testing.assert_close(w_add.sum(dim=-1), torch.ones(10), atol=1e-6, rtol=0)
+        torch.testing.assert_close(w_add, w_cart, atol=1e-6, rtol=0)
+        torch.testing.assert_close(y_add, y_cart, atol=1e-6, rtol=0)
+
+    def test_additive_scales_to_37_sensors_and_roundtrips_with_legacy_compat(self):
+        torch.manual_seed(14)
+        cfg = {
+            "rule_mode": "additive",
+            "normalize_firing": False,
+            "normalize_inputs": True,
+            "consequent": {"type": "first_order"},
+            "max_rules": 256,
+            "sensors": {f"s{i}": {"enabled": True, "num_terms": 2} for i in range(37)},
+        }
+        model = ANFIS.from_config(cfg, out_dim=1)
+        self.assertEqual(model.num_rules, 74)
+        x = torch.randn(32, 37)
+        model.init_from_data(x)
+        y = model(x)
+        self.assertEqual(y.shape, (32, 1))
+        (y ** 2).mean().backward()
+        self.assertGreater(model.consequent.weight.grad.abs().sum().item(), 0.0)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "additive37.pt"
+            model.save(p, tag="add37")
+            loaded, meta = load_anfis(p)
+            self.assertEqual(meta["tag"], "add37")
+            self.assertEqual(loaded.rule_mode, "additive")
+            self.assertFalse(loaded.normalize_firing)
+            with torch.no_grad():
+                torch.testing.assert_close(loaded(x), model(x), atol=1e-6, rtol=0)
+
+        # Legacy checkpoint without rule_mode defaults to cartesian.
+        cart = ANFIS(sensors=_uniform_sensors((2, 3), "gaussian"), out_dim=1)
+        x2 = torch.randn(8, 2)
+        with tempfile.TemporaryDirectory() as tmp:
+            lp = Path(tmp) / "legacy_rule_mode.pt"
+            cart.save(lp)
+            blob = torch.load(lp, map_location="cpu", weights_only=False)
+            blob["config"].pop("rule_mode", None)
+            torch.save(blob, lp)
+            loaded_cart, _ = load_anfis(lp)
+            self.assertEqual(loaded_cart.rule_mode, "cartesian")
+            with torch.no_grad():
+                torch.testing.assert_close(loaded_cart(x2), cart(x2), atol=1e-6, rtol=0)
+
+        with self.assertRaises(ValueError):
+            ANFIS(sensors=_uniform_sensors((2, 3), "gaussian"), rule_mode="additive", max_rules=4)
+        with self.assertRaises(ValueError):
+            ANFIS(sensors=_uniform_sensors((2, 3), "gaussian"), rule_mode="bogus")
 
 
 if __name__ == "__main__":

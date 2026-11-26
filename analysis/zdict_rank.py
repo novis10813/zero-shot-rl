@@ -16,7 +16,7 @@ projected onto the column space. Membership parameters are taken from `init_from
 same initialisation `zero_shot_rl.finetune.anfis_z` uses.
 
 Usage (repo root):
-    PYTHONPATH=.:tasks/T6.3-sensors MUJOCO_GL=egl uv run python -m analyze.zdict_rank \\
+    PYTHONPATH=. MUJOCO_GL=egl uv run python -m analysis.zdict_rank \\
         --checkpoint <fb.pt> --dataset_path datasets/walker/rnd/dataset.npz \\
         --anfis_configs configs/anfis/walker.yaml tasks/T6.3-sensors/configs/<set>.yaml \\
         --out_dir tasks/T6.3-sensors/data

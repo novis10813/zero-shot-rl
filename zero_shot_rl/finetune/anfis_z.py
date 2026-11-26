@@ -112,6 +112,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "normalize_inputs": True,
         "temperature": None,
         "t_norm": "product",
+        "rule_mode": "cartesian",
         "normalize_firing": True,
         "max_rules": 256,
         "default_membership": {
@@ -832,7 +833,7 @@ def main():
     if dry_model is not None:
         print(
             f"Algo={algo}  Param={param_type}  Domain={domain}  sensors={sensor_names}  "
-            f"terms={list(dry_model.term_counts)}  rules={dry_model.num_rules}",
+            f"rule_mode={dry_model.rule_mode}  terms={list(dry_model.term_counts)}  rules={dry_model.num_rules}",
             flush=True,
         )
     else:

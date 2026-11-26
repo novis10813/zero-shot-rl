@@ -11,8 +11,8 @@ DATASET=${DATASET:?set DATASET to walker/rnd/dataset.npz}
 OUT_DIR=${OUT_DIR:?set OUT_DIR}
 
 OMP_NUM_THREADS=${OMP_NUM_THREADS:-2} MKL_NUM_THREADS=${MKL_NUM_THREADS:-2} \
-PYTHONPATH=.:tasks/T6.3-sensors MUJOCO_GL=${MUJOCO_GL:-egl} \
-  exec uv run python -m analyze.zdict_rank \
+PYTHONPATH=. MUJOCO_GL=${MUJOCO_GL:-egl} \
+  exec uv run python -m analysis.zdict_rank \
   --checkpoint "$CHECKPOINT" \
   --dataset_path "$DATASET" \
   --anfis_configs \
