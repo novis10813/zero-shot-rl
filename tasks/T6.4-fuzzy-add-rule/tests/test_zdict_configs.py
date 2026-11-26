@@ -5,7 +5,7 @@ import unittest
 import torch
 
 from analysis.zdict_rank import rule_basis
-from zero_shot_rl.finetune.anfis_z import load_anfis_config, resolve_anfis_sensors
+from zero_shot_rl.finetune.anfis_z import load_anfis_config, load_config, resolve_anfis_sensors
 from zero_shot_rl.latent.anfis import ANFIS
 
 ADDITIVE_SETS = [
@@ -33,6 +33,20 @@ class AdditiveConfigTest(unittest.TestCase):
                 x = torch.randn(32, num_sensors)
                 model.init_from_data(x)
                 self.assertEqual(rule_basis(model, x).shape, (32, num_columns))
+
+    def test_sepcmaes_experiment_configs_resolve(self):
+        for anfis_path in (
+            "tasks/T6.4-fuzzy-add-rule/configs/walker_all37_additive_first.yaml",
+            "tasks/T6.4-fuzzy-add-rule/configs/walker8_additive_first.yaml",
+            "tasks/T6.4-fuzzy-add-rule/configs/walker_all37_additive_zero.yaml",
+        ):
+            cfg = load_config("tasks/T6.4-fuzzy-add-rule/configs/sepcmaes_anfis.yaml", anfis_config=anfis_path)
+            self.assertEqual(cfg["algo"], "cmaes")
+            self.assertEqual(cfg["param"], "anfis")
+            self.assertTrue(cfg["cmaes"]["diagonal"])
+            self.assertEqual(cfg["budget"]["max_env_steps"], 800000)
+            self.assertEqual(cfg["anfis"]["rule_mode"], "additive")
+            self.assertFalse(cfg["anfis"]["normalize_firing"])
 
 
 if __name__ == "__main__":
