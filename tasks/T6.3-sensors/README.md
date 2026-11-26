@@ -5,13 +5,15 @@ $\mathbf{Z}_{\text{dict}} = B^\top \Psi / N$ 的奇異值，判斷增加 sensors
 
 ## Sensor 組合
 
-| 名稱 | 設定檔 | Sensors | 規則數 | 字典欄數 |
+| 結構 | 設定檔 | Sensors | 規則數 | 字典欄數 |
 |---|---|---|---|---|
-| 4 sensors | `configs/anfis/walker.yaml` | 4 | 36 | 180 |
-| 8 sensors | `tasks/T6.1-ood-fuzzy/configs/walker_actuator.yaml` | 8 | 256 | 2304 |
-| 全部 37 sensors | `tasks/T6.3-sensors/configs/walker_all37_linear.yaml` | 37 | 1 | 38 |
+| fuzzy | `configs/anfis/walker.yaml` | 4 | 36 | 180 |
+| fuzzy | `tasks/T6.1-ood-fuzzy/configs/walker_actuator.yaml` | 8 | 256 | 2304 |
+| 線性 | `tasks/T6.3-sensors/configs/walker4_linear.yaml` | 4 | 1 | 5 |
+| 線性 | `tasks/T6.3-sensors/configs/walker8_linear.yaml` | 8 | 1 | 9 |
+| 線性 | `tasks/T6.3-sensors/configs/walker_all37_linear.yaml` | 37 | 1 | 38 |
 
-全部 37 sensors 每個只用一個 term，等於 sensors 的線性 reward，因為 Cartesian grid 放不下 $2^{37}$ 條規則。
+線性版每個 sensor 只用一個 term，等於 sensors 的線性 reward。
 
 ## 字典秩分析
 
@@ -27,7 +29,13 @@ membership 參數取 `init_from_data` 的初始化。
 輸出 `data/zdict_rank.csv`（每組的數值秩、有效秩、條件數、四個任務 $z_r$ 的投影殘差）與
 `data/zdict_spectra.npz`（完整奇異值）。
 
-`REPORT.md` 的表格取自 `data/zdict_rank.csv`。文中提到的個別奇異值比例 $\sigma_i/\sigma_1$ 由下列指令列出：
+`REPORT.md` 的表格取自 `data/zdict_rank.csv`。四個任務的平均殘差：
+
+```bash
+uv run python -c "import pandas as pd; d = pd.read_csv('tasks/T6.3-sensors/data/zdict_rank.csv'); print(d.set_index('config').filter(like='residual').mean(axis=1).round(3))"
+```
+
+文中提到的個別奇異值比例 $\sigma_i/\sigma_1$ 由下列指令列出：
 
 ```bash
 uv run python -c "import numpy as np; d = np.load('tasks/T6.3-sensors/data/zdict_spectra.npz'); [print(k, d[k] / d[k][0]) for k in d.files]"

@@ -4,7 +4,7 @@
 
 結論：
 
-- 在 fuzzy 規則結構下，4 個 sensors 已經能表示所有 $z \in \mathbb{R}^{50}$。增加到 8 個 sensors 不擴大表示範圍，只把字典的條件數從 2137 降到 258。37 個 sensors 的線性 reward 則表示不完全，四個任務的 $z_r$ 殘差在 3.5% 到 17.4% 之間。
+- 在 fuzzy 規則結構下，4 個 sensors 已經能表示所有 $z \in \mathbb{R}^{50}$。增加到 8 個 sensors 不擴大表示範圍，只把字典的條件數從 1,982 降到 252。線性 reward 在 4、8、37 個 sensors 下都無法表示任務，四個任務的平均殘差分別為 0.217、0.215、0.111，規則結構比 sensors 數量重要。
 - 將 T6.2 直接搜 $z$ 的 full-cov CMA-ES 換成與 ANFIS 相同的 sep-CMA-ES 後，4 環境平均 select IQM 是 652.9，與 full-cov 的 645.3 相當，仍比 ANFIS 高約 95 分。T6.2 中直接搜 $z$ 的領先來自搜尋空間，不是演算法。
 - ANFIS 找到的 $z$ 所隱含的 reward 仍可用 Walker reward 公式描述（$R^2 \approx 0.71$，與 zero-shot $z_r$ 的 0.66–0.71 相當），walk 的速度權重從 0.74 降到 0.27–0.47。直接搜 $z$ 的隱含 reward 無法用該公式描述（$R^2 \approx 0.4$）。
 
@@ -30,35 +30,50 @@ $$z \propto \mathbb{E}_\rho\big[B(s)\,r(s)\big] = \mathbf{Z}_{\text{dict}}\,\the
 
 **Sensor 組合**
 
-| 組合 | Sensors | 每個 sensor 的 terms | 規則數 $K$ | 字典欄數 |
+| 結構 | Sensors | 每個 sensor 的 terms | 規則數 $K$ | 字典欄數 |
 |---|---|---|---:|---:|
-| 4 sensors | `torso_height`、`torso_upright`、`horizontal_velocity`、`angmomentum` | 3、2、3、2 | 36 | 180 |
-| 8 sensors | 上述 4 個加左右 hip、knee 角速度（T6.1 actuator 組） | 2 | 256 | 2,304 |
-| 37 sensors | Walker 全部 sensors | 1 | 1 | 38 |
+| fuzzy | 4：`torso_height`、`torso_upright`、`horizontal_velocity`、`angmomentum` | 3、2、3、2 | 36 | 180 |
+| fuzzy | 8：上述 4 個加左右 hip、knee 角速度（T6.1 actuator 組） | 2 | 256 | 2,304 |
+| 線性 | 4：同上 | 1 | 1 | 5 |
+| 線性 | 8：同上 | 1 | 1 | 9 |
+| 線性 | 37：Walker 全部 sensors | 1 | 1 | 38 |
 
-37 個 sensors 每個只用 1 個 term，等於 sensors 的線性 reward。Cartesian grid 用 2 個 terms 會有 $2^{37}$ 條規則，無法建立。
+每個 sensor 只用 1 個 term 時只有 1 條規則，ANFIS 退化為 sensors 的線性 reward $r(s) = W\tilde{x}(s) + b$。37 個 sensors 的 fuzzy 版需要至少 $2^{37}$ 條規則，無法建立。
 
 ## 2. 結果
 
 資料來源：`data/zdict_rank.csv` 與 `data/zdict_spectra.npz`。
 
-| 組合 | 數值秩 | 有效秩 | 條件數 | stand 殘差 | walk 殘差 | run 殘差 | flip 殘差 |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| 4 sensors | 45 | 14.3 | 2,137 | 0 | 0 | 0 | 0 |
-| 8 sensors | 50 | 17.5 | 258 | 0 | 0 | 0 | 0 |
-| 37 sensors（線性） | 36 | 20.3 | $4.4 \times 10^{16}$ | 0.035 | 0.174 | 0.094 | 0.130 |
+| 結構 | Sensors | 數值秩 | 有效秩 | 條件數 | stand 殘差 | walk 殘差 | run 殘差 | flip 殘差 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| fuzzy | 4 | 45 / 50 | 14.3 | 1,982 | 0 | 0 | 0 | 0 |
+| fuzzy | 8 | 50 / 50 | 17.4 | 252 | 0 | 0 | 0 | 0 |
+| 線性 | 4 | 5 / 5 | 4.7 | 2.7 | 0.057 | 0.318 | 0.204 | 0.290 |
+| 線性 | 8 | 9 / 9 | 7.3 | 7.8 | 0.055 | 0.317 | 0.200 | 0.289 |
+| 線性 | 37 | 36 / 38 | 20.3 | $3.6 \times 10^{16}$ | 0.019 | 0.178 | 0.099 | 0.148 |
 
-殘差為 0 的格子實際值都小於 $10^{-14}$。有效秩是 $\exp(-\sum_i p_i \log p_i)$，其中 $p_i = \sigma_i / \sum_j \sigma_j$。
+數值秩欄為「秩 / 上限」，上限是 $\min(50, \text{字典欄數})$。殘差為 0 的格子實際值都小於 $10^{-14}$。有效秩是 $\exp(-\sum_i p_i \log p_i)$，其中 $p_i = \sigma_i / \sum_j \sigma_j$。
+
+**四個任務的平均殘差**
+
+| 結構 | 4 sensors | 8 sensors | 37 sensors |
+|---|---:|---:|---:|
+| fuzzy | 0 | 0 | 無法建立 |
+| 線性 | 0.217 | 0.215 | 0.111 |
+
+**fuzzy 4 sensors 最弱的 5 個方向**
+
+| | $\sigma_{46}$ | $\sigma_{47}$ | $\sigma_{48}$ | $\sigma_{49}$ | $\sigma_{50}$ |
+|---|---:|---:|---:|---:|---:|
+| $\sigma_i / \sigma_1$ | $9.7 \times 10^{-4}$ | $8.0 \times 10^{-4}$ | $6.9 \times 10^{-4}$ | $5.6 \times 10^{-4}$ | $5.0 \times 10^{-4}$ |
 
 ## 3. 解讀
 
-**4 sensors 能表示所有 $z$，但有 5 個方向很難到達。** 50 個奇異值都不為 0，四個任務的殘差都是 0。數值秩只有 45，是因為最小的 5 個奇異值落在 $4.7 \times 10^{-4}\sigma_1$ 到 $9.1 \times 10^{-4}\sigma_1$ 之間。要在這些方向上移動相同距離，consequent 參數的變化量必須是最強方向的約 1100 到 2100 倍。
-
-**8 sensors 改善數值條件，不擴大表示範圍。** 它和 4 sensors 一樣能表示整個 $\mathbb{R}^{50}$，條件數低約 8 倍，最小奇異值是 $3.9 \times 10^{-3}\sigma_1$。代價是參數從約 200 維增加到 2,300 維以上。
-
-**37 sensors 的線性 reward 不足以表示任務。** 38 個欄位中有兩個奇異值低於 float32 精度（$1.6 \times 10^{-8}\sigma_1$ 與 $2.3 \times 10^{-17}\sigma_1$），表示有 sensors 是其他 sensors 的線性組合，欄空間只有 36 維。四個任務都有殘差，walk 最大（17.4%）。增加 sensors 不能取代 fuzzy 規則提供的非線性。
-
-**對 sensors 搜尋實驗的意義。** 在 fuzzy 規則結構下，sensors 數量不影響能表示哪些 $z$。之後 CMA-ES 比較 4 和 8 sensors 時，結果反映的是「條件數改善」和「搜尋維度增加約 10 倍」之間的取捨。37 sensors 線性版的上限本來就比較低，它表現較差不能用來說明 sensors 越多越好。
+- **規則結構比 sensors 數量重要。** 固定 sensors 數量，fuzzy 版的殘差為 0，線性版為 0.21 以上。固定線性結構，sensors 從 4 加到 8 時殘差幾乎不變，加到 37 時降到 0.111，仍無法表示任何一個任務。
+- **fuzzy 4 sensors 能表示所有 $z$，但有 5 個方向很難到達。** 要在這 5 個方向上移動相同距離，consequent 參數的變化量是最強方向的約 1,000 到 2,000 倍。
+- **fuzzy 8 sensors 只改善數值條件。** 能表示的 $z$ 與 4 sensors 相同，條件數低約 8 倍，參數從約 200 維增為 2,300 維以上。
+- **線性 37 sensors 的欄空間只有 36 維。** 有兩個奇異值低於 float32 精度（$1.0 \times 10^{-8}\sigma_1$ 與 0），表示部分 sensors 是其他 sensors 的線性組合。
+- **對 sensors 搜尋實驗的意義。** 在 fuzzy 結構下，sensors 數量不影響能表示哪些 $z$，4 與 8 sensors 的差異只來自條件數與搜尋維度。
 
 ## 4. 對照實驗：sep-CMA-ES 直接搜 $z$
 
@@ -97,7 +112,7 @@ T6.2 中直接搜 $z$ 用 full-cov CMA-ES，ANFIS 用 sep-CMA-ES（對角共變�
 
 - **演算法不是主因。** 直接搜 $z$ 時，sep 與 full-cov 在 4 個環境的 select IQM 差距都在 23 分以內，互有勝負。在 50 維的 $z$ 空間裡，學不學共變異數的旋轉幾乎沒有影響。
 - **搜尋空間是主因。** 演算法同為 sep-CMA-ES 時，ANFIS 的 4 環境平均 select IQM 比直接搜 $z$ 低 93 到 99 分。4 個環境 × 4 個任務的 16 格中，兩種 ANFIS 的最終分數都低於 sep-CMA-ES 直接搜 $z$。
-- **和字典的數值條件一致。** 參數 $\theta$ 的擾動 $\delta\theta \sim \mathcal{N}(0, \sigma^2 I)$ 在 $z$ 空間的共變異數是 $\sigma^2\,\mathbf{Z}_{\text{dict}}\mathbf{Z}_{\text{dict}}^\top$，各方向的變異數正比於 $\sigma_i^2$。依第 2 節的奇異值，4 sensors 時前 10 個方向佔 98% 的變異數，最弱的 25 個方向只佔 0.02%；8 sensors 時是 98% 與 0.17%。以 $\sigma_i^2$ 計算的有效秩分別是 6.3 與 6.1。直接搜 $z$ 時 50 個方向的變異數相同。ANFIS 的探索大多集中在約 6 個 $z$ 方向。
+- **和字典的數值條件一致。** 參數 $\theta$ 的擾動 $\delta\theta \sim \mathcal{N}(0, \sigma^2 I)$ 在 $z$ 空間的共變異數是 $\sigma^2\,\mathbf{Z}_{\text{dict}}\mathbf{Z}_{\text{dict}}^\top$，各方向的變異數正比於 $\sigma_i^2$。依第 2 節的奇異值，4 sensors 時前 10 個方向佔 98% 的變異數，最弱的 25 個方向只佔 0.02%；8 sensors 時是 98% 與 0.17%。以 $\sigma_i^2$ 計算的有效秩分別是 6.4 與 6.1。直接搜 $z$ 時 50 個方向的變異數相同。ANFIS 的探索大多集中在約 6 個 $z$ 方向。
 - **參數維度不是主因。** custom sensors 的參數比 4 sensors 多約 10 倍（2,336 對約 200），兩者的分數卻相近。
 
 **評估對數值誤差很敏感**
