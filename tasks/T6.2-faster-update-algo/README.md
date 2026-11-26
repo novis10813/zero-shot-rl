@@ -7,6 +7,7 @@
 位於 `tasks/T6.2-faster-update-algo/configs/`：
 - `lola_z.yaml`、`rela_z.yaml`、`cem_z.yaml`、`cmaes_z.yaml`：直接優化自由潛向量 $z$（`param: z`）。
 - `lola_anfis.yaml`、`cem_anfis.yaml`、`cmaes_anfis.yaml`：4-sensor ANFIS（`configs/anfis/walker.yaml`）。
+- 動力學設定：`friction_mild`、`actuator_mild` 用 `tasks/T3.2-ood-robustness/configs/<env>.yaml`；`friction_high_mild`、`actuator_high_mild` 用 `tasks/T4.1.2-dynamic-shift-detection/configs/<env>.yaml`。
 - 客製 sensor ANFIS：執行時透過 `--anfis_config` 覆寫為 `tasks/T6.1-ood-fuzzy/configs/walker_friction.yaml`（Friction 兩環境）或 `tasks/T6.1-ood-fuzzy/configs/walker_actuator.yaml`（Actuator 兩環境）。
 
 ## 執行範例

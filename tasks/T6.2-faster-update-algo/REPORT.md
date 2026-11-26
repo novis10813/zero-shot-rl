@@ -111,7 +111,7 @@
 
 ## 3. 學到的狀態權重視覺化（`sep-CMA-ES` 800k，10 seeds 平均 $\pm 1\sigma$）
 
-以 ANFIS 搜尋空間中表現最佳且最穩定的 `sep-CMA-ES`（全部 10 個 finetune seeds 第 `800k` 步 `<task>_final.pt`）為代表，在實際用來計算 $z_\phi = \sqrt{d_z}\,\operatorname{normalize}(\mathbb{E}[\tilde{r}_\phi(s)B(s)])$ 的 **10,000 筆離線參考狀態 $\mathcal{D}_{\text{ref}}$** 上，沿每個感測器分 25 箱（`[p01, p99]`）畫出真實樣本上的 10-seed 平均 $\pm 1\sigma$ 權重（`ref_binned_slices.png`，灰色柱狀為樣本密度），同時亦保留固定基準姿態的 1D 切面（`reward_slices.png`）與 2D 熱圖（`reward_heatmap.png`）於 `figures/cmaes_800k/<env>[_custom]/`。
+以 ANFIS 搜尋空間中表現最佳且最穩定的 `sep-CMA-ES`（全部 10 個 finetune seeds 第 `800k` 步最終模型）為代表，在實際用來計算 $z_\phi = \sqrt{d_z}\,\operatorname{normalize}(\mathbb{E}[\tilde{r}_\phi(s)B(s)])$ 的 **10,000 筆離線參考狀態 $\mathcal{D}_{\text{ref}}$** 上，沿每個感測器分 25 箱（`[p01, p99]`）畫出真實樣本上的 10-seed 平均 $\pm 1\sigma$ 權重（`ref_binned_slices.png`，灰色柱狀為樣本密度），同時亦保留固定基準姿態的 1D 切面（`reward_slices.png`）與 2D 熱圖（`reward_heatmap.png`）於 `figures/cmaes_800k/<env>[_custom]/`。
 
 以下展示 `friction_mild`（低摩擦 0.1）與 `actuator_mild`（關節力矩 76%）的客製 sensor 真實資料集分箱平均圖（紅字欄位為新增感測器）：
 
@@ -126,9 +126,9 @@
 - **額外 sensors 的維度效應**：在 `sep-CMA-ES`（`555.9` vs `549.6`，四環境全面勝出）與 `LoLA`（`474.8` vs `451.0`，四環境全面勝出）上，擴增客製 sensors 均帶來正向增益；唯獨 `CEM` 在 1,052–2,336 維的高維參數空間內因缺乏共變異數與步長自適應而退化（`487.0` vs `522.6`）。
 - **真實資料集分箱圖揭示跨 10 seeds 一致的對比式重加權**：
   - **跌倒與倒立全面轉為負權重、高站立放大**：在 `torso_height < 0.75–0.85 m` 與 `torso_upright < 0`（頭下腳上或倒地）區域，四個任務跨 10 seeds 一致給出**負權重**（低至 `-0.3` 至 `-1.5`），而在 `torso_height > 1.0 m` 與 `torso_upright -> +1` 則放大至原始 $r(s)$ 的 `2–5` 倍。相較原始非負 reward，ANFIS 學出零中心對比式權重，主動把 $z_\phi$ 推離跌倒與倒立狀態。
-  - **抑制後退與借用前進穩定**：在 `CoM_vx < 0`（後退／向後滑倒）區域四個任務皆被壓成負權重；實測 `actuator_mild` `stand` 可將原本往後倒退的 `mean_vx=-0.506` 修正為 `+0.461`，並將平均高度從 `0.720 m` 抬升至 `0.973 m`。
+  - **抑制後退與借用前進穩定**：在 `CoM_vx < 0`（後退／向後滑倒）區域四個任務皆被壓成負權重。
   - **額外感測器在真實資料上的作用**：`friction_mild_custom` 的 `com_vz > +2 m/s`（向上垂直速度）在四個任務皆出現明顯正權重上翹；`actuator_mild_custom` 的 `qvel_left_knee > 0` 與 `qvel_right_hip` 呈現跨任務一致的單調上升趨勢；其餘關節角速度平均較平、標準差帶較寬，顯示不同 seed 透過不同關節組合達成相近的潛向量補償。
 - **自由潛向量 $z$ 上 `ReLA` 奪冠，與算力成本存在明顯取捨**：`ReLA (z)` 以四環境平均 `691.0 / 685.8` 居所有方法之冠（在最困難的 `actuator_mild` 達 `651.5`，領先次佳 `CMA-ES (z)` 高達 `+102.2`；在 `friction_mild` 達 `677.4`、`friction_high_mild` 達 `686.9`，皆顯著勝出；僅在 `actuator_high_mild` 的 `748.3` 略低於 `CMA-ES (z)` 的 `754.5`）。但因 `utd=4` 需在每個環境步反覆穿透凍結 FB 網路做反向傳播，其單組牆上時間遠高於 `CMA-ES` 與 `LoLA`。
 - **限制與待補事項**：
-  - 單一凍結 FB checkpoint（`660000.pt`）本身存在左右步態不對稱（慣用腳），因此 ANFIS 對雙側關節角速度（如 `qvel_left_knee` vs `qvel_right_knee`）學出的不對稱斜率反映的是該 checkpoint 的特徵對齊，未必跨預訓練 seed 保持同一側。
+  - 單一凍結 FB checkpoint（Walker RND 660k）本身存在左右步態不對稱（慣用腳），因此 ANFIS 對雙側關節角速度（如 `qvel_left_knee` vs `qvel_right_knee`）學出的不對稱斜率反映的是該 checkpoint 的特徵對齊，未必跨預訓練 seed 保持同一側。
   - 不同條件分佈於 CPU、兩款本機 GPU 與遠端 GPU 執行，低摩擦環境對 FP32 末位誤差敏感；正式最終版可將所有模型以 `--eval_models_dir` 在同一硬體上統一重評以消除裝置差異。
