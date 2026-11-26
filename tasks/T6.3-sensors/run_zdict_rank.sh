@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rank analysis of the ANFIS rule dictionary for the 4 / 8 / 37 sensor sets.
+# Rank analysis of the ANFIS rule dictionary: fuzzy 4 / 8 sensors and linear 4 / 8 / 37 sensors.
 #
 # Usage (repo root):
 #   CHECKPOINT=<fb 660000.pt> DATASET=<walker/rnd/dataset.npz> OUT_DIR=<out dir> \
@@ -18,6 +18,8 @@ PYTHONPATH=.:tasks/T6.3-sensors MUJOCO_GL=${MUJOCO_GL:-egl} \
   --anfis_configs \
     configs/anfis/walker.yaml \
     tasks/T6.1-ood-fuzzy/configs/walker_actuator.yaml \
+    tasks/T6.3-sensors/configs/walker4_linear.yaml \
+    tasks/T6.3-sensors/configs/walker8_linear.yaml \
     tasks/T6.3-sensors/configs/walker_all37_linear.yaml \
   --out_dir "$OUT_DIR" \
   "$@"

@@ -13,6 +13,8 @@ from zero_shot_rl.latent.anfis import ANFIS
 SENSOR_SETS = [
     ("configs/anfis/walker.yaml", 4, 36 * 5),
     ("tasks/T6.1-ood-fuzzy/configs/walker_actuator.yaml", 8, 256 * 9),
+    ("tasks/T6.3-sensors/configs/walker4_linear.yaml", 4, 5),
+    ("tasks/T6.3-sensors/configs/walker8_linear.yaml", 8, 9),
     ("tasks/T6.3-sensors/configs/walker_all37_linear.yaml", 37, 38),
 ]
 
