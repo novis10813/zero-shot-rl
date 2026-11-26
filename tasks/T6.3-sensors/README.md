@@ -1,7 +1,12 @@
 # T6.3-sensors
 
-比較不同 sensor 組合的 ANFIS 搜尋空間。第一步分析 ANFIS 規則字典
-$\mathbf{Z}_{\text{dict}} = B^\top \Psi / N$ 的奇異值，判斷增加 sensors 是否擴大可到達的潛向量集合。
+比較不同 sensor 組合與規則結構的 ANFIS 搜尋空間，分三部分：
+
+1. ANFIS 規則字典 $\mathbf{Z}_{\text{dict}} = B^\top \Psi / N$ 的奇異值（fuzzy 4 / 8 sensors，線性 4 / 8 / 37 sensors）。
+2. sep-CMA-ES 直接搜 $z$ 的對照實驗，與 T6.2 同 seeds 比較。
+3. T6.2 找到的 $z$ 所隱含的 reward $r_z = B^\top \Sigma_B^{-1} z$，以及用 Walker reward 公式的配適。
+
+結果見 `REPORT.md`。
 
 ## Sensor 組合
 
