@@ -93,6 +93,12 @@ PYTHONPATH=.:tasks/T6.3-sensors MUJOCO_GL=egl uv run python -m analyze.reference
 PYTHONPATH=.:tasks/T6.3-sensors OMP_NUM_THREADS=1 uv run python -m analyze.reward_template
 ```
 
+`REPORT.md` 第 5 節的表格（相關係數、配適 $R^2$、walk 的 $b_v$）由下列指令從上述兩個 csv 產生 `data/reward_summary.md`：
+
+```bash
+PYTHONPATH=.:tasks/T6.3-sensors uv run python -m analyze.reward_summary
+```
+
 ## 測試
 
 ```bash

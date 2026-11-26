@@ -6,6 +6,7 @@
 
 - 在 fuzzy 規則結構下，4 個 sensors 已經能表示所有 $z \in \mathbb{R}^{50}$。增加到 8 個 sensors 不擴大表示範圍，只把字典的條件數從 2137 降到 258。37 個 sensors 的線性 reward 則表示不完全，四個任務的 $z_r$ 殘差在 3.5% 到 17.4% 之間。
 - 將 T6.2 直接搜 $z$ 的 full-cov CMA-ES 換成與 ANFIS 相同的 sep-CMA-ES 後，4 環境平均 select IQM 是 652.9，與 full-cov 的 645.3 相當，仍比 ANFIS 高約 95 分。T6.2 中直接搜 $z$ 的領先來自搜尋空間，不是演算法。
+- ANFIS 找到的 $z$ 所隱含的 reward 仍可用 Walker reward 公式描述（$R^2 \approx 0.71$，與 zero-shot $z_r$ 的 0.66–0.71 相當），walk 的速度權重從 0.74 降到 0.27–0.47。直接搜 $z$ 的隱含 reward 無法用該公式描述（$R^2 \approx 0.4$）。
 
 ## 1. 方法
 
@@ -103,7 +104,66 @@ T6.2 中直接搜 $z$ 用 full-cov CMA-ES，ANFIS 用 sep-CMA-ES（對角共變�
 
 同一個 $z_r$ 在不同執行設定下的評估分數差很多。以 friction_mild、seed 1000 的 stand 為例，`baseline_table6.csv` 的 $z_r$ 分數在 T6.2 的 CMA-ES 與 CEM 是 161.2，在 T6.2 的 LoLA ANFIS 是 271.3，在本實驗是 127.3。同一個 run 裡，第 0 步評估的 $z$ 與 $z_r$ 的 cosine 為 1.0000，分數却是 178.3。policy 是確定性的，評估環境的種子也固定，比較可能的原因是不同主機與執行緒數造成的微小浮點誤差在 walker 的 rollout 中被放大，但尚未驗證。本實驗在單執行緒下執行，T6.2 的 CMA-ES 為兩個執行緒，因此 sep 與 full-cov 之間幾分的差距在雜訊範圍內。ANFIS 與直接搜 $z$ 的差距遠大於此。
 
-## 5. 限制
+## 5. 找到的 $z$ 隱含的 reward
+
+對一個 $z$，$B$ 張成空間中唯一產生它的 reward 是
+
+$$r_z(s) = B(s)^\top \Sigma_B^{-1} z, \qquad \Sigma_B = \mathbb{E}_\rho[B(s)B(s)^\top]$$
+
+分析對象是 T6.2 第 800,000 步的 $z$（sep-CMA-ES ANFIS 4 sensors 與 full-cov CMA-ES 直接搜 $z$，各 4 個環境 × 10 seeds），在第 1 節的 10,000 個 reference 狀態上計算。所有 $r_z$ 共用同一個仿射尺度（使 $r_{z_r}$ 最接近真實 reward）。資料來源：`data/reward_summary.md`。
+
+**與真實 reward 的相關係數**（4 環境 × 10 seeds 平均）
+
+| 任務 | $r_{z_r}$ 對真實 | ANFIS 對真實 | 直接搜 $z$ 對真實 | ANFIS 對 $r_{z_r}$ | 直接搜 $z$ 對 $r_{z_r}$ |
+|---|---:|---:|---:|---:|---:|
+| stand | 0.78 | 0.70 | 0.35 | 0.87 | 0.45 |
+| walk | 0.71 | 0.56 | 0.35 | 0.77 | 0.50 |
+| run | 0.72 | 0.52 | 0.36 | 0.71 | 0.49 |
+| flip | 0.75 | 0.61 | 0.39 | 0.80 | 0.51 |
+
+**沿 4 個 sensors 的分箱平均（walk）**
+
+![walk 的隱含 reward](figures/z_reward/walk.png)
+
+黑線為真實 reward，灰虛線為 $r_{z_r}$，藍線為 ANFIS，橙線為直接搜 $z$（陰影為 10 seeds 的 $\pm 1$ 標準差）。其餘任務見 `figures/z_reward/{stand,run,flip}.png`。
+
+**以 Walker reward 公式配適**
+
+公式為 DMC Walker reward 的推廣（13 個參數），stand、walk、run、flip 皆為其特例：
+
+$$r(s) = a\big[w\,T(h;h_0,\infty,m_h) + (1-w)\tfrac{1+u}{2}\big]\big[(1-b_v) + b_v\,T(v_x;v_{lo},v_{hi},m_v)\big]\big[(1-b_\omega) + b_\omega\,T(\omega;\omega_{lo},\omega_{hi},m_\omega)\big] + c$$
+
+$T$ 為 dm_control 的 Gaussian tolerance（區間內為 1，距區間一個 margin 處為 0.1）；$h$、$u$、$v_x$、$\omega$ 為 torso 高度、upright、水平速度與角動量。
+
+| 任務 | 真實 reward | $r_{z_r}$ | ANFIS（seed 平均） | ANFIS（單一 seed） | 直接搜 $z$（seed 平均） | 直接搜 $z$（單一 seed） |
+|---|---:|---:|---:|---:|---:|---:|
+| stand | 1.000 | 0.70 | 0.72 | 0.69 | 0.38 | 0.19 |
+| walk | 0.999 | 0.67 | 0.71 | 0.68 | 0.37 | 0.21 |
+| run | 0.992 | 0.66 | 0.72 | 0.66 | 0.38 | 0.22 |
+| flip | 1.000 | 0.71 | 0.71 | 0.67 | 0.43 | 0.26 |
+
+表中為配適的 $R^2$。seed 平均為 10 seeds 平均 reward 的配適，再對 4 個環境取平均。
+
+**walk 的公式對照（friction_mild）**
+
+| 對象 | $R^2$ | 配適結果 |
+|---|---:|---|
+| 真實 reward | 0.999 | $\big(0.75\,T(h,[1.20,\infty),0.60) + 0.25\tfrac{1+u}{2}\big)\big(0.16 + 0.84\,T(v_x,[1.09,\infty),1.05)\big)$ |
+| $r_{z_r}$ | 0.67 | $0.82\,T(h,[1.67,\infty),2.0)\big(0.26 + 0.74\,T(v_x,[2.44,\infty),3.9)\big) - 0.08$ |
+| ANFIS | 0.72 | $0.98\,T(h,[1.81,\infty),2.0)\big(0.62 + 0.38\,T(v_x,[2.10,\infty),4.6)\big) - 0.34$ |
+
+省略權重 $b_\omega < 0.25$ 的角動量項。所有配適結果見 `data/reward_template.md`。
+
+**walk 的速度權重 $b_v$**
+
+| 對象 | friction_mild | friction_high_mild | actuator_mild | actuator_high_mild |
+|---|---:|---:|---:|---:|
+| 真實 reward | 0.84 | 0.84 | 0.84 | 0.84 |
+| $r_{z_r}$ | 0.74 | 0.74 | 0.74 | 0.74 |
+| ANFIS | 0.38 | 0.27 | 0.37 | 0.47 |
+| 直接搜 $z$（$R^2 \le 0.40$，不可解讀） | 0.71 | 0.82 | 0.67 | 0.80 |
+
+## 6. 限制
 
 - membership 參數取初始化值。T6.2 的 CMA-ES 使用 `param_scope: all`，會同時調整 membership，字典在搜尋過程中會改變。本分析只描述搜尋起點。
 - 線性關係只在 identity 輸出層下成立。使用 softplus 等輸出層時，可到達的集合不再是欄空間。
@@ -113,3 +173,6 @@ T6.2 中直接搜 $z$ 用 full-cov CMA-ES，ANFIS 用 sep-CMA-ES（對角共變�
 - 對照實驗只有 3 個 seeds。
 - 「ANFIS 的探索集中在少數 $z$ 方向」是由奇異值推得的解釋，尚未直接驗證。直接的驗證是把直接搜 $z$ 得到的 $z - z_r$ 投影到 $\mathbf{Z}_{\text{dict}}$ 的奇異向量上，檢查進步是否落在弱方向。
 - ANFIS 與直接搜 $z$ 還有其他設定差異：ANFIS 先用真實 reward warm-start 500 步，`max_sigma` 為 2.0（$z$ 為 5.0），且 membership 參數也在搜尋範圍內。
+- 分箱圖為邊際平均，每個點混有其他變數的變化。Walker 每個 episode 固定 1000 步，reward 加常數不改變最佳 policy，因此只比較形狀，不比較高低。
+- 公式中部分參數無法確定：$w$ 幾乎都為 1（upright 與高度高度相關），$h_0$ 與 $m_h$ 常停在上界 2.0（資料高度最大約 1.6），部分 $\omega$ 區間寬度為 0。只有各項權重 $b_v$、$b_\omega$ 與整體形狀可解讀。
+- 直接搜 $z$ 的隱含 reward 與 4-sensor 公式配適的 $R^2$ 低，只表示它不是「原任務改幾個參數」，尚未確認它的改動來自哪些 sensors。
