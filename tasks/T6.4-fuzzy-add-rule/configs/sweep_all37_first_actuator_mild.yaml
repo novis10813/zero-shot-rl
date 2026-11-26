@@ -1,6 +1,7 @@
-# sep-CMA-ES on walker_all37_additive_first.yaml: actuator_mild x 10 finetune seeds, CPU only (max 10 jobs, ~8.5 GB/job).
+# sep-CMA-ES on walker_all37_additive_first.yaml: actuator_mild x 10 finetune seeds, idlab GPU 1 (max 10 jobs, ~8.5 GB RAM + ~1 GB VRAM/job).
 on: idlab
-gpus: 0
-command: OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. MUJOCO_GL=disabled uv run python -m zero_shot_rl.finetune.anfis_z --config tasks/T6.4-fuzzy-add-rule/configs/sepcmaes_anfis.yaml --anfis_config tasks/T6.4-fuzzy-add-rule/configs/walker_all37_additive_first.yaml --device cpu --checkpoint /home/sam/zsrl-artifacts/T4.1.3.1-residual-soft-q/zero-shot-rl-297/660000.pt --dataset_path /home/sam/zsrl-datasets/walker/rnd/dataset.npz --dynamics tasks/T3.2-ood-robustness/configs/actuator_mild.yaml --seed {ft_seed} --train_seed_offset {ft_seed}00 --out_dir out/all37_first_actuator_mild_ft{ft_seed}
+gpus: 1
+vram: 2G
+command: OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=. MUJOCO_GL=disabled uv run python -m zero_shot_rl.finetune.anfis_z --config tasks/T6.4-fuzzy-add-rule/configs/sepcmaes_anfis.yaml --anfis_config tasks/T6.4-fuzzy-add-rule/configs/walker_all37_additive_first.yaml --device cuda --checkpoint /home/sam/zsrl-artifacts/T4.1.3.1-residual-soft-q/zero-shot-rl-297/660000.pt --dataset_path /home/sam/zsrl-datasets/walker/rnd/dataset.npz --dynamics tasks/T3.2-ood-robustness/configs/actuator_mild.yaml --seed {ft_seed} --train_seed_offset {ft_seed}00 --out_dir out/all37_first_actuator_mild_ft{ft_seed}
 grid:
   ft_seed: [1000, 1010, 1020, 1030, 1040, 1050, 1060, 1070, 1080, 1090]
