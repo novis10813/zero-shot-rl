@@ -1,13 +1,14 @@
-# T6.4-fuzzy-add-rule：加法規則 ANFIS 字典秩分析
+# T6.4-fuzzy-add-rule：加法規則 ANFIS 字典秩分析與 OOD 適應實驗
 
-在 T6.3 中，Cartesian product 規則數隨 sensor 數量指數成長（37 個 sensors 需要 $2^{37}$ 條規則而無法建立），且 4 與 8 sensors 的 $\mathbf{Z}_{\text{dict}}$ 條件數偏高，使參數空間的探索集中在少數 $z$ 方向。本實驗改用加法規則（`rule_mode: additive`，規則數 $K = \sum_i M_i$）與未正規化觸發強度（`normalize_firing: false`），比較 4、8、37 個 sensors 在 `zero_order`（等價於單層 RBF-KAN）與 `first_order` consequent 下的 $\mathbf{Z}_{\text{dict}}$ 秩、條件數與任務殘差。
+在 T6.3 中，Cartesian product 規則數隨 sensor 數量指數成長（37 個 sensors 需要 $2^{37}$ 條規則而無法建立），且 4 與 8 sensors 的 $\mathbf{Z}_{\text{dict}}$ 條件數偏高，使探索集中在少數 $z$ 方向。本任務改用加法規則（`rule_mode: additive`，規則數 $K = \sum_i M_i$）與未正規化觸發強度（`normalize_firing: false`），先分析 $\mathbf{Z}_{\text{dict}}$ 的譜性質，再於 Walker 四個 OOD 動力學環境（各 10 個 finetune seeds）以 `sep-CMA-ES` 檢驗高階 Cartesian 交互作用與二階交互作用是否必要。
 
 結論：
 
-- `zero_order` 在 4 與 8 sensors 下無法表示 Walker 任務（四個任務平均殘差分別為 0.177 與 0.172，其中 `walk` 為 0.280 與 0.278）。擴展到 37 個 sensors 後殘差降為 0，但條件數為 3,388、以 $\sigma_i^2$ 計算的有效秩僅 1.36。
-- 37 個 sensors 搭配 `first_order`（74 條規則、2,812 欄）顯著改善搜尋空間的數值條件：條件數從 T6.3 4-sensor Cartesian 的 1,982 降至 57.8（約 34 倍），有效秩（$\sigma_i$）從 14.33 升至 27.45，變異數有效秩（$\sigma_i^2$）從 6.39 升至 11.47。
+- **高階 Cartesian 規則乘積不必要**：同為 8 個 sensors、`first_order` consequent 時，拿掉 8 維乘積的加法規則 `8_first`（16 條規則、176 參數）在 4 環境平均取得 `554.6 / 551.9`（select / final IQM），與 T6.2 的 Cartesian custom（128–256 條規則、最高 2,336 參數）`555.9 / 550.9` 持平。
+- **二階交互作用是必要的**：純 1D 加法 `all37_zero`（無 $\mu_{i,m}(x_i)\,x_j$ 交叉項，等價單層 RBF-KAN）在 4 與 8 sensors 無法表達 Walker 任務；擴到 37 sensors 雖能歸零 $z_r$ 殘差，但條件數高達 `3,388`（變異數有效秩僅 `1.36`），OOD 4 環境平均僅 `478.0 / 471.2`，落後 `all37_first` `88.3` 分。
+- **改善字典條件數並不足以追平直接搜 $z$**：37 sensors 搭配 `first_order`（`all37_first`，74 條規則、2,960 參數）將 $\mathbf{Z}_{\text{dict}}$ 條件數降至 `57.8`（變異數有效秩升至 `11.47`），4 環境平均升至 `566.3 / 561.3`，高出 T6.2 Cartesian custom `10.4` 分，但仍落後 T6.2 直接搜 $z$（`644.2 / 639.3`）`77.9` 分。
 
-## 1. 方法與設定
+## 1. 規則字典 $\mathbf{Z}_{\text{dict}}$ 分析：方法與設定
 
 在 `rule_mode: additive` 與 `normalize_firing: false` 下，每個 sensor $i$ 的第 $m$ 個 linguistic term 獨立作為一條規則，總規則數 $K = \sum_{i=1}^{D} M_i$，觸發權重為未經 softmax 正規化的 membership 值：
 
@@ -38,7 +39,7 @@ $$w_{i,m}(s) = \mu_{i,m}(\tilde{x}_i(s))^{1/T}$$
 | `walker_all37_additive_zero` | 37：Walker 全部 scalar sensors | 2 × 37 | 74 | `zero_order` | 74 |
 | `walker_all37_additive_first` | 同上 37 個 | 2 × 37 | 74 | `first_order` | 2,812 |
 
-## 2. 結果
+## 2. 字典秩結果
 
 資料來源：`data/zdict_rank.csv` 與 `data/zdict_spectra.npz`；Cartesian 對照組數據取自 T6.3（`tasks/T6.3-sensors/data/zdict_rank.csv` 與 `zdict_spectra.npz`）。
 
@@ -68,8 +69,47 @@ $$w_{i,m}(s) = \mu_{i,m}(\tilde{x}_i(s))^{1/T}$$
 | `walker_all37_additive_zero` | 1.36 | 99.52% | 0.02% |
 | `walker_all37_additive_first` | 11.47 | 89.26% | 1.09% |
 
-## 3. 解讀與限制
+## 3. OOD Walker 適應實驗（`sep-CMA-ES`，4 環境 × 10 seeds）
 
-- **單純相加的 1D 基底（`zero_order`）不足以改善搜尋空間**：4 與 8 sensors 只有 10 與 16 條規則，缺少跨 sensor 乘積項，無法表示 `walk`、`run`、`flip`。擴張至 37 sensors 時雖足以在 $B(s)$ 欄空間內補齊 4 個任務，但能量高度集中於少數方向（變異數有效秩 1.36）。
-- **加法規則讓 37 sensors 搭配 `first_order` 成為可能**：Cartesian 結構在 37 sensors 時規則數爆炸而無法建立；改用加法規則後僅需 74 條規則。與 T6.3 的 8-sensor Cartesian（2,304 欄）相比，`walker_all37_additive_first` 參數維度相近（2,812 欄），但條件數從 252 降至 57.8，最弱 25 個 $z$ 方向的變異數佔比提高約 6.4 倍（相對 4-sensor Cartesian 提高約 50 倍）。
-- **限制**：本報告僅量測固定 membership 初始化下的 $\mathbf{Z}_{\text{dict}}$ 譜性質，尚未進行 OOD Walker 的實際 finetune；`walker_all37_additive_first` 的搜尋參數為 2,812 維以上（含 membership），實際表現仍需透過 `sep-CMA-ES` 與 `zero-shot` / 直接搜 $z$ 對照驗證。
+在與 T6.1、T6.2 相同的四個 OOD 環境（`friction_mild`、`friction_high_mild`、`actuator_mild`、`actuator_high_mild`）與 10 個 finetune seeds（`1000..1090`）上測試三組加法規則 ANFIS：
+
+- `all37_first`：`walker_all37_additive_first`（74 條規則，共 2,960 參數：2,812 consequent + 148 membership）。
+- `8_first`：`walker8_additive_first`（16 條規則，共 176 參數：144 consequent + 32 membership）。
+- `all37_zero`：`walker_all37_additive_zero`（74 條規則，共 222 參數：74 consequent + 148 membership）。
+
+**超參數**（對齊 T6.2 `cmaes_anfis.yaml`）
+
+- `algo: cmaes`、`diagonal: true`（sep-CMA-ES）、`param_scope: all`、`pop_size: 16`、$\sigma_0 = 0.5$、`min_sigma: 0.0001`、`max_sigma: 2.0`。
+- 先以真實 reward warm-start 500 步（`lr: 0.01`）；每個任務訓練 800,000 環境步（完整 1000-step episode，共 50 代），每 40,000 步於 20 個共用評估環境（種子 `5..24`）評估一次。
+- 彙整指標依 Table 6（Jeen et al. 2024，`analysis.table6_aggregate`）：`select IQM` 為所有評估點中 all-task IQM 最高者，`final IQM` 為第 800,000 步的 all-task IQM。
+
+**4 環境平均**
+
+資料來源：`data/summary.csv`（T6.2 對照列來自 `tasks/T6.2-faster-update-algo/data/inputs/`，皆為 4 環境 × 10 seeds 配對計算）。
+
+| 條件 | select IQM | final IQM | stand | walk | run | flip |
+|---|---:|---:|---:|---:|---:|---:|
+| `all37_first`（T6.4） | **566.3** | **561.3** | **741.0** | 647.7 | **237.6** | **474.9** |
+| `8_first`（T6.4） | 554.6 | 551.9 | 698.9 | 649.7 | 208.5 | 454.0 |
+| `all37_zero`（T6.4） | 478.0 | 471.2 | 663.6 | 515.9 | 145.3 | 426.5 |
+| Cartesian 4 sensors（T6.2） | 549.6 | 543.6 | 739.8 | 638.5 | 217.1 | 448.7 |
+| Cartesian custom（T6.2） | 555.9 | 550.9 | 738.3 | **652.4** | 230.2 | 449.3 |
+| 直接搜 $z$ full-cov（T6.2） | 644.2 | 639.3 | 867.3 | 742.7 | 284.6 | 535.9 |
+
+各任務欄為第 800,000 步的分數（ANFIS 條件中粗體為最高）。
+
+**各環境明細（select IQM / final IQM）**
+
+| 環境 | `all37_first` | `8_first` | `all37_zero` | T6.2 Cartesian 4 sensors | T6.2 Cartesian custom | T6.2 直接搜 $z$ |
+|---|---:|---:|---:|---:|---:|---:|
+| `friction_mild` | 499.2 / 490.7 | 509.5 / 507.3 | 427.2 / 427.2 | 511.9 / 503.5 | 516.7 / 516.7 | 616.6 / 615.1 |
+| `friction_high_mild` | **585.8 / 582.2** | 555.6 / 547.7 | 464.9 / 453.6 | 558.9 / 548.7 | 561.0 / 556.6 | 656.5 / 643.9 |
+| `actuator_mild` | **501.8 / 501.8** | 488.9 / 488.1 | 412.1 / 401.7 | 489.7 / 489.7 | 491.0 / 475.4 | 549.3 / 543.7 |
+| `actuator_high_mild` | **678.4 / 670.4** | 664.4 / 664.4 | 607.9 / 602.2 | 637.9 / 632.6 | 654.9 / 654.9 | 754.5 / 754.5 |
+
+## 4. 解讀與限制
+
+- **高階 Cartesian 規則交互作用不必要**：`8_first` 與 T6.2 Cartesian custom 使用相同的 8 個 actuator-group sensors（T6.2 在 friction 另用 7 sensors），拿掉高階乘積後參數量從 2,336 降到 176，4 環境平均仍幾乎完全一致（`554.6` vs `555.9`；`final` 為 `551.9` vs `550.9`）。
+- **完全無交互作用的 1D 加法不足**：`all37_zero` 在全部 4 個環境都大幅落後 `all37_first`（4 環境平均差 `88.3` 分）與 `8_first`（差 `76.6` 分），反映 Walker 任務確實需要至少二階的感測器交互作用（$\mu_{i,m}(x_i)\,x_j$），且其 $\mathbf{Z}_{\text{dict}}$ 變異數有效秩僅 `1.36`。
+- **字典條件數改善帶來有限增益，未消除與直接搜 $z$ 的差距**：`all37_first` 在 `friction_high_mild`、`actuator_mild`、`actuator_high_mild` 三個環境都創下 ANFIS 最高分，4 環境平均高出 Cartesian custom `10.4` 分；但仍低於直接搜 $z$ `77.9` 分。這與 T6.3 的發現一致：透過 `ANFIS`（從 $z_r$ warm-start 起跳，並限制在 smooth sensor-weighted reward 流形內）探索的結構性偏置，無法單靠改善 $\mathbf{Z}_{\text{dict}}$ 條件數就完全消除。
+- **執行硬體差異**：`all37_first / friction_mild`（10 個）與 `all37_zero` 的部分 seeds（12 個）在 CPU 執行，其餘 98 個 jobs 在 CUDA 執行；各環境的 `baseline_table6.csv`（同一 seed 下 $z_r$ 評估）與先前 T6.3 觀察一致，單一任務可能受浮點與執行裝置微小誤差影響，但 10 seeds 平均下的主要差距（`all37_zero` 落後約 80–90 分、直接搜 $z$ 領先約 78 分）遠大於此變異。
