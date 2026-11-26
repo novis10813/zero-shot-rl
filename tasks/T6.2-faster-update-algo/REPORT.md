@@ -23,7 +23,7 @@
 - **彙整指標**：依 Table 6（Jeen et al. 2024，`analysis.table6_aggregate`）計算。`select IQM` 為十個 seeds 平均後 All-task IQM 最高的評估點；`final step IQM` 為最終第 `800,000` 步（不挑選）的 All-task IQM。
 - **超參數摘要**：
   - `LoLA`：`horizon=100`、$m=2$、$k=5$、$\gamma=0.98$、$\sigma_0=0.5$、`std_lr=0.05`；`z` 使用 `lr=0.05`，ANFIS 使用 `lr=0.01`。
-  - `ReLA`：雙殘差 Critic（2 層 64 隱藏單元，末層零初始化）、`utd=4`、`actor_update_freq=4`、`batch_size=256`、`lr=1e-4`。（40 支實驗尚未全數完成，未納入下表，待全部 4 個 OOD 環境收齊 10 seeds 後以 `analyze.summarize` 補入。）
+  - `ReLA`：雙殘差 Critic（2 層 64 隱藏單元，末層零初始化）、`utd=4`、`actor_update_freq=4`、`batch_size=256`、`lr=1e-4`。
   - `CEM`：`pop_size=16`、`elite_frac=0.25`、$\alpha=0.7$、$\sigma_0=0.5$、完整 episode（50 代）。
   - `CMA-ES`：`pop_size=16`、$\sigma_0=0.5$、完整 episode（50 代）；`z` 用 full-covariance CMA-ES，ANFIS 用 `sep-CMA-ES`（對角共變異數）。
 
@@ -40,6 +40,7 @@
 | friction_mild | REINFORCE 3.2M (T6.1) | anfis (custom sensors) | 397.1 | 394.6 |
 | friction_mild | CMA-ES (full-cov) | z | 616.6 | 615.1 |
 | friction_mild | LoLA | z | 553.1 | 553.1 |
+| friction_mild | ReLA | z | 677.4 | 664.0 |
 | friction_mild | CEM | z | 519.4 | 511.2 |
 | friction_mild | sep-CMA-ES | anfis (4 sensors) | 511.9 | 503.5 |
 | friction_mild | sep-CMA-ES | anfis (custom sensors) | 516.7 | 516.7 |
@@ -54,6 +55,7 @@
 | friction_high_mild | REINFORCE 3.2M (T6.1) | anfis (custom sensors) | 424.0 | 424.0 |
 | friction_high_mild | CMA-ES (full-cov) | z | 656.5 | 643.9 |
 | friction_high_mild | LoLA | z | 604.7 | 604.2 |
+| friction_high_mild | ReLA | z | 686.9 | 686.9 |
 | friction_high_mild | CEM | z | 530.3 | 530.1 |
 | friction_high_mild | sep-CMA-ES | anfis (4 sensors) | 558.9 | 548.7 |
 | friction_high_mild | sep-CMA-ES | anfis (custom sensors) | 561.0 | 556.6 |
@@ -68,6 +70,7 @@
 | actuator_mild | REINFORCE 3.2M (T6.1) | anfis (custom sensors) | 377.6 | 377.6 |
 | actuator_mild | CMA-ES (full-cov) | z | 549.3 | 543.7 |
 | actuator_mild | LoLA | z | 514.2 | 493.5 |
+| actuator_mild | ReLA | z | 651.5 | 646.8 |
 | actuator_mild | CEM | z | 428.7 | 423.3 |
 | actuator_mild | sep-CMA-ES | anfis (4 sensors) | 489.7 | 489.7 |
 | actuator_mild | sep-CMA-ES | anfis (custom sensors) | 491.0 | 475.4 |
@@ -82,6 +85,7 @@
 | actuator_high_mild | REINFORCE 3.2M (T6.1) | anfis (custom sensors) | 584.3 | 584.3 |
 | actuator_high_mild | CMA-ES (full-cov) | z | 754.5 | 754.5 |
 | actuator_high_mild | LoLA | z | 707.7 | 688.4 |
+| actuator_high_mild | ReLA | z | 748.3 | 745.7 |
 | actuator_high_mild | CEM | z | 654.2 | 652.7 |
 | actuator_high_mild | sep-CMA-ES | anfis (4 sensors) | 637.9 | 632.6 |
 | actuator_high_mild | sep-CMA-ES | anfis (custom sensors) | 654.9 | 654.9 |
@@ -96,6 +100,7 @@
 | 4-env mean | REINFORCE 3.2M (T6.1) | anfis (custom sensors) | 445.8 | 445.1 |
 | 4-env mean | CMA-ES (full-cov) | z | 644.2 | 639.3 |
 | 4-env mean | LoLA | z | 594.9 | 584.8 |
+| 4-env mean | ReLA | z | 691.0 | 685.8 |
 | 4-env mean | CEM | z | 533.2 | 529.3 |
 | 4-env mean | sep-CMA-ES | anfis (4 sensors) | 549.6 | 543.6 |
 | 4-env mean | sep-CMA-ES | anfis (custom sensors) | 555.9 | 550.9 |
@@ -123,7 +128,7 @@
   - **跌倒與倒立全面轉為負權重、高站立放大**：在 `torso_height < 0.75–0.85 m` 與 `torso_upright < 0`（頭下腳上或倒地）區域，四個任務跨 10 seeds 一致給出**負權重**（低至 `-0.3` 至 `-1.5`），而在 `torso_height > 1.0 m` 與 `torso_upright -> +1` 則放大至原始 $r(s)$ 的 `2–5` 倍。相較原始非負 reward，ANFIS 學出零中心對比式權重，主動把 $z_\phi$ 推離跌倒與倒立狀態。
   - **抑制後退與借用前進穩定**：在 `CoM_vx < 0`（後退／向後滑倒）區域四個任務皆被壓成負權重；實測 `actuator_mild` `stand` 可將原本往後倒退的 `mean_vx=-0.506` 修正為 `+0.461`，並將平均高度從 `0.720 m` 抬升至 `0.973 m`。
   - **額外感測器在真實資料上的作用**：`friction_mild_custom` 的 `com_vz > +2 m/s`（向上垂直速度）在四個任務皆出現明顯正權重上翹；`actuator_mild_custom` 的 `qvel_left_knee > 0` 與 `qvel_right_hip` 呈現跨任務一致的單調上升趨勢；其餘關節角速度平均較平、標準差帶較寬，顯示不同 seed 透過不同關節組合達成相近的潛向量補償。
-- **自由潛向量 $z$ 仍高於 ANFIS 上限**：`CMA-ES (full-cov)` 在 $z$ 空間達 `644.2`、`LoLA` 達 `594.9`。
+- **自由潛向量 $z$ 上 `ReLA` 奪冠，與算力成本存在明顯取捨**：`ReLA (z)` 以四環境平均 `691.0 / 685.8` 居所有方法之冠（在最困難的 `actuator_mild` 達 `651.5`，領先次佳 `CMA-ES (z)` 高達 `+102.2`；在 `friction_mild` 達 `677.4`、`friction_high_mild` 達 `686.9`，皆顯著勝出；僅在 `actuator_high_mild` 的 `748.3` 略低於 `CMA-ES (z)` 的 `754.5`）。但因 `utd=4` 需在每個環境步反覆穿透凍結 FB 網路做反向傳播，其單組牆上時間遠高於 `CMA-ES` 與 `LoLA`。
 - **限制與待補事項**：
-  - `ReLA`（`z`）尚未收齊 4 環境 $\times$ 10 seeds，故本表暫未列出；待全部 40 支完成後重新執行 `analyze.summarize` 一併補入。
-  - 演化法（CEM / CMA-ES）在 CPU 執行、`LoLA (z)` 與 `LoLA (anfis)` 分別在兩款不同 GPU 執行，低摩擦環境對 FP32 末位誤差敏感；正式最終版可將所有模型以 `--eval_models_dir` 在同一硬體上統一重評以消除裝置差異。
+  - 單一凍結 FB checkpoint（`660000.pt`）本身存在左右步態不對稱（慣用腳），因此 ANFIS 對雙側關節角速度（如 `qvel_left_knee` vs `qvel_right_knee`）學出的不對稱斜率反映的是該 checkpoint 的特徵對齊，未必跨預訓練 seed 保持同一側。
+  - 不同條件分佈於 CPU、兩款本機 GPU 與遠端 GPU 執行，低摩擦環境對 FP32 末位誤差敏感；正式最終版可將所有模型以 `--eval_models_dir` 在同一硬體上統一重評以消除裝置差異。

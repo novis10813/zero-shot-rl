@@ -6,6 +6,7 @@ friction_mild,t61_reinforce_3p2m_ood_4sensor,REINFORCE 3.2M (T6.1),anfis (4 sens
 friction_mild,t61_reinforce_3p2m_ood_custom,REINFORCE 3.2M (T6.1),anfis (custom sensors),10,3040000.00,397.15,394.58,421.61,540.65,178.55,372.69
 friction_mild,cmaes_z,CMA-ES (full-cov),z,10,760000.00,616.64,615.06,828.33,708.05,246.08,525.24
 friction_mild,lola_z,LoLA,z,10,800000.00,553.08,553.08,705.64,652.21,196.89,453.95
+friction_mild,rela_z,ReLA,z,10,760000.00,677.38,663.98,739.47,736.95,215.09,617.81
 friction_mild,cem_z,CEM,z,10,640000.00,519.41,511.16,663.45,611.19,211.06,427.62
 friction_mild,cmaes_anfis,sep-CMA-ES,anfis (4 sensors),10,680000.00,511.90,503.52,664.05,583.72,181.78,440.08
 friction_mild,cmaes_anfis_custom,sep-CMA-ES,anfis (custom sensors),10,800000.00,516.66,516.66,658.54,601.92,196.08,431.41
@@ -20,6 +21,7 @@ friction_high_mild,t61_reinforce_3p2m_ood_4sensor,REINFORCE 3.2M (T6.1),anfis (4
 friction_high_mild,t61_reinforce_3p2m_ood_custom,REINFORCE 3.2M (T6.1),anfis (custom sensors),10,3200000.00,423.97,423.97,663.11,441.33,215.47,406.60
 friction_high_mild,cmaes_z,CMA-ES (full-cov),z,10,760000.00,656.52,643.88,871.37,799.19,304.89,513.86
 friction_high_mild,lola_z,LoLA,z,10,760000.00,604.72,604.16,772.77,737.69,281.47,471.76
+friction_high_mild,rela_z,ReLA,z,10,800000.00,686.88,686.88,857.37,863.78,240.05,516.39
 friction_high_mild,cem_z,CEM,z,10,760000.00,530.27,530.10,727.99,615.60,228.46,444.94
 friction_high_mild,cmaes_anfis,sep-CMA-ES,anfis (4 sensors),10,680000.00,558.91,548.67,785.96,677.56,218.38,440.25
 friction_high_mild,cmaes_anfis_custom,sep-CMA-ES,anfis (custom sensors),10,760000.00,560.98,556.58,790.63,669.77,240.64,452.20
@@ -34,6 +36,7 @@ actuator_mild,t61_reinforce_3p2m_ood_4sensor,REINFORCE 3.2M (T6.1),anfis (4 sens
 actuator_mild,t61_reinforce_3p2m_ood_custom,REINFORCE 3.2M (T6.1),anfis (custom sensors),10,3200000.00,377.65,377.65,557.55,408.58,193.19,346.71
 actuator_mild,cmaes_z,CMA-ES (full-cov),z,10,680000.00,549.27,543.72,773.74,653.28,236.88,445.25
 actuator_mild,lola_z,LoLA,z,10,440000.00,514.22,493.50,694.51,603.51,209.43,424.93
+actuator_mild,rela_z,ReLA,z,10,680000.00,651.49,646.84,833.43,808.90,190.91,494.08
 actuator_mild,cem_z,CEM,z,10,440000.00,428.74,423.25,670.18,493.92,185.28,363.55
 actuator_mild,cmaes_anfis,sep-CMA-ES,anfis (4 sensors),10,800000.00,489.73,489.73,707.76,597.29,204.75,382.16
 actuator_mild,cmaes_anfis_custom,sep-CMA-ES,anfis (custom sensors),10,680000.00,491.01,475.41,686.70,596.53,197.69,385.50
@@ -48,6 +51,7 @@ actuator_high_mild,t61_reinforce_3p2m_ood_4sensor,REINFORCE 3.2M (T6.1),anfis (4
 actuator_high_mild,t61_reinforce_3p2m_ood_custom,REINFORCE 3.2M (T6.1),anfis (custom sensors),10,3200000.00,584.26,584.26,737.50,662.32,268.55,506.21
 actuator_high_mild,cmaes_z,CMA-ES (full-cov),z,10,800000.00,754.46,754.46,955.88,851.98,357.97,656.93
 actuator_high_mild,lola_z,LoLA,z,10,560000.00,707.74,688.35,880.56,848.99,330.36,566.49
+actuator_high_mild,rela_z,ReLA,z,10,760000.00,748.33,745.69,830.07,894.81,336.45,666.59
 actuator_high_mild,cem_z,CEM,z,10,560000.00,654.25,652.66,812.16,768.48,322.16,540.02
 actuator_high_mild,cmaes_anfis,sep-CMA-ES,anfis (4 sensors),10,600000.00,637.91,632.62,822.53,720.05,247.37,555.76
 actuator_high_mild,cmaes_anfis_custom,sep-CMA-ES,anfis (custom sensors),10,800000.00,654.88,654.88,825.09,755.91,290.67,553.86
@@ -62,6 +66,7 @@ mean_of_4_dynamics,t61_reinforce_3p2m_ood_4sensor,REINFORCE 3.2M (T6.1),anfis (4
 mean_of_4_dynamics,t61_reinforce_3p2m_ood_custom,REINFORCE 3.2M (T6.1),anfis (custom sensors),10,,445.76,445.11,594.94,513.22,213.94,408.05
 mean_of_4_dynamics,cmaes_z,CMA-ES (full-cov),z,10,,644.22,639.28,857.33,753.12,286.46,535.32
 mean_of_4_dynamics,lola_z,LoLA,z,10,,594.94,584.77,763.37,710.60,254.54,479.28
+mean_of_4_dynamics,rela_z,ReLA,z,10,,691.02,685.85,815.08,826.11,245.63,573.72
 mean_of_4_dynamics,cem_z,CEM,z,10,,533.16,529.29,718.44,622.30,236.74,444.03
 mean_of_4_dynamics,cmaes_anfis,sep-CMA-ES,anfis (4 sensors),10,,549.61,543.64,745.08,644.66,213.07,454.56
 mean_of_4_dynamics,cmaes_anfis_custom,sep-CMA-ES,anfis (custom sensors),10,,555.89,550.88,740.24,656.03,231.27,455.74
