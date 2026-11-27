@@ -52,7 +52,7 @@ class RewardFunctionConstructor:
             ).reward_function
 
     def __call__(self, physics):
-        return [self.reward_functions[task](physics) for task in self.task_names]
+        return [float(self.reward_functions[task](physics)) for task in self.task_names]
 
     def process_episode(
         self, episode: Dict[str, np.ndarray]
