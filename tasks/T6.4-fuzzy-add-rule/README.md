@@ -9,7 +9,7 @@ CHECKPOINT=<FB 660000.pt> DATASET=datasets/walker/rnd/dataset.npz OUT_DIR=tasks/
   bash tasks/T6.4-fuzzy-add-rule/run_zdict_rank.sh --device cpu
 ```
 
-產出 `data/zdict_rank.csv` 與 `data/zdict_spectra.npz`。`REPORT.md` 第 2 節探索變異數分布的數值可由以下指令重現：
+產出 `data/zdict_rank.csv` 與 `data/zdict_spectra.npz`。`REPORT.md` 結果的「探索變異數分布」的數值可由以下指令重現：
 
 ```bash
 uv run python -c "
