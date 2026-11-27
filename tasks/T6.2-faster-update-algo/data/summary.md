@@ -7,6 +7,7 @@
 | friction_mild | REINFORCE 3.2M (T6.1) | anfis (custom sensors) | 397.1 | 394.6 |
 | friction_mild | CMA-ES (full-cov) | z | 616.6 | 615.1 |
 | friction_mild | LoLA | z | 553.1 | 553.1 |
+| friction_mild | ReLA | z | 677.4 | 664.0 |
 | friction_mild | CEM | z | 519.4 | 511.2 |
 | friction_mild | sep-CMA-ES | anfis (4 sensors) | 511.9 | 503.5 |
 | friction_mild | sep-CMA-ES | anfis (custom sensors) | 516.7 | 516.7 |
@@ -21,6 +22,7 @@
 | friction_high_mild | REINFORCE 3.2M (T6.1) | anfis (custom sensors) | 424.0 | 424.0 |
 | friction_high_mild | CMA-ES (full-cov) | z | 656.5 | 643.9 |
 | friction_high_mild | LoLA | z | 604.7 | 604.2 |
+| friction_high_mild | ReLA | z | 686.9 | 686.9 |
 | friction_high_mild | CEM | z | 530.3 | 530.1 |
 | friction_high_mild | sep-CMA-ES | anfis (4 sensors) | 558.9 | 548.7 |
 | friction_high_mild | sep-CMA-ES | anfis (custom sensors) | 561.0 | 556.6 |
@@ -35,6 +37,7 @@
 | actuator_mild | REINFORCE 3.2M (T6.1) | anfis (custom sensors) | 377.6 | 377.6 |
 | actuator_mild | CMA-ES (full-cov) | z | 549.3 | 543.7 |
 | actuator_mild | LoLA | z | 514.2 | 493.5 |
+| actuator_mild | ReLA | z | 651.5 | 646.8 |
 | actuator_mild | CEM | z | 428.7 | 423.3 |
 | actuator_mild | sep-CMA-ES | anfis (4 sensors) | 489.7 | 489.7 |
 | actuator_mild | sep-CMA-ES | anfis (custom sensors) | 491.0 | 475.4 |
@@ -49,6 +52,7 @@
 | actuator_high_mild | REINFORCE 3.2M (T6.1) | anfis (custom sensors) | 584.3 | 584.3 |
 | actuator_high_mild | CMA-ES (full-cov) | z | 754.5 | 754.5 |
 | actuator_high_mild | LoLA | z | 707.7 | 688.4 |
+| actuator_high_mild | ReLA | z | 748.3 | 745.7 |
 | actuator_high_mild | CEM | z | 654.2 | 652.7 |
 | actuator_high_mild | sep-CMA-ES | anfis (4 sensors) | 637.9 | 632.6 |
 | actuator_high_mild | sep-CMA-ES | anfis (custom sensors) | 654.9 | 654.9 |
@@ -63,6 +67,7 @@
 | 4-env mean | REINFORCE 3.2M (T6.1) | anfis (custom sensors) | 445.8 | 445.1 |
 | 4-env mean | CMA-ES (full-cov) | z | 644.2 | 639.3 |
 | 4-env mean | LoLA | z | 594.9 | 584.8 |
+| 4-env mean | ReLA | z | 691.0 | 685.8 |
 | 4-env mean | CEM | z | 533.2 | 529.3 |
 | 4-env mean | sep-CMA-ES | anfis (4 sensors) | 549.6 | 543.6 |
 | 4-env mean | sep-CMA-ES | anfis (custom sensors) | 555.9 | 550.9 |
