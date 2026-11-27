@@ -132,6 +132,7 @@
   - **額外感測器在真實資料上的作用**：`friction_mild_custom` 的 `com_vz > +2 m/s`（向上垂直速度）在四個任務皆出現明顯正權重上翹；`actuator_mild_custom` 的 `qvel_left_knee > 0` 與 `qvel_right_hip` 呈現跨任務一致的單調上升趨勢；其餘關節角速度平均較平、標準差帶較寬，顯示不同 seed 透過不同關節組合達成相近的潛向量補償。
 - **自由潛向量 $z$ 上 `ReLA` 奪冠，與算力成本存在明顯取捨**：`ReLA (z)` 以四環境平均 `691.0 / 685.8` 居所有方法之冠（在最困難的 `actuator_mild` 達 `651.5`，領先次佳 `CMA-ES (z)` 高達 `+102.2`；在 `friction_mild` 達 `677.4`、`friction_high_mild` 達 `686.9`，皆顯著勝出；僅在 `actuator_high_mild` 的 `748.3` 略低於 `CMA-ES (z)` 的 `754.5`）。但因 `utd=4` 需在每個環境步反覆穿透凍結 FB 網路做反向傳播，其單組牆上時間遠高於 `CMA-ES` 與 `LoLA`。
 - **限制與待補事項**：
+  - 本分支 `anfis_z` 預設的 REINFORCE 路徑與 `main` 的回報值並非逐位元組一致（相同 seed 下，從 step 0 起即不同），因此 T6.1 參考列（由 `main` 的程式碼產生，見 T6.1 的 `exp/` tag）未以此程式碼重跑，差異原因未釐清。
   - `select IQM` 在報告所用的同一組評估種子（`5..24`）上挑選最佳評估點，數值偏樂觀，因此一併列出不挑選的 `final step IQM`。
   - `LoLA`（ANFIS）的 `lr=0.01` 與 `CEM` / `CMA-ES`（ANFIS）的 `init_sigma=0.5` 是以小規模 probe 在同樣的測試環境上調整而得，未使用獨立的驗證環境。
   - 單一凍結 FB checkpoint（Walker RND 660k）本身存在左右步態不對稱（慣用腳），因此 ANFIS 對雙側關節角速度（如 `qvel_left_knee` vs `qvel_right_knee`）學出的不對稱斜率反映的是該 checkpoint 的特徵對齊，未必跨預訓練 seed 保持同一側。
