@@ -43,7 +43,7 @@
 
 ## 結論
 
-- **預期 1 成立（平均上）**：`all37_first` 4 環境平均 `566.3 / 561.3`（select / final），高於 T6.2 Cartesian 4 sensors 的 `549.6 / 543.6`（`+16.7`）。但並非每個環境都成立：`friction_high_mild`（`585.8` vs `558.9`）、`actuator_mild`（`501.8` vs `489.7`）、`actuator_high_mild`（`678.4` vs `637.9`）較高，`friction_mild` 較低（`499.2` vs `511.9`）。
+- **預期 1 大致成立（4 個環境中 3 個成立）**：`all37_first` 4 環境平均 `566.3 / 561.3`（select / final），高於 T6.2 Cartesian 4 sensors 的 `549.6 / 543.6`（`+16.7`）。但並非每個環境都成立：`friction_high_mild`（`585.8` vs `558.9`）、`actuator_mild`（`501.8` vs `489.7`）、`actuator_high_mild`（`678.4` vs `637.9`）較高，`friction_mild` 較低（`499.2` vs `511.9`）。
 - **預期 2 成立**：`all37_zero` 4 環境平均 `478.0 / 471.2`，落後 `all37_first` `88.3` 分，且 4 個環境全部較低（例如 `friction_mild` `427.2` vs `499.2`）。
 - **交互作用與基底函數數量**：只有 1D 項的 `all37_zero` 在 37 個 sensors（74 條規則）下仍明顯較差，所以單靠基底函數多並不夠，需要二階交互作用（$\mu_{i,m}(x_i)\,x_j$）。另一方面，8 個 sensors 的 `8_first`（176 參數）`554.6 / 551.9` 與 T6.2 Cartesian custom（128–256 條規則，最高 2,336 參數）`555.9 / 550.9` 持平，高階 Cartesian 乘積並不必要。
 - **與直接搜 $z$ 的差距仍在**：`all37_first` 將 $\mathbf{Z}_{\text{dict}}$ 條件數降到 `57.8`（變異數有效秩 `11.47`），高出 T6.2 Cartesian custom `10.4` 分，仍落後 T6.2 直接搜 $z$（`644.2 / 639.3`）`77.9` 分。
