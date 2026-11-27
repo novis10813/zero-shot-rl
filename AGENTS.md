@@ -3,6 +3,11 @@
 Baselines, modified RL functions and FB latent experiments on top of the authors' zero-shot RL
 code, one report per task.
 
+The experiment process (task ids, branches, worktrees, lifecycle, archiving and `exp/` tags,
+`REPORT.md` structure, file rule, close-out, review, compute and data rules) is defined in
+`/mnt/raid1/novis/research/docs/experiment-protocol.md`. Read it before any task work. This file
+adds only what is specific to this repo.
+
 ## Where code lives
 
 ```
@@ -25,8 +30,8 @@ zero_shot_rl/                            shared code: upstream root modules and 
   provenance.py                          file hashes and no-clobber publication
 analysis/                                analysis tools used by two or more tasks
 tests/                                   component tests for zero_shot_rl/ and agents/
-tasks/T<NN>-<name>/
-  REPORT.md                              results only
+tasks/T<id>-<name>/
+  REPORT.md                              question, method, conclusions, results (see the protocol)
   README.md                              how to reproduce: commands, configs, code changes
   configs/                               experiment configs (sources, sweeps, seeds)
   data/                                  eval data behind every reported number
@@ -39,30 +44,44 @@ tasks/T<NN>-<name>/
 
 Each module's docstring states what it does and how to run it.
 
+## Running
+
+Run everything from the repo root with `uv`, e.g.
+`uv run python -m zero_shot_rl.train.main_exorl fb walker rnd` (reads `agents/<algo>/config.yaml`)
+or `PYTHONPATH=. uv run python -m zero_shot_rl.latent.infer`. Task modules also need the task
+directory on the path, e.g. `PYTHONPATH=.:tasks/T05-opt-to-pessi uv run python -m analyze.q1`.
+
+## Code rules
+
 - The authors' code is the `upstream` remote (`enjeeneer/zero-shot-rl`, branch `upstream/main`).
   Their root modules `main_exorl.py`, `main_d4rl.py`, `exorl_reformatter.py`, `dmc.py` and
   `utils.py` live in `zero_shot_rl/`. Bringing their updates into `main` is a `chore/` PR that
   merges `upstream/main`, applying changes to those modules to their `zero_shot_rl/` copies.
-- Run everything from the repo root, e.g. `uv run python -m zero_shot_rl.train.main_exorl fb walker rnd`
-  (reads `agents/<algo>/config.yaml`) or `PYTHONPATH=. uv run python -m zero_shot_rl.latent.infer`.
-  Task modules also need the task directory on the path, e.g.
-  `PYTHONPATH=.:tasks/T05-opt-to-pessi uv run python -m analyze.q1`.
-- New baselines go in new modules (for example `agents/<name>/`), not in edits to existing
-  agents.
-- A change to an upstream file, including the modules moved to `zero_shot_rl/`, that can alter
-  training or evaluation results goes behind a new argument or config key whose default keeps
-  the original behaviour.
-- If a change alters what an existing entry module computes, say so in the commit message.
-  Earlier results are reproduced from their `exp/` tags, not from `main`.
-- For tasks after T06, code in `tasks/T<NN>-<name>/` is limited to experiment configs (yaml), launch scripts (`.sh`)
-  and analysis or visualization used only by that task. Any other code (algorithms, environments,
-  entry modules, libraries) goes in the repo's shared directories, e.g. `zero_shot_rl/`.
+- New baselines go in new modules (for example `agents/<name>/`), not in edits to existing agents.
+- Stricter than the protocol, for upstream code only: a change to an upstream file, including the
+  modules moved to `zero_shot_rl/`, that can alter training or evaluation results goes behind a
+  new argument or config key whose default keeps the original behaviour.
+- For other existing entry modules, earlier results are reproduced from their `exp/` tags. A
+  change that alters what such a module computes by default is stated in the commit message and
+  the PR.
+- For tasks after T06, code in `tasks/T<id>-<name>/` is limited to experiment configs (yaml),
+  launch scripts (`.sh`) and analysis or visualization used only by that task. Any other code
+  (algorithms, environments, entry modules, libraries) goes in the shared directories, e.g.
+  `zero_shot_rl/`.
 - A task's analysis code moves to `analysis/` or `zero_shot_rl/` when a second task needs it, and
   the same commit updates the commands in earlier tasks' READMEs.
 
 ## Verify
 
-Run before every commit that touches code:
+If only files under `tasks/T<id>-<name>/` changed:
+
+```
+uv run ruff check
+PYTHONPATH=.:tasks/T<id>-<name> MUJOCO_GL=egl uv run python -m unittest discover -s tasks/T<id>-<name>/tests -t tasks/T<id>-<name>
+```
+
+If shared code changed (`zero_shot_rl/`, `agents/`, `analysis/`, `rewards/`, `custom_dmc_tasks/`,
+`configs/`, `scripts/`, `tests/`), run the full block before every commit:
 
 ```
 uv run ruff check
@@ -74,63 +93,15 @@ done
 ```
 
 Each task's tests run in their own process, because task modules such as `common.py` may share
-names across tasks. A task README lists its `--check` commands, which verify that stored outputs
-are reproduced byte for byte.
+names across tasks.
 
-## Branches and tasks
+## Research rules
 
-| Branch | Purpose |
-|---|---|
-| `main` | runnable code and every finished task; updated only through PRs |
-| `task/T<NN>-<name>` | one per task, branched from `main`; experiments and trial and error |
-| `chore/<name>` | changes outside any task (refactors, tooling, docs, `upstream/main` merges); deleted once merged |
+Scores of trained agents over seeds are aggregated with `analysis.table6_aggregate` (Table 6 of
+Jeen et al. 2024). Tasks up to T3.3.1 that used other aggregations keep them.
 
-Both kinds of branch are merged into `main` by PR with a merge commit, never squash, so the
-history and tagged commits stay in `main`. `task/` branches only get new commits: never rebase,
-force-push or delete them. A tag never moves to a different commit; its message may be corrected
-by re-creating it on the same commit.
+## Data rules
 
-Task numbers are two digits and never reused. Tasks run one at a time: `task/T<NN+1>` branches
-from `main` after `T<NN>` is merged. Finished tasks are in `tasks/`.
-
-1. Branch `task/T<NN>-<name>` from `main`. Run experiments with `lab run`, which executes the
-   pushed commit.
-2. For every job whose results go into the report:
-   - copy its checkpoints (best and final) and log from the lab host to
-     `artifacts/T<NN>-<name>/<job id>/`, check the sha256 against the host copy, then delete the
-     host copy;
-   - tag the commit it ran with an annotated tag `exp/T<NN>-<job id>`. The message records seed,
-     the repo-relative paths of the checkpoints and log under `artifacts/`, and the checkpoints'
-     sha256. No host names: the fork is public.
-3. When the task ends, commit a cleanup on the task branch: delete or move every file that
-   fails the file rule below.
-4. Open a PR from the task branch to `main`.
-
-## File rule
-
-A file stays on `main` only if it is needed to:
-
-- **run** a baseline or variant: algorithms, environments, entry points, environment setup;
-- **reproduce** a reported number or figure: experiment configs, eval data, analysis scripts;
-- **understand** the repo: `README.md`, this file, task READMEs.
-
-Debugging scripts, abandoned attempts, working notes and superseded figures are deleted in the
-cleanup commit. They stay reachable through the `task/` branch history and `exp/` tags.
-
-## Reports
-
-- `REPORT.md` presents results: setup, numbers, figures, comparisons, limitations.
-- No checkpoint paths, hashes, host names or job logs in reports. Those go in `exp/` tag messages.
-- Every number and figure must be regenerable from the task's `data/` with a command in its
-  `README.md`. Numbers from other sources (papers, other repos) name their source.
-- Scores of trained agents over seeds are aggregated with `analysis.table6_aggregate` (Table 6
-  of Jeen et al. 2024). Tasks up to T3.3.1 that used other aggregations keep them.
-
-## Data and checkpoints
-
-- Datasets, checkpoints, job logs and videos are never committed. `.gitignore` covers
-  `artifacts/`, `datasets/` and `agents/*/saved_models/`.
-- Checkpoints, job logs and videos live only on this machine, in `artifacts/` at the repo root.
-  Lab hosts run jobs and keep no results. `git clean -x` deletes `artifacts/`; never run it.
-- Checkpoints are saved with `AbstractAgent.save` (class, constructor arguments and `state_dict`)
-  and loaded with `load_agent`. Never pickle whole objects.
+- Checkpoints are saved with `AbstractAgent.save` (class, constructor arguments and
+  `state_dict`) and loaded with `load_agent`. Never pickle whole objects.
+- `.gitignore` covers `artifacts/`, `datasets/` and `agents/*/saved_models/`.
