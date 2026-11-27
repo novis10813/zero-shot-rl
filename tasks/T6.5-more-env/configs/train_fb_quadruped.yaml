@@ -1,0 +1,8 @@
+# lab sweep spec for vanilla FB on ExORL quadruped rnd-100k, seeds 0-4.
+# Mirrors T4.1.3.1 Walker FB pretraining: 1M learning steps, eval every 20k steps saving every eval checkpoint.
+on: idlab1
+gpu_indices: [0]
+vram: 12G
+command: PYTHONUNBUFFERED=1 MUJOCO_GL=egl uv run python -m zero_shot_rl.train.main_exorl fb quadruped rnd --eval_tasks stand jump roll roll_fast --wandb_logging False --dataset_path $HOME/zsrl-datasets/quadruped/rnd/dataset.npz --seed {seed}
+grid:
+  seed: [0, 1, 2, 3, 4]
