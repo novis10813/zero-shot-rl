@@ -1,0 +1,50 @@
+# LoLA (Sikchi et al., 2025, arXiv:2504.07896, Alg. 2) with 4-sensor ANFIS parameterization.
+# Evaluation protocol and total env-step budget match T6.1-ood-fuzzy stage 1 (800k env steps).
+
+algo: lola
+param: anfis
+zero_shot_init: true
+
+anfis_config: ../../../configs/anfis/walker.yaml
+
+budget:
+  max_env_steps: 800000
+  eval_every_env_steps: 40000  # hits T6.1 milestones 160k, 320k, 480k, 640k, 800k + early curve
+
+reference:
+  dataset_transitions: 100000
+  z_inference_steps: 10000
+  seed: 42
+  discount: 0.98
+
+warmstart:
+  enabled: true
+  steps: 500
+  lr: 0.01
+  weight_decay: 0.0
+
+lola:
+  horizon: 100
+  num_start_states: 2
+  num_latents: 5
+  init_state_prob: 0.2
+  bootstrap: true
+  fb_q_head: min
+  discount: 0.98
+  init_sigma: 0.5
+  learn_std: true
+  min_sigma: 0.01
+  max_sigma: 2.0
+  lr: 0.01
+  std_lr: 0.05
+  weight_decay: 0.0
+  grad_clip: 1.0
+  normalize_advantages: false
+  buffer_size: 100000
+  train_seed_offset: 100000
+  seed: 1000
+
+eval:
+  tasks: null                  # resolves to [stand, walk, run, flip] for walker
+  eval_episodes: 20            # 20 shared eval envs (seeds 5..24)
+  eval_seed_start: 5

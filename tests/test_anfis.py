@@ -11,6 +11,7 @@ import torch.nn.functional as F
 from zero_shot_rl.latent.anfis import (
     ANFIS,
     CONSEQUENTS,
+    INPUT_NORMALIZERS,
     MEMBERSHIPS,
     OUTPUT_ACTIVATIONS,
     T_NORMS,
@@ -294,6 +295,107 @@ class ANFISTest(unittest.TestCase):
         self.assertFalse(loaded.normalize_firing)
         with torch.no_grad():
             torch.testing.assert_close(loaded(x), model(x), atol=1e-6, rtol=0)
+
+    def test_per_sensor_normalizers_formulas_outliers_and_constant(self):
+        self.assertEqual(set(INPUT_NORMALIZERS), {"none", "zscore", "minmax", "robust", "symlog_zscore"})
+        torch.manual_seed(11)
+        n = 200
+        # Col 0: bounded [-1, 1] -> none
+        c0 = torch.linspace(-1.0, 1.0, n)
+        # Col 1: affine Gaussian -> zscore
+        c1 = torch.randn(n) * 4.0 + 10.0
+        # Col 2: [2.0, 6.0] -> minmax maps cleanly to [-1, 1]
+        c2 = torch.linspace(2.0, 6.0, n)
+        # Col 3: heavy-tailed with huge outliers -> robust (median / IQR)
+        c3 = torch.randn(n) * 0.5 + 1.0
+        c3[:2] = torch.tensor([500.0, -500.0])
+        # Col 4: heavy-tailed -> symlog_zscore
+        c4 = torch.randn(n) * 0.5
+        c4[:2] = torch.tensor([1000.0, -1000.0])
+        # Col 5: constant -> must stay finite with eps floor
+        c5 = torch.full((n,), 3.5)
+
+        x = torch.stack([c0, c1, c2, c3, c4, c5], dim=-1)
+        sensors = [
+            {"name": "s_none", "num_terms": 2, "membership": "gaussian", "normalize": "none"},
+            {"name": "s_zscore", "num_terms": 2, "membership": "gaussian", "normalize": "zscore"},
+            {"name": "s_minmax", "num_terms": 2, "membership": "gaussian", "normalize": "minmax"},
+            {"name": "s_robust", "num_terms": 2, "membership": "gaussian", "normalize": "robust"},
+            {"name": "s_symlog", "num_terms": 2, "membership": "gaussian", "normalize": "symlog_zscore"},
+            {"name": "s_const", "num_terms": 2, "membership": "gaussian", "normalize": "robust"},
+        ]
+        model = ANFIS(sensors=sensors, out_dim=1, normalize_inputs=False)
+        model.init_from_data(x)
+        self.assertEqual(
+            model.input_normalizers,
+            ("none", "zscore", "minmax", "robust", "symlog_zscore", "robust"),
+        )
+        xn = model.normalize(x)
+        self.assertTrue(torch.isfinite(xn).all())
+
+        # none leaves values untouched
+        torch.testing.assert_close(xn[:, 0], c0, atol=1e-6, rtol=0)
+        # zscore -> zero mean, unit std
+        torch.testing.assert_close(xn[:, 1].mean(), torch.tensor(0.0), atol=1e-5, rtol=0)
+        torch.testing.assert_close(xn[:, 1].std(unbiased=False), torch.tensor(1.0), atol=1e-5, rtol=0)
+        # minmax -> [-1, 1]
+        torch.testing.assert_close(xn[:, 2].min(), torch.tensor(-1.0), atol=1e-5, rtol=0)
+        torch.testing.assert_close(xn[:, 2].max(), torch.tensor(1.0), atol=1e-5, rtol=0)
+        # robust -> inliers retain O(1) spread despite +-500 outliers (zscore would collapse inliers to < 0.02)
+        inlier_std_robust = xn[2:, 3].std(unbiased=False).item()
+        inlier_std_zscore = ((c3 - c3.mean()) / c3.std(unbiased=False))[2:].std(unbiased=False).item()
+        self.assertGreater(inlier_std_robust, 0.4)
+        self.assertLess(inlier_std_zscore, 0.05)
+        # symlog_zscore -> symlog(x) standardized
+        u4 = torch.sign(c4) * torch.log1p(torch.abs(c4))
+        expected_4 = (u4 - u4.mean()) / u4.std(unbiased=False)
+        torch.testing.assert_close(xn[:, 4], expected_4, atol=1e-5, rtol=0)
+        # constant sensor -> zeros
+        torch.testing.assert_close(xn[:, 5], torch.zeros(n), atol=1e-5, rtol=0)
+
+    def test_per_sensor_normalizers_from_config_roundtrip_and_legacy_ckpt(self):
+        torch.manual_seed(12)
+        x = torch.randn(40, 3) * torch.tensor([1.0, 5.0, 20.0]) + torch.tensor([0.0, 2.0, -3.0])
+        cfg = {
+            "normalize_inputs": True,
+            "sensors": {
+                "upright": {"enabled": True, "num_terms": 2, "normalize": "none"},
+                "height": {"enabled": True, "num_terms": 3},  # inherits zscore from normalize_inputs=True
+                "angmom": {"enabled": True, "num_terms": 2, "normalize": "symlog_zscore"},
+            },
+        }
+        model = ANFIS.from_config(cfg, out_dim=1)
+        self.assertEqual(model.input_normalizers, ("none", "zscore", "symlog_zscore"))
+        model.init_from_data(x)
+        y = model(x)
+        (y ** 2).mean().backward()
+        for p in model.parameters():
+            self.assertIsNotNone(p.grad)
+            self.assertTrue(torch.isfinite(p.grad).all())
+
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "mixed_norm.pt"
+            model.save(p, tag="mixed")
+            loaded, meta = load_anfis(p)
+            self.assertEqual(meta["tag"], "mixed")
+            self.assertEqual(loaded.input_normalizers, ("none", "zscore", "symlog_zscore"))
+            with torch.no_grad():
+                torch.testing.assert_close(loaded(x), model(x), atol=1e-6, rtol=0)
+
+            # Simulate a legacy checkpoint whose serialized sensor specs lack the 'normalize' key.
+            blob = torch.load(p, map_location="cpu", weights_only=False)
+            for s in blob["config"]["sensors"]:
+                s.pop("normalize", None)
+            legacy_p = Path(tmp) / "legacy.pt"
+            torch.save(blob, legacy_p)
+            legacy_loaded, _ = load_anfis(legacy_p)
+            self.assertEqual(legacy_loaded.input_normalizers, ("zscore", "zscore", "zscore"))
+
+        with self.assertRaises(ValueError):
+            ANFIS(
+                sensors=[{"name": "bad", "num_terms": 2, "membership": "gaussian", "normalize": "bogus"}],
+                out_dim=1,
+            )
 
 
 if __name__ == "__main__":

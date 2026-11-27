@@ -1,0 +1,46 @@
+# Pure-PyTorch full-covariance CMA-ES with direct z parameterization (800k env steps).
+# Matches T6.1-ood-fuzzy / T6.2 evaluation protocol (20 eval envs, seeds 5..24).
+
+algo: cmaes
+param: z
+zero_shot_init: true
+
+budget:
+  max_env_steps: 800000
+  eval_every_env_steps: 40000
+
+anfis:
+  domain: walker
+
+reference:
+  dataset_transitions: 100000
+  z_inference_steps: 10000
+  seed: 42
+  discount: 0.98
+
+warmstart:
+  enabled: false
+
+cmaes:
+  pop_size: 16                 # Hansen default for d=50 is 15; 16 gives 50 generations in 800k steps
+  init_sigma: 0.5
+  min_sigma: 0.0001
+  max_sigma: 5.0
+  diagonal: false              # full covariance CMA-ES in 50D latent space
+  param_scope: all
+  train_episodes_per_z: 1
+  episode_steps: null
+  horizon: null                # null -> full episode (1000 steps); set e.g. 100 for lookahead
+  num_start_states: 2
+  init_state_prob: 0.2
+  bootstrap: true
+  fb_q_head: min
+  discount: 0.98
+  buffer_size: 100000
+  train_seed_offset: 100000
+  seed: 1000
+
+eval:
+  tasks: null                  # resolves to [stand, walk, run, flip] for walker
+  eval_episodes: 20            # 20 shared eval envs (seeds 5..24)
+  eval_seed_start: 5

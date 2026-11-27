@@ -6,7 +6,7 @@ COMMANDS = {
     "value_correction": ("zero_shot_rl.finetune.value_correction", "Online Q_adapt / residual soft-Q finetuning"),
     "action_transform": ("zero_shot_rl.finetune.action_transform", "Test-time FB-AA (g_1 + T_theta) finetuning"),
     "online_inference": ("zero_shot_rl.finetune.online_inference", "OpTI-BFM online task-vector adaptation"),
-    "anfis_z": ("zero_shot_rl.finetune.anfis_z", "REINFORCE optimization of composable ANFIS -> FB latent z"),
+    "anfis_z": ("zero_shot_rl.finetune.anfis_z", "Latent adaptation (REINFORCE / LoLA / ReLA / CEM / CMA-ES) with ANFIS or direct z"),
 }
 
 ALIASES = {

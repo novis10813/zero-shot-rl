@@ -1,0 +1,53 @@
+# Paper-native ReLA (Sikchi et al., 2025, arXiv:2504.07896, Alg. 1) with direct z parameterization.
+# Evaluation protocol and total env-step budget match T6.1-ood-fuzzy stage 1 (50 iters * 16 * 1000 = 800k).
+
+algo: rela
+param: z
+zero_shot_init: true
+
+budget:
+  max_env_steps: 800000
+  eval_every_env_steps: 40000  # hits T6.1 milestones 160k, 320k, 480k, 640k, 800k + early curve
+
+anfis:
+  domain: walker
+
+reference:
+  dataset_transitions: 100000
+  z_inference_steps: 10000
+  seed: 42
+  discount: 0.98
+
+warmstart:
+  enabled: false
+
+rela:
+  use_residual: true
+  hidden_dim: null
+  residual_hidden_dim: 64
+  scratch_hidden_dim: 1024
+  critic_layers: 2
+  fb_q_head: min
+  discount: 0.98
+  tau: 0.005
+  utd: 4
+  actor_update_freq: 4
+  batch_size: 256
+  buffer_size: 300000
+  exploration_std: 0.1
+  target_policy_noise: 0.2
+  target_noise_clip: 0.3
+  warmup_steps: 256
+  actor_warmup_steps: 0
+  critic_lr: 0.0001
+  actor_lr: 0.0001
+  weight_decay: 0.0
+  grad_clip: 1.0
+  log_every_env_steps: 1000
+  train_seed_offset: 100000
+  seed: 1000
+
+eval:
+  tasks: null                  # resolves to [stand, walk, run, flip] for walker
+  eval_episodes: 20            # 20 shared eval envs (seeds 5..24)
+  eval_seed_start: 5
